@@ -1,0 +1,21 @@
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.tags {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  overflow: visible;
+}
+
+.tags button {
+  background-color: bisque;
+}
+
+#indicators {
+  pointer-events: none;
+}

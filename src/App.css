@@ -1,8 +1,29 @@
-#root {
+/* #root {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+} */
+
+#taskbar {
+  width: 100vw;
+  max-height: 20vh;
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+  margin-bottom: 2em;
+  background-color: gray;
+  align-items: center;
+  /* font-size: 4vh; */
+}
+
+#logout{
+  margin-right: 10px;
+}
+
+img {
+  height: 14vh;
+  border-radius: 50%;
 }
 
 .logo {
