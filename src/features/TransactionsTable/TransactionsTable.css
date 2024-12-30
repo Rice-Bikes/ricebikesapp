@@ -19,3 +19,9 @@ header {
 #indicators {
   pointer-events: none;
 }
+
+main{
+    padding: 0 5vw;
+    max-width: 90vw;
+}
+
