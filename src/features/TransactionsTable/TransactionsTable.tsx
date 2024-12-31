@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import type { ColDef, RowSelectionOptions } from "ag-grid-community";
 import "./TransactionsTable.css"; // CSS Stylesheet
+import {useNavigate} from "react-router-dom";
 
 // Row Data Interface
 interface IRow {
@@ -133,6 +134,13 @@ function CreateTransactionDropdown() {
 
 export function Transactions() {
   // Row Data: The data to be displayed.
+  const navigate = useNavigate();
+
+  const onRowClicked = (e: any) => {
+    const selectedTransaction = e.data;
+    navigate("/transaction-details", {state: {transaction: selectedTransaction}});
+  };
+
   const [rowData, setRowData] = useState<IRow[]>([
     {
       "#": 1,
@@ -263,7 +271,7 @@ export function Transactions() {
         columnDefs={colDefs}
         defaultColDef={defaultColDef}
         rowSelection={rowSelection}
-        onRowClicked={(e) => console.log(e)}
+        onRowClicked={onRowClicked}
       />
     </main>
   );
