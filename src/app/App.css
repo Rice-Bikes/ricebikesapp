@@ -17,8 +17,11 @@
   /* font-size: 4vh; */
 }
 
-#logout{
+#logout {
+  height: 8vh;
   margin-right: 10px;
+  margin-top: 2vh;
+  margin-bottom: 2vh;
 }
 
 img {
