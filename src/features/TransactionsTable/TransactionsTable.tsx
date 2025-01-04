@@ -13,9 +13,10 @@ import {
 import type { ColDef, RowSelectionOptions } from "ag-grid-community";
 import "./TransactionsTable.css"; // CSS Stylesheet
 import {useNavigate} from "react-router-dom";
+import NewTransactionForm from "../../components/TransactionPage/BikeForm"
 
 // Row Data Interface
-interface IRow {
+export interface IRow {
   "#": number;
   tag: Tag;
   Name: string;
@@ -42,10 +43,16 @@ const CompanyLogoRenderer = (param: CustomCellRendererProps) => (
   </div>
 );
 
+// Creating new transaction
+interface CreateTransactionDropdownProps{
+  onCreateTransaction: (newTransaction: IRow) => void;
+}
+
 const options = ["Inpatient", "Outpatient", "Merchandise", "Retrospec"]; // list of actions
-function CreateTransactionDropdown() {
+function CreateTransactionDropdown({ onCreateTransaction }: CreateTransactionDropdownProps) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
+  const [showForm, setShowForm] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(1);
 
   const handleClick = () => {
@@ -58,6 +65,7 @@ function CreateTransactionDropdown() {
   ) => {
     setSelectedIndex(index);
     setOpen(false);
+    setShowForm(true);
   };
 
   const handleToggle = () => {
@@ -74,6 +82,11 @@ function CreateTransactionDropdown() {
 
     setOpen(false);
   };
+
+  const handleTransactionCreated = (newTransaction: IRow) => {
+    onCreateTransaction(newTransaction);
+    setShowForm(false);
+  }
 
   return (
     <>
@@ -128,6 +141,7 @@ function CreateTransactionDropdown() {
           </Grow>
         )}
       </Popper>
+      {showForm && <NewTransactionForm onTransactionCreated={handleTransactionCreated} />}
     </>
   );
 }
@@ -251,12 +265,16 @@ export function Transactions() {
     };
   }, []);
 
+  const addTransaction = (newTransaction: IRow) => {
+    setRowData((prevRowData) => [...prevRowData, newTransaction]);
+  };
+
   // Container: Defines the grid's theme & dimensions.
   return (
     <main style={{ width: "100vw", height: "80vh" }}>
       <header>
         <ButtonGroup id="nav-buttons">
-          <CreateTransactionDropdown></CreateTransactionDropdown>
+          <CreateTransactionDropdown onCreateTransaction={addTransaction}></CreateTransactionDropdown>
           <Button>Whiteboard</Button>
           <Button>Price Check</Button>
         </ButtonGroup>
