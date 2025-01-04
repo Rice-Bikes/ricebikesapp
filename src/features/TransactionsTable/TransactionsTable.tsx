@@ -1,5 +1,6 @@
 import { AgGridReact, CustomCellRendererProps } from "ag-grid-react"; // React Data Grid Component
-import { useState, useMemo, useRef } from "react"; // React State Hook
+import { useState, useMemo, useRef, useEffect } from "react"; // React State Hook
+import { TransactionTableModel } from "./TransactionTableModel"; // Transaction Table Model
 import {
   Button,
   ButtonGroup,
@@ -12,7 +13,6 @@ import {
 } from "@mui/material";
 import type { ColDef, RowSelectionOptions } from "ag-grid-community";
 import "./TransactionsTable.css"; // CSS Stylesheet
-import {useNavigate} from "react-router-dom";
 
 // Row Data Interface
 interface IRow {
@@ -48,14 +48,15 @@ function CreateTransactionDropdown() {
   const anchorRef = useRef<HTMLDivElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(1);
 
-  const handleClick = () => {
-    console.info(`You clicked ${options[selectedIndex]}`);
-  };
+  // const handleClick = () => {
+  //   console.info(`You clicked ${options[selectedIndex]}`);
+  // };
 
   const handleMenuItemClick = (
     event: React.MouseEvent<HTMLLIElement, MouseEvent>,
     index: number
   ) => {
+    console.info(`You clicked ${options[index]} with ${event}`);
     setSelectedIndex(index);
     setOpen(false);
   };
@@ -133,14 +134,9 @@ function CreateTransactionDropdown() {
 }
 
 export function Transactions() {
+
+  const model = new TransactionTableModel();
   // Row Data: The data to be displayed.
-  const navigate = useNavigate();
-
-  const onRowClicked = (e: any) => {
-    const selectedTransaction = e.data;
-    navigate("/transaction-details", {state: {transaction: selectedTransaction}});
-  };
-
   const [rowData, setRowData] = useState<IRow[]>([
     {
       "#": 1,
@@ -156,83 +152,99 @@ export function Transactions() {
       Model: "Roubaix",
       Submitted: new Date("2018-01-16"),
     },
-    // {
-    //   "#": 2,
-    //   tag: {
-    //     inpatient: true,
-    //     beerBike: false,
-    //     nuclear: false,
-    //     retrospec: false,
-    //     merch: false,
-    //   },
-    //   Name: "Melanie",
-    //   Make: "idx",
-    //   Model: "idx",
-    //   Submitted: new Date("2019-01-6"),
-    // },
-    // {
-    //   "#": 3,
-    //   tag: {
-    //     inpatient: true,
-    //     beerBike: false,
-    //     nuclear: false,
-    //     retrospec: false,
-    //     merch: false,
-    //   },
-    //   Name: "Chase Geyer",
-    //   Make: "Specialized",
-    //   Model: "Roubaix",
-    //   Submitted: new Date("2019-01-16"),
-    // },
-    // {
-    //   "#": 4,
-    //   tag: {
-    //     inpatient: true,
-    //     beerBike: false,
-    //     nuclear: false,
-    //     retrospec: false,
-    //     merch: false,
-    //   },
-    //   Name: "Chase Geyer",
-    //   Make: "Specialized",
-    //   Model: "Roubaix",
-    //   Submitted: new Date("2020-01-16"),
-    // },
-    // {
-    //   "#": 5,
-    //   tag: {
-    //     inpatient: true,
-    //     beerBike: false,
-    //     nuclear: false,
-    //     retrospec: false,
-    //     merch: false,
-    //   },
-    //   Name: "Chase Geyer",
-    //   Make: "Specialized",
-    //   Model: "Roubaix",
-    //   Submitted: new Date("2021-01-16"),
-    // },
-    // {
-    //   "#": 6,
-    //   tag: {
-    //     inpatient: true,
-    //     beerBike: false,
-    //     nuclear: false,
-    //     retrospec: false,
-    //     merch: false,
-    //   },
-    //   Name: "Chase Geyer",
-    //   Make: "Specialized",
-    //   Model: "Roubaix",
-    //   Submitted: new Date("2022-01-16"),
-    // },
+    {
+      "#": 2,
+      tag: {
+        inpatient: true,
+        beerBike: false,
+        nuclear: false,
+        retrospec: false,
+        merch: false,
+      },
+      Name: "Melanie",
+      Make: "idx",
+      Model: "idx",
+      Submitted: new Date("2019-01-6"),
+    },
+    {
+      "#": 3,
+      tag: {
+        inpatient: true,
+        beerBike: false,
+        nuclear: false,
+        retrospec: false,
+        merch: false,
+      },
+      Name: "Chase Geyer",
+      Make: "Specialized",
+      Model: "Roubaix",
+      Submitted: new Date("2019-01-16"),
+    },
+    {
+      "#": 4,
+      tag: {
+        inpatient: true,
+        beerBike: false,
+        nuclear: false,
+        retrospec: false,
+        merch: false,
+      },
+      Name: "Chase Geyer",
+      Make: "Specialized",
+      Model: "Roubaix",
+      Submitted: new Date("2020-01-16"),
+    },
+    {
+      "#": 5,
+      tag: {
+        inpatient: true,
+        beerBike: false,
+        nuclear: false,
+        retrospec: false,
+        merch: false,
+      },
+      Name: "Chase Geyer",
+      Make: "Specialized",
+      Model: "Roubaix",
+      Submitted: new Date("2021-01-16"),
+    },
+    {
+      "#": 6,
+      tag: {
+        inpatient: true,
+        beerBike: false,
+        nuclear: false,
+        retrospec: false,
+        merch: false,
+      },
+      Name: "Chase Geyer",
+      Make: "Specialized",
+      Model: "Roubaix",
+      Submitted: new Date("2022-01-16"),
+    },
   ]);
 
+  useEffect(() => {
+    model
+    .pollTransactions()
+    .then((data) => {
+      console.log("checking current bulk operation");
+      console.log(data);
+      setRowData(data);
+    })
+    .catch((err) => console.error(err));
+
+
+      // .then((res) => res.json())
+      // .then((data) => console.log(data))
+      // .then((data) => setRowData(data));
+  });
+
   // Column Definitions: Defines & controls grid columns.
-  const [colDefs, setColDefs] = useState<ColDef<IRow>[]>([
+  const [colDefs] = useState<ColDef<IRow>[]>([
     { field: "#", filter: true },
     { field: "tag", cellRenderer: CompanyLogoRenderer },
-    { field: "Name" },
+    { field: "Name", filter: true },
     { field: "Make" },
     { field: "Model" },
     { field: "Submitted" },
@@ -254,6 +266,7 @@ export function Transactions() {
   // Container: Defines the grid's theme & dimensions.
   return (
     <main style={{ width: "100vw", height: "80vh" }}>
+      <Button></Button>
       <header>
         <ButtonGroup id="nav-buttons">
           <CreateTransactionDropdown></CreateTransactionDropdown>
@@ -271,7 +284,7 @@ export function Transactions() {
         columnDefs={colDefs}
         defaultColDef={defaultColDef}
         rowSelection={rowSelection}
-        onRowClicked={onRowClicked}
+        onRowClicked={(e) => console.log(e)}
       />
     </main>
   );
