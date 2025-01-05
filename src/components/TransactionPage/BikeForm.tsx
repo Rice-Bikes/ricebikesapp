@@ -2,10 +2,12 @@ import React, {useState} from 'react';
 import { IRow } from "../../features/TransactionsTable/TransactionsTable";
 
 interface NewTransactionFormProps {
-    onTransactionCreated: (newTransaction: IRow) => void;
+    onTransactionCreated: (newTransaction: any) => void;
+    isOpen: boolean;
+    onClose: () => void;
 }
 
-function NewTransactionForm({onTransactionCreated}: NewTransactionFormProps) {
+function NewTransactionForm({onTransactionCreated, isOpen, onClose}: NewTransactionFormProps) {
     const [formState, setFormState] = useState({
         name: '',
         email: '',
@@ -21,7 +23,7 @@ function NewTransactionForm({onTransactionCreated}: NewTransactionFormProps) {
     };
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const newTransaction: IRow = {
+        const newTransaction = {
             // TODO: need to make id generator
             "#": Math.floor(Math.random() * 10000),
             tag: { // TODO: need to set tags correctly based on dropdown selection
@@ -41,6 +43,7 @@ function NewTransactionForm({onTransactionCreated}: NewTransactionFormProps) {
         };
         onTransactionCreated(newTransaction); 
         console.log(newTransaction);
+        onClose();
     };
     const handleNext = () => {
         if (currentStep === 3) {
@@ -49,85 +52,101 @@ function NewTransactionForm({onTransactionCreated}: NewTransactionFormProps) {
             setCurrentStep(currentStep + 1);
         }
     };
+    if(!isOpen) return null;
     return (
-        <form onSubmit={handleSubmit}>
-          {currentStep === 1 && (
-            <div>
-              <h2>Step 1: User Information</h2>
-              <label>
-                Name:
-                <input
-                  type="text"
-                  name="name"
-                  value={formState.name}
-                  onChange={handleInputChange}
-                />
-              </label>
-              <br />
-              <label>
-                Email:
-                <input
-                  type="email"
-                  name="email"
-                  value={formState.email}
-                  onChange={handleInputChange}
-                />
-              </label>
-              <br />
-              <label>
-                Phone:
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formState.phone}
-                  onChange={handleInputChange}
-                />
-              </label>
-              <button onClick={handleNext}>Next</button>
-            </div>
-          )}
-          {currentStep === 2 && (
-            <div>
-              <h2>Step 2: Bike Information</h2>
-              <label>
-                Make:
-                <input
-                  type="text"
-                  name="make"
-                  value={formState.make}
-                  onChange={handleInputChange}
-                />
-              </label>
-              <br />
-              <label>
-                Model:
-                <input
-                  type="text"
-                  name="model"
-                  value={formState.model}
-                  onChange={handleInputChange}
-                />
-              </label>
-              <br />
-              <label>
-                Color:
-                <input
-                  type="text"
-                  name="color"
-                  value={formState.color}
-                  onChange={handleInputChange}
-                />
-              </label>
-              <button onClick={handleNext}>Next</button>
-            </div>
-          )}
-          {currentStep === 3 && (
-            <div>
-              <h2>Transaction Created!</h2>
-            </div>
-          )}
-        </form>
-      );
+      <div className="modal-overlay">
+        <div className='modal-container'>
+          <button className="close-button" onClick={onClose}>
+            x
+          </button>
+          <form>
+            {currentStep === 1 && (
+              <div>
+                <h2>Step 1: User Information</h2>
+                <label>
+                  Name:
+                  <input
+                    type="text"
+                    name="name"
+                    value={formState.name}
+                    onChange={handleInputChange}
+                  />
+                </label>
+                <br />
+                <label>
+                  Email:
+                  <input
+                    type="email"
+                    name="email"
+                    value={formState.email}
+                    onChange={handleInputChange}
+                  />
+                </label>
+                <br />
+                <label>
+                  Phone:
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formState.phone}
+                    onChange={handleInputChange}
+                  />
+                </label>
+                <button type="button" onClick={handleNext}>
+                  Next
+                </button>
+              </div>
+            )}
+            {currentStep === 2 && (
+              <div>
+                <h2>Step 2: Bike Information</h2>
+                <label>
+                  Make:
+                  <input
+                    type="text"
+                    name="make"
+                    value={formState.make}
+                    onChange={handleInputChange}
+                  />
+                </label>
+                <br />
+                <label>
+                  Model:
+                  <input
+                    type="text"
+                    name="model"
+                    value={formState.model}
+                    onChange={handleInputChange}
+                  />
+                </label>
+                <br />
+                <label>
+                  Color:
+                  <input
+                    type="text"
+                    name="color"
+                    value={formState.color}
+                    onChange={handleInputChange}
+                  />
+                </label>
+                <button type="button" onClick={handleNext}>
+                  Next
+                </button>
+              </div>
+            )}
+            {currentStep === 3 && (
+              <div>
+                <h2>Transaction Created!</h2>
+                <p>Your transaction has been successfully created.</p>
+                <button type="button" onClick={onClose}>
+                  Close
+                </button>
+              </div>
+            )}
+          </form>
+        </div>
+      </div>
+    );
 }
 
 export default NewTransactionForm;

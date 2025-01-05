@@ -9,6 +9,8 @@ import {
   Popper,
   MenuItem,
   MenuList,
+  Modal,
+  Box,
 } from "@mui/material";
 import type { ColDef, RowSelectionOptions } from "ag-grid-community";
 import "./TransactionsTable.css"; // CSS Stylesheet
@@ -141,7 +143,15 @@ function CreateTransactionDropdown({ onCreateTransaction }: CreateTransactionDro
           </Grow>
         )}
       </Popper>
-      {showForm && <NewTransactionForm onTransactionCreated={handleTransactionCreated} />}
+      <Modal open={showForm} onClose={() => setShowForm(false)}>
+        <Box>
+          <NewTransactionForm 
+            onTransactionCreated={handleTransactionCreated} 
+            isOpen={showForm}
+            onClose={() => setShowForm(false)}
+          />
+        </Box>
+      </Modal>
     </>
   );
 }
