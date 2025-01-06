@@ -20,20 +20,40 @@ import NewTransactionForm from "../../components/TransactionPage/BikeForm"
 // Row Data Interface
 export interface IRow {
   "#": number;
-  tag: Tag;
-  Name: string;
-  Make: string;
-  Model: string;
+  Type: Type;
+  Customer: Customer;
+  Bike: Bike;
+  Tags: Tag;
   Submitted: Date;
 }
 
 type Tag = {
-  inpatient: boolean;
-  beerBike: boolean;
+  waitEmail: boolean;
   nuclear: boolean;
-  retrospec: boolean;
-  merch: boolean;
+  waitPart: boolean;
+  refurb: boolean;
 };
+
+type Customer = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: Number;
+}
+
+type Bike = {
+  make: string;
+  model: string;
+  color: string;
+}
+
+type Type = {
+  inpatient: boolean;
+  outpatient: boolean;
+  merch: boolean;
+  retrospec: boolean;
+  beerBike: boolean;
+}
 
 const CompanyLogoRenderer = (param: CustomCellRendererProps) => (
   <div className="tags">
@@ -168,97 +188,49 @@ export function Transactions() {
   const [rowData, setRowData] = useState<IRow[]>([
     {
       "#": 1,
-      tag: {
-        inpatient: true,
-        beerBike: false,
-        nuclear: false,
-        retrospec: false,
-        merch: false,
+      Customer: {
+        firstName: "Chase",
+        lastName: "Geyer",
+        email: "chase.geyer@rice.edu",
+        phone: 1234567890
       },
-      Name: "Chase Geyer",
-      Make: "Specialized",
-      Model: "Roubaix",
+      Bike: {
+        make: "Huffy",
+        model: "Rockcreek",
+        color: "Blue"
+      },
+      Tags: {
+        waitEmail: false,
+        nuclear: false,
+        waitPart: false,
+        refurb: false,
+      },
+      Type: {
+        inpatient: true,
+        outpatient: false,
+        merch: false,
+        retrospec: false,
+        beerBike: false,
+      },
       Submitted: new Date("2018-01-16"),
-    },
-    // {
-    //   "#": 2,
-    //   tag: {
-    //     inpatient: true,
-    //     beerBike: false,
-    //     nuclear: false,
-    //     retrospec: false,
-    //     merch: false,
-    //   },
-    //   Name: "Melanie",
-    //   Make: "idx",
-    //   Model: "idx",
-    //   Submitted: new Date("2019-01-6"),
-    // },
-    // {
-    //   "#": 3,
-    //   tag: {
-    //     inpatient: true,
-    //     beerBike: false,
-    //     nuclear: false,
-    //     retrospec: false,
-    //     merch: false,
-    //   },
-    //   Name: "Chase Geyer",
-    //   Make: "Specialized",
-    //   Model: "Roubaix",
-    //   Submitted: new Date("2019-01-16"),
-    // },
-    // {
-    //   "#": 4,
-    //   tag: {
-    //     inpatient: true,
-    //     beerBike: false,
-    //     nuclear: false,
-    //     retrospec: false,
-    //     merch: false,
-    //   },
-    //   Name: "Chase Geyer",
-    //   Make: "Specialized",
-    //   Model: "Roubaix",
-    //   Submitted: new Date("2020-01-16"),
-    // },
-    // {
-    //   "#": 5,
-    //   tag: {
-    //     inpatient: true,
-    //     beerBike: false,
-    //     nuclear: false,
-    //     retrospec: false,
-    //     merch: false,
-    //   },
-    //   Name: "Chase Geyer",
-    //   Make: "Specialized",
-    //   Model: "Roubaix",
-    //   Submitted: new Date("2021-01-16"),
-    // },
-    // {
-    //   "#": 6,
-    //   tag: {
-    //     inpatient: true,
-    //     beerBike: false,
-    //     nuclear: false,
-    //     retrospec: false,
-    //     merch: false,
-    //   },
-    //   Name: "Chase Geyer",
-    //   Make: "Specialized",
-    //   Model: "Roubaix",
-    //   Submitted: new Date("2022-01-16"),
-    // },
+    }
   ]);
 
   // Column Definitions: Defines & controls grid columns.
   const [colDefs, setColDefs] = useState<ColDef<IRow>[]>([
     { field: "#", filter: true },
-    { field: "tag", cellRenderer: CompanyLogoRenderer },
-    { field: "Name" },
-    { field: "Make" },
-    { field: "Model" },
+    {
+      headerName: "Name",
+      valueGetter: (params) => `${params.data?.Customer.firstName} ${params.data?.Customer.lastName}`,
+    },
+    {
+      headerName: "Make",
+      valueGetter: (params) => params.data?.Bike.make
+    },
+    {
+      headerName: "Model",
+      valueGetter: (params) => params.data?.Bike.model
+    },
     { field: "Submitted" },
   ]);
 

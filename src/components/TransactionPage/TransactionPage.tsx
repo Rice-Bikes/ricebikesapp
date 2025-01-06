@@ -1,4 +1,3 @@
-import React from 'react';
 import {useLocation} from 'react-router-dom';
 
 const Transaction = () => {
@@ -11,14 +10,14 @@ const Transaction = () => {
         <div style={{padding: '20px'}}>
             <h2>Transaction Details</h2>
             <h3>Bike Information</h3>
-            <p><strong>Make:</strong>{transaction.Make}</p>
-            <p><strong>Model:</strong>{transaction.Model}</p>
-            <p><strong>Color:</strong>{transaction.Color}</p>
+            <p><strong>Make: </strong>{transaction.Bike.make}</p>
+            <p><strong>Model: </strong>{transaction.Bike.model}</p>
+            <p><strong>Color: </strong>{transaction.Bike.color}</p>
 
             <h3>Customer Information</h3>
-            <p><strong>Name:</strong>{transaction.Name}</p>
-            {/**<p><strong>Email:</strong>{transaction.customer.email}</p>
-            <p><strong>Phone:</strong>{transaction.customer.phone}</p>**/}
+            <p><strong>Name: </strong>{transaction.Customer.firstName} {transaction.Customer.lastName}</p>
+            <p><strong>Email: </strong>{transaction.Customer.email}</p>
+            <p><strong>Phone: </strong>{transaction.Customer.phone}</p>
 
             {/**<h3>Repair</h3>
             <ul>
