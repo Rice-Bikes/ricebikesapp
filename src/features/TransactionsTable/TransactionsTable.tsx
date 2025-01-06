@@ -133,7 +133,7 @@ function CreateTransactionDropdown() {
   );
 }
 
-export function Transactions() {
+export function Transactions(): JSX.Element {
 
   const model = new TransactionTableModel();
   // Row Data: The data to be displayed.
