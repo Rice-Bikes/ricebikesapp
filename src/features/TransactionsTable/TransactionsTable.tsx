@@ -1,4 +1,4 @@
-import { AgGridReact, CustomCellRendererProps } from "ag-grid-react"; // React Data Grid Component
+import { AgGridReact } from "ag-grid-react"; // React Data Grid Component
 import { useState, useMemo, useRef, useEffect } from "react"; // React State Hook
 import { TransactionTableModel } from "./TransactionTableModel"; // Transaction Table Model
 import {
@@ -10,42 +10,81 @@ import {
   Popper,
   MenuItem,
   MenuList,
+  Modal,
+  Box,
 } from "@mui/material";
 import type { ColDef, RowSelectionOptions } from "ag-grid-community";
 import "./TransactionsTable.css"; // CSS Stylesheet
+import NewTransactionForm from "../../components/TransactionPage/BikeForm";
+//import TestForm from "../../components/TransactionPage/TestForm";
 
 // Row Data Interface
-interface IRow {
+export interface IRow {
   "#": number;
-  tag: Tag;
-  Name: string;
-  Make: string;
-  Model: string;
+  Transaction: Transaction;
+  Customer: Customer;
+  Bike: Bike;
   Submitted: Date;
 }
 
-type Tag = {
-  inpatient: boolean;
-  beerBike: boolean;
-  nuclear: boolean;
-  retrospec: boolean;
-  merch: boolean;
+export type Customer = {
+  customer_id?: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
 };
 
-const CompanyLogoRenderer = (param: CustomCellRendererProps) => (
-  <div className="tags">
-    {param.value.inpatient && <button>Inpatient</button>}
-    {param.value.beerBike && <button>Beer Bike</button>}
-    {param.value.nuclear && <button>Nuclear</button>}
-    {param.value.retrospec && <button>Retrospec</button>}
-    {param.value.merch && <button>Merch</button>}
-  </div>
-);
+export type Bike = {
+  bike_id?: string;
+  make: string;
+  model: string;
+  date_created?: Date;
+  description: string;
+};
+
+export type Transaction = {
+  transaction_num: string;
+  date_created: Date;
+  transaction_type: string;
+  customer_id?: string;
+  bike_id?: string;
+  total_cost: number;
+  description: string | null;
+  is_completed: boolean;
+  is_paid: boolean;
+  is_refurb: boolean;
+  is_urgent: boolean;
+  is_nuclear?: boolean;
+  is_beer_bike: boolean;
+  is_employee: boolean;
+  is_reserved: boolean;
+  is_wait_email: boolean;
+  date_completed: Date | null;
+};
+
+// const CompanyLogoRenderer = (param: CustomCellRendererProps) => (
+//   <div className="tags">
+//     {param.value.inpatient && <button>Inpatient</button>}
+//     {param.value.beerBike && <button>Beer Bike</button>}
+//     {param.value.nuclear && <button>Nuclear</button>}
+//     {param.value.retrospec && <button>Retrospec</button>}
+//     {param.value.merch && <button>Merch</button>}
+//   </div>
+// );
+
+// Creating new transaction
+interface CreateTransactionDropdownProps {
+  onCreateTransaction: (newTransaction: IRow) => void;
+}
 
 const options = ["Inpatient", "Outpatient", "Merchandise", "Retrospec"]; // list of actions
-function CreateTransactionDropdown() {
+function CreateTransactionDropdown({
+  onCreateTransaction,
+}: CreateTransactionDropdownProps) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
+  const [showForm, setShowForm] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(1);
 
   // const handleClick = () => {
@@ -59,6 +98,7 @@ function CreateTransactionDropdown() {
     console.info(`You clicked ${options[index]} with ${event}`);
     setSelectedIndex(index);
     setOpen(false);
+    setShowForm(true);
   };
 
   const handleToggle = () => {
@@ -74,6 +114,11 @@ function CreateTransactionDropdown() {
     }
 
     setOpen(false);
+  };
+
+  const handleTransactionCreated = (newTransaction: IRow) => {
+    onCreateTransaction(newTransaction);
+    setShowForm(false);
   };
 
   return (
@@ -129,124 +174,97 @@ function CreateTransactionDropdown() {
           </Grow>
         )}
       </Popper>
+      <Modal open={showForm} onClose={() => setShowForm(false)}>
+        <Box>
+          <NewTransactionForm
+            onTransactionCreated={handleTransactionCreated}
+            isOpen={showForm}
+            onClose={() => setShowForm(false)}
+          />
+        </Box>
+      </Modal>
     </>
   );
 }
 
 export function Transactions(): JSX.Element {
-
   const model = new TransactionTableModel();
   // Row Data: The data to be displayed.
   const [rowData, setRowData] = useState<IRow[]>([
     {
       "#": 1,
-      tag: {
-        inpatient: true,
-        beerBike: false,
-        nuclear: false,
-        retrospec: false,
-        merch: false,
+      Transaction: {
+        transaction_num: "1234",
+        date_created: new Date("2021-01-16"),
+        transaction_type: "Inpatient",
+        customer_id: "1234",
+        bike_id: "1234",
+        total_cost: 100,
+        description: "Bike repair",
+        is_completed: false,
+        is_paid: false,
+        is_refurb: false,
+        is_urgent: false,
+        is_nuclear: false,
+        is_beer_bike: false,
+        is_employee: false,
+        is_reserved: false,
+        is_wait_email: false,
+        date_completed: null,
       },
-      Name: "Chase Geyer",
-      Make: "Specialized",
-      Model: "Roubaix",
+      Customer: {
+        customer_id: "1234",
+        firstName: "Chase",
+        lastName: "Geyer",
+        email: "chase.geyer@rice.edu",
+        phone: "1234567890",
+      },
+      Bike: {
+        bike_id: "1234",
+        make: "Huffy",
+        model: "Rockcreek",
+        description: "Blue MTB",
+        date_created: new Date("2021-01-16"),
+      },
       Submitted: new Date("2018-01-16"),
-    },
-    {
-      "#": 2,
-      tag: {
-        inpatient: true,
-        beerBike: false,
-        nuclear: false,
-        retrospec: false,
-        merch: false,
-      },
-      Name: "Melanie",
-      Make: "idx",
-      Model: "idx",
-      Submitted: new Date("2019-01-6"),
-    },
-    {
-      "#": 3,
-      tag: {
-        inpatient: true,
-        beerBike: false,
-        nuclear: false,
-        retrospec: false,
-        merch: false,
-      },
-      Name: "Chase Geyer",
-      Make: "Specialized",
-      Model: "Roubaix",
-      Submitted: new Date("2019-01-16"),
-    },
-    {
-      "#": 4,
-      tag: {
-        inpatient: true,
-        beerBike: false,
-        nuclear: false,
-        retrospec: false,
-        merch: false,
-      },
-      Name: "Chase Geyer",
-      Make: "Specialized",
-      Model: "Roubaix",
-      Submitted: new Date("2020-01-16"),
-    },
-    {
-      "#": 5,
-      tag: {
-        inpatient: true,
-        beerBike: false,
-        nuclear: false,
-        retrospec: false,
-        merch: false,
-      },
-      Name: "Chase Geyer",
-      Make: "Specialized",
-      Model: "Roubaix",
-      Submitted: new Date("2021-01-16"),
-    },
-    {
-      "#": 6,
-      tag: {
-        inpatient: true,
-        beerBike: false,
-        nuclear: false,
-        retrospec: false,
-        merch: false,
-      },
-      Name: "Chase Geyer",
-      Make: "Specialized",
-      Model: "Roubaix",
-      Submitted: new Date("2022-01-16"),
     },
   ]);
 
   useEffect(() => {
     model
-    .pollTransactions()
-    .then((data) => {
-      console.log("checking current bulk operation");
-      console.log(data);
-      setRowData(data);
-    })
-    .catch((err) => console.error(err));
+      .pollTransactions()
+      .then((data) => {
+        console.log("checking current bulk operation");
+        console.log(data);
+        setRowData(data);
+      })
+      .catch((err) => console.error(err));
 
-
-      // .then((res) => res.json())
-      // .then((data) => console.log(data))
-      // .then((data) => setRowData(data));
+    // .then((res) => res.json())
+    // .then((data) => console.log(data))
+    // .then((data) => setRowData(data));
   });
 
   // Column Definitions: Defines & controls grid columns.
   const [colDefs] = useState<ColDef<IRow>[]>([
-    { field: "#", filter: true },
-    { field: "tag", cellRenderer: CompanyLogoRenderer },
-    { field: "Name", filter: true },
-    { field: "Make" },
-    { field: "Model" },
+    {
+      headerName: "#",
+      valueGetter: (params) => params.data?.Transaction.transaction_num,
+      filter: true,
+    },
+    {
+      headerName: "Name",
+      valueGetter: (params) =>
+        `${params.data?.Customer.firstName} ${params.data?.Customer.lastName}`,
+    },
+    {
+      headerName: "Make",
+      valueGetter: (params) => params.data?.Bike.make,
+    },
+    {
+      headerName: "Model",
+      valueGetter: (params) => params.data?.Bike.model,
+    },
     { field: "Submitted" },
   ]);
 
@@ -263,13 +281,18 @@ export function Transactions(): JSX.Element {
     };
   }, []);
 
+  const addTransaction = (newTransaction: IRow) => {
+    console.log("adding new transaction");
+    setRowData((prevRowData) => [...prevRowData, newTransaction]);
+  };
+
   // Container: Defines the grid's theme & dimensions.
   return (
     <main style={{ width: "100vw", height: "80vh" }}>
       <Button></Button>
       <header>
         <ButtonGroup id="nav-buttons">
-          <CreateTransactionDropdown></CreateTransactionDropdown>
+          <CreateTransactionDropdown onCreateTransaction={addTransaction} />
           <Button>Whiteboard</Button>
           <Button>Price Check</Button>
         </ButtonGroup>
