@@ -15,7 +15,8 @@ import {
 import type { ColDef, RowSelectionOptions } from "ag-grid-community";
 import "./TransactionsTable.css"; // CSS Stylesheet
 import {useNavigate} from "react-router-dom";
-import NewTransactionForm from "../../components/TransactionPage/BikeForm"
+import NewTransactionForm from "../../components/TransactionPage/BikeForm";
+//import TestForm from "../../components/TransactionPage/TestForm";
 
 // Row Data Interface
 export interface IRow {
@@ -27,27 +28,27 @@ export interface IRow {
   Submitted: Date;
 }
 
-type Tag = {
+export type Tag = {
   waitEmail: boolean;
   nuclear: boolean;
   waitPart: boolean;
   refurb: boolean;
 };
 
-type Customer = {
+export type Customer = {
   firstName: string;
   lastName: string;
   email: string;
   phone: Number;
 }
 
-type Bike = {
+export type Bike = {
   make: string;
   model: string;
   color: string;
 }
 
-type Type = {
+export type Type = {
   inpatient: boolean;
   outpatient: boolean;
   merch: boolean;
@@ -248,6 +249,7 @@ export function Transactions() {
   }, []);
 
   const addTransaction = (newTransaction: IRow) => {
+    console.log("adding new transaction");
     setRowData((prevRowData) => [...prevRowData, newTransaction]);
   };
 
@@ -256,7 +258,7 @@ export function Transactions() {
     <main style={{ width: "100vw", height: "80vh" }}>
       <header>
         <ButtonGroup id="nav-buttons">
-          <CreateTransactionDropdown onCreateTransaction={addTransaction}></CreateTransactionDropdown>
+          <CreateTransactionDropdown onCreateTransaction={addTransaction} />
           <Button>Whiteboard</Button>
           <Button>Price Check</Button>
         </ButtonGroup>

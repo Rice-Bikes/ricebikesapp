@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import { IRow } from "../../features/TransactionsTable/TransactionsTable";
+import { IRow } from "../../features/TransactionsTable/TransactionsTable"
 
 interface NewTransactionFormProps {
     onTransactionCreated: (newTransaction: any) => void;
@@ -9,9 +9,10 @@ interface NewTransactionFormProps {
 
 function NewTransactionForm({onTransactionCreated, isOpen, onClose}: NewTransactionFormProps) {
     const [formState, setFormState] = useState({
-        name: '',
+        firstName: '',
+        lastName: '',
         email: '',
-        phone: '',
+        phone: 0,
         make: '',
         model: '',
         color: '',
@@ -23,22 +24,34 @@ function NewTransactionForm({onTransactionCreated, isOpen, onClose}: NewTransact
     };
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const newTransaction = {
+        console.log("handle submit");
+        const newTransaction: IRow = {
             // TODO: need to make id generator
             "#": Math.floor(Math.random() * 10000),
-            tag: { // TODO: need to set tags correctly based on dropdown selection
-                inpatient: false,
-                beerBike: false,
-                nuclear: false,
-                retrospec: false,
-                merch: false,
+            Tags: { 
+              waitEmail: false,
+              nuclear: false,
+              waitPart: false,
+              refurb: false,
             },
-            Name: formState.name,
-            Email: formState.email,
-            Phone: formState.phone,
-            Make: formState.make,
-            Model: formState.model,
-            Color: formState.color,
+            Customer: {
+              firstName: formState.firstName,
+              lastName: formState.lastName,
+              email: formState.email,
+              phone: formState.phone,
+            },
+            Bike: {
+              make: formState.make,
+              model: formState.model,
+              color: formState.color,
+            },
+            Type: {// TODO: need to set type correctly based on dropdown selection
+              inpatient: true,
+              outpatient: false,
+              merch: false,
+              retrospec: false,
+              beerBike: false,
+            },
             Submitted: new Date(),
         };
         onTransactionCreated(newTransaction); 
@@ -46,10 +59,10 @@ function NewTransactionForm({onTransactionCreated, isOpen, onClose}: NewTransact
         onClose();
     };
     const handleNext = () => {
-        if (currentStep === 3) {
-            handleSubmit({ preventDefault: () => {} } as React.FormEvent<HTMLFormElement>);
-        } else {
+        if (currentStep < 3) {
             setCurrentStep(currentStep + 1);
+            console.log("incrementing step");
+            console.log(currentStep);
         }
     };
     if(!isOpen) return null;
@@ -59,16 +72,26 @@ function NewTransactionForm({onTransactionCreated, isOpen, onClose}: NewTransact
           <button className="close-button" onClick={onClose}>
             x
           </button>
-          <form>
+          <form onSubmit={handleSubmit}>
             {currentStep === 1 && (
               <div>
                 <h2>Step 1: User Information</h2>
                 <label>
-                  Name:
+                  First Name:
                   <input
                     type="text"
-                    name="name"
-                    value={formState.name}
+                    name="firstName"
+                    value={formState.firstName}
+                    onChange={handleInputChange}
+                  />
+                </label>
+                <br />
+                <label>
+                  Last Name:
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formState.lastName}
                     onChange={handleInputChange}
                   />
                 </label>
@@ -92,6 +115,7 @@ function NewTransactionForm({onTransactionCreated, isOpen, onClose}: NewTransact
                     onChange={handleInputChange}
                   />
                 </label>
+                <br />
                 <button type="button" onClick={handleNext}>
                   Next
                 </button>
@@ -136,11 +160,8 @@ function NewTransactionForm({onTransactionCreated, isOpen, onClose}: NewTransact
             )}
             {currentStep === 3 && (
               <div>
-                <h2>Transaction Created!</h2>
-                <p>Your transaction has been successfully created.</p>
-                <button type="button" onClick={onClose}>
-                  Close
-                </button>
+                <h2>Creating transaction...</h2>
+                <button type="submit">Submit</button>
               </div>
             )}
           </form>
