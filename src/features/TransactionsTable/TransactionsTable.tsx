@@ -16,14 +16,19 @@ import {
 import type { ColDef, RowSelectionOptions } from "ag-grid-community";
 import "./TransactionsTable.css"; // CSS Stylesheet
 import NewTransactionForm from "../../components/TransactionPage/BikeForm";
-//import TestForm from "../../components/TransactionPage/TestForm";
+import {Repair} from '../../components/RepairItem/RepairItem';
+import {useNavigate} from "react-router-dom";
+import {Part} from '../../components/PartItem/PartItem';
+
 
 // Row Data Interface
 export interface IRow {
-  "#": number;
+  // "#": number;
   Transaction: Transaction;
   Customer: Customer;
   Bike: Bike;
+  Repairs: Repair[];
+  Parts: Part[];
   Submitted: Date;
 }
 
@@ -190,9 +195,16 @@ function CreateTransactionDropdown({
 export function Transactions(): JSX.Element {
   const model = new TransactionTableModel();
   // Row Data: The data to be displayed.
+
+  const navigate = useNavigate();
+  const onRowClicked = (e: any) => {
+    const selectedTransaction = e.data;
+    navigate("/transaction-details", {state: {transaction: selectedTransaction}});
+  };
+
   const [rowData, setRowData] = useState<IRow[]>([
     {
-      "#": 1,
+      // "#": 1,
       Transaction: {
         transaction_num: "1234",
         date_created: new Date("2021-01-16"),
@@ -226,6 +238,8 @@ export function Transactions(): JSX.Element {
         description: "Blue MTB",
         date_created: new Date("2021-01-16"),
       },
+      Repairs: [],
+      Parts: [],
       Submitted: new Date("2018-01-16"),
     },
   ]);
@@ -307,7 +321,7 @@ export function Transactions(): JSX.Element {
         columnDefs={colDefs}
         defaultColDef={defaultColDef}
         rowSelection={rowSelection}
-        onRowClicked={(e) => console.log(e)}
+        onRowClicked={onRowClicked}
       />
     </main>
   );

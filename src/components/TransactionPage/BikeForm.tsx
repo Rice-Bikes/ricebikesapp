@@ -32,10 +32,23 @@ function NewTransactionForm({
     const newTransaction: IRow = {
       // TODO: need to make id generator
       Transaction: {
-        waitEmail: false,
-        nuclear: false,
-        waitPart: false,
-        refurb: false,
+        transaction_num: "", // TODO: need to figure this out
+        date_created: new Date(),
+        transaction_type: "", // TODO: need to set based on type
+        customer_id: "", // TODO: need to figure this out
+        bike_id: "", // TODO: need to figure this out
+        total_cost: 0.00,
+        description: "",
+        is_completed: false,
+        is_paid: false,
+        is_refurb: false,
+        is_urgent: false,
+        is_nuclear: false,
+        is_beer_bike: false,
+        is_employee: false, // TODO: should be based on if custy is recognized as employee
+        is_reserved: false,
+        is_wait_email: false,
+        date_completed: null,
       },
       Customer: {
         firstName: formState.firstName,
@@ -48,15 +61,8 @@ function NewTransactionForm({
         model: formState.model,
         description: formState.color,
       },
-
-      Type: {
-        // TODO: need to set type correctly based on dropdown selection
-        inpatient: true,
-        outpatient: false,
-        merch: false,
-        retrospec: false,
-        beerBike: false,
-      },
+      Repairs: [],
+      Parts: [],
       Submitted: new Date(),
     };
     onTransactionCreated(newTransaction);
