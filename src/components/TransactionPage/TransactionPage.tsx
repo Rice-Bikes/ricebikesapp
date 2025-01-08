@@ -66,7 +66,7 @@ const Transaction = () => {
     }
 
     const handleAddRepair = (repair: Repair) => {
-        console.log("handle add repai");
+        console.log("handle add repair");
         const updatedRepairs = [...currentTransaction.Repairs, repair];
         const updatedTotalCost = currentTransaction.Transaction.total_cost + repair.price;
 
@@ -104,18 +104,18 @@ const Transaction = () => {
         <div style={{padding: '20px'}}>
             <h2>Transaction Details</h2>
             <h3>Bike Information</h3>
-            <p><strong>Make: </strong>{transaction.Bike.make}</p>
-            <p><strong>Model: </strong>{transaction.Bike.model}</p>
-            <p><strong>Color: </strong>{transaction.Bike.color}</p>
+            <p><strong>Make: </strong>{currentTransaction.Bike.make}</p>
+            <p><strong>Model: </strong>{currentTransaction.Bike.model}</p>
+            <p><strong>Color: </strong>{currentTransaction.Bike.color}</p>
 
             <h3>Customer Information</h3>
-            <p><strong>Name: </strong>{transaction.Customer.firstName} {transaction.Customer.lastName}</p>
-            <p><strong>Email: </strong>{transaction.Customer.email}</p>
-            <p><strong>Phone: </strong>{transaction.Customer.phone}</p>
+            <p><strong>Name: </strong>{currentTransaction.Customer.firstName} {transaction.Customer.lastName}</p>
+            <p><strong>Email: </strong>{currentTransaction.Customer.email}</p>
+            <p><strong>Phone: </strong>{currentTransaction.Customer.phone}</p>
 
             <h3>Repairs</h3>
             <ul>
-                {transaction.Repairs.map((repair: Repair) => (
+                {currentTransaction.Repairs.map((repair: Repair) => (
                     <li key={repair._id}>
                         {repair.name} - ${repair.price.toFixed(2)}
                     </li>
@@ -162,7 +162,7 @@ const Transaction = () => {
             </ul>
 
             <h3>Total</h3>
-            <p><strong>${transaction.Transaction.total_cost.toFixed(2)}</strong></p>
+            <p><strong>${currentTransaction.Transaction.total_cost.toFixed(2)}</strong></p>
         </div>
     );
 };

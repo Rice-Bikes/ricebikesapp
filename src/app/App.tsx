@@ -6,23 +6,30 @@ import { Button } from "@mui/material";
 import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
 import Transaction from "../components/TransactionPage/TransactionPage";
 //import {RepairItemList} from '../components/RepairItem/RepairItem';
+import {RepairsProvider} from '../components/RepairItem/RepairItem';
+import {PartsProvider} from '../components/PartItem/PartItem';
 
 function App() {
   return (
-    <Router>
-      <header id="taskbar">
-        <img src={RiceBikesIcon} alt="Rice Bikes Icon" />
-        <h2>Rice Bikes App</h2>
-        <Button id="logout" variant="contained" disableElevation>
-          {" "}
-          <h2>Logout</h2>{" "}
-        </Button>
-      </header>
-      <Routes>
-        <Route path="/" element={<Transactions />} />
-        <Route path="/transaction-details" element={<Transaction />} />
-      </Routes>
-    </Router>
+    <RepairsProvider>
+      <PartsProvider>
+        <Router>
+          <header id="taskbar">
+            <img src={RiceBikesIcon} alt="Rice Bikes Icon" />
+            <h2>Rice Bikes App</h2>
+            <Button id="logout" variant="contained" disableElevation>
+              {" "}
+              <h2>Logout</h2>{" "}
+            </Button>
+          </header>
+          <Routes>
+            <Route path="/" element={<Transactions />} />
+            <Route path="/transaction-details" element={<Transaction />} />
+          </Routes>
+        </Router>
+      </PartsProvider>
+    </RepairsProvider>
+    
   );
 }
 
