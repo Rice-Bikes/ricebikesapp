@@ -1,0 +1,115 @@
+"_id","name","price","disabled","description","__v"
+"59fb7cfe734d1d170d45857f","front flat repair","7","1",,
+"5a7cf973734d1d794663f4f7","rear flat repair","8",,"Removal of one tire bead from the wheel, removal of tube, and inspection of tire & tube to identify cause of the flat. Wipe inside the tire with a shop rag. Remedy the cause of the flat, reinstall new tube & the second tire bead. Does not include cost of tube, or cost of replacing rim tape (See Install Rim Tape). Does not apply to tubeless tires (See Install Tubeless Tire)",
+"5a8ccd9144598272c1ec0588","Adjust rim brake (front)","12",,"Adjustment of one v-brake or caliper brake (Adequate power, no rubbing on rim, equivalent gap between rim and right and left pads).",
+"5a8ccd9144598272c1ec0589","Installing brake lever","22",,"Removing old lever, installing new parts, and adjusting",
+"5a8ccd9144598272c1ec058a","Install brake pads","15",,"Remove old and install new pads (not included), brake adjust",
+"5a8ccd9144598272c1ec058b","Install rim brake","20",,"Removing old brake, installing new parts, and adjusting. Includes new cable and housing",
+"5a8ccd9144598272c1ec058c","Install brake cable","18",,"Removal of old brake cable and housing, measuring, cutting, installing new cable and housing , brake adjustment.",
+"5a8ccd9144598272c1ec058d","Headset adjustment","12",,"Adjusting bearing preload until no free play in headset while holding front brake and applying pressure",
+"5a8ccd9144598272c1ec058e","Adjust disc brake","15",,"Adjustment of disc (Adequate power, no rubbing on rotor, equivalent gap between rim and right and left pads).",
+"5a8ccd9144598272c1ec058f","Headset overhaul","20",,"Remove stem and fork, dismantle and clean headset, install new bearings and new grease, reinstall stem and fork, adjust bearing preload.",
+"5a8ccd9144598272c1ec0590","Wrap handlebars","15",,"Removal of old bar tape and end plugs, ensuring brake and gear cables run close to handlebars, wrapping bars with new tape(not included)",
+"5a8ccd9144598272c1ec0591","Install grips","10",,"Removal of old grips, installation of new grips.",
+"5a8ccd9144598272c1ec0592","Install handlebars","20","1","Removal of old bars and accessories (if applicable), installation of new bars , transfer brakes/shifters to new bars.",
+"5a8ccd9144598272c1ec0593","Adjust bottom bracket","12",,"Removal of crank to access adjustment, tightening bearings until no free play, reinstallation of crank.",
+"5a8ccd9144598272c1ec0594","Install bottom bracket","25","1","Removal of cranks & old BB, clean threads, greasing new BB cups, installation of new BB, reinstallation of cranks. Bottom bracket separate.",
+"5a8ccd9144598272c1ec0597","Install stem","10",,"Removal of old handlebars from stem and old stem from fork, installation of new stem, reinstallation of handlebars.",
+"5a8ccd9144598272c1ec0598","Install shifter","25",,"Removal of old shifter and cable inner, installation of new shifter and cable inner (retaining original housing), adjustment of derailleur to function as before.",
+"5a8ccd9144598272c1ec0599","Overhaul bottom bracket","30",,"Removal of cranks and BB cups, removal of old bearings, cleaning cups, installation of new bearings/grease, reinstallation of BB and cranks",
+"5a8ccd9144598272c1ec059b","Install derailleur cable","20",,"Removal of old cable + housing, installation of new cable and housing, adjustment of derailleur to function as before. Cable, housing, cable ends/small parts included in price.",
+"5a8ccd9144598272c1ec059d","Install derailleur","22",,"Removal of old derailleur, installation of new derailleur, adjustment to function properly.",
+"5a8ccd9144598272c1ec059e","Major clean","15",,"Minor clean+clean/lube chain, degreaser brake tracks",
+"5a8ccd9144598272c1ec059f","Adjust front derailleur","15",,"Adjustment of cable tension and limit screws to achieve proper shifting. ",
+"5a8ccd9144598272c1ec05a0","Adjust rear derailleur","15",,"Adjustment of cable tension and limit screws to achieve proper shifting. ",
+"5a8ccd9144598272c1ec05a1",,"40","1",,
+"5a8ccd9144598272c1ec05a2","Align Derailleur hanger & adjust","20",,"Removal of derailleur from hanger, using hanger bending tool to straighten hanger. Includes subsequent derailleur adjustment.",
+"5a8ccd9144598272c1ec05a3","Install rear rack","25",,"Installation of rack",
+"5a8ccd9144598272c1ec05a4","Replace pedals (set)","9",,"Removal of old pedals, greasing threads of new pedals, installation of new pedals",
+"5a8ccd9144598272c1ec05a5","Replace pedal (single)","5",,"Removal of old pedal, greasing threads of new pedal, installation of new pedal",
+"5a8ccd9144598272c1ec05a6","Replace chain","9",,"Removal of old chain, measuring and shortening new chain, installation of new chain",
+"5a8ccd9144598272c1ec05a7","Install freewheel","15",,"Removal of old freewheel, cleaning and regreasing threads, installation of new freewheel. Freewheel separate.",
+"5a8ccd9144598272c1ec05a8","Replace crankset","15",,"Removal of old cranks, installation of new cranks",
+"5a8ccd9144598272c1ec05a9","Install basket","15",,"Installation of basket.",
+"5a8ccd9144598272c1ec05aa","Flat repair","13","1","Removal of old tube, diagnosing puncture, check for debris or damage in tire or rim tape, installation of new tube. Part price included.",
+"5a8ccd9144598272c1ec05ac","Install cassette","15",,"Removal of old cassette, installation of new cassette",
+"5a8ccd9144598272c1ec05ad","Replace one tube","7","1","Removal of old tube, diagnosing puncture, check for debris or damage in tire or rim tape, installation of new tube.",
+"5a8ccd9144598272c1ec05ae","Replace one tire","12",,"Removal of old tire, installation of new tire and old tube.",
+"5a8ccd9144598272c1ec05af","Install one tire","12",,"installation of new tire and old tube.",
+"5a8ccd9144598272c1ec05b0","Hub overhaul (front)","25",,"Removal of front wheel, disassembly of front hub, cleaning hub parts, reassembly with new bearings/grease.",
+"5a8ccd9144598272c1ec05b1","Clean and lube chain","7",,"Fill chain cleaner with degreaser and run chain through. Repeat optionally with bike wash (to remove degreaser) and isopropyl alcohol (to displace water). Finally lube each chain roller and wipe excess off the outer plates.",
+"5a8ccd9144598272c1ec05b2","Hub overhaul (rear)","30",,"Removal of rear wheel and freewheel/cassette/cog, disassembly of hub, cleaning hub parts, reassembly with new bearings/grease",
+"5a8ccd9144598272c1ec05b3","Coaster hub overhaul","40",,"Removal of coaster wheel, disassembly of hub, cleaning hub parts, reassembly with new bearings/grease",
+"5a8ccd9144598272c1ec05b4","Level 1 tune up (Student)","45",,"Clean & lube chain. Up to 4 cable-based adjustments (e.g. 2 brakes and 2 derailleurs)",
+"5a8ccd9144598272c1ec05b5","Adjust hub bearings (front)","12",,"Removal of front wheel, adjusting bearing preload to eliminate free play",
+"5a8ccd9144598272c1ec05b6","Level 2 tune up (Student)","65",,"Major clean (includes clean & lube chain). Up to 4 recables (e.g. 2 brakes & 2 derailleurs).",
+"5a8ccd9144598272c1ec05b7","Level 3 tune up (Student)","130",,"Major clean (includes clean & lube chain). Replace chain (excludes cost of chain). 2 wheel trues. Up to 4 recables (e.g. 2 brakes & 2 derailleur) and up to 4 bearing adjustments (e.g. bottom bracket, both hubs, and headset). ",
+"5a8ccd9144598272c1ec05b8","Adjust hub bearings (rear)","12",,"Removal of rear wheel, adjusting bearing preload to eliminate free play. Includes cassette removal/install. ",
+"5a8ccd9144598272c1ec05b9","Minor adjustment","3",,"A small adjustment that takes ~5 minutes.",
+"5a8ccd9144598272c1ec05ba","Install wheel","10",,"Transfer of old tire/tube to new wheel, installation on bike ",
+"5ad513b18a3647dc866e2d77","Front wheel true","20",,"truing front wheel",
+"5ad513c48a3647dc866e2d78","Rear wheel true","20",,"truing rear wheel",
+"5ba83d976c8bfe86d865004e","Brake bleed (single)","25",,"Bleed one hydraulic brake. Supplies included.",
+"5ba841e46c8bfe86d865004f","Brake bleed (both)","35",,"Bleed both hydraulic brakes. Supplies included.",
+"5bbd407f909387ce5113d16e","Bike build","40","1","Includes everything needed to build the bike from the box when it arrives. Adjustment of brakes and derailleurs, checking safety of factory-installed parts (stem, rear wheel, etc) ",
+"5bbd4311909387ce5113d16f","Install front spoke - 1st spoke","25",,"Install/replace a spoke on front wheel and true the wheel. Each additional spoke is $5 (see Install Front Spoke - Additional Spoke)",
+"5bbd4331909387ce5113d170","Install rear spoke - 1st spoke","30",,"Install/replace a spoke on rear wheel and true wheel. Each additional spoke is $5 (see Install rear spoke - Additional Spoke)",
+"5bbd448f909387ce5113d172","Install saddle","5",,"Remove the old saddle and install the new one",
+"5c673cbd58d24503b7bcced0","Tap Threads","20",,,"0"
+"5d793e9091c86706791ecfd3","Brake Arm Install","20",,,"0"
+"60259c41654c0a0dbd6d3847","on-bike wheel true","8","1",,"0"
+"604972cf24f59345b4467200","Install hoods","5",,,"0"
+"604e4649e53c17089b0b59f0","Patch tube","13",,,"0"
+"60567904e53c17089b0b5f19","Replace chainring","15",,,"0"
+"6063a4db2e67d7161953700f","replace brake lever","15","1",,"0"
+"6068cb432e67d71619537361","install single/used fender","15",,,"0"
+"606bbde87e6634331ddd1c63","front flat repair","8",,"Removal of one tire bead from the wheel, removal of tube, and inspection of tire & tube to identify cause of the flat. Wipe inside the tire with a shop rag. Remedy the cause of the flat, reinstall new tube & the second tire bead. Does not include cost of tube, or cost of replacing rim tape (See Install Rim Tape). Does not apply to tubeless tires (See Install Tubeless Tire)","0"
+"606bbfee83649433d3966260","recycle","100","1",,"0"
+"606f844683649433d39664a4","straighten brake lever","1",,,"0"
+"614e07219f1cde247d63d946","Install rim tape","5",,"Removal of old rim tape if necessary, cleaning of rim, and installation of new rim tape. Includes cost of rim tape.","0"
+"61fac6e274a9c31f46bafb6d","Shorten Chain","10",,,"0"
+"6298f2464c1b2a23b1c9c84d","Install Cartridge Bottom Bracket","15",,"Removal of cranks & old BB, clean threads, greasing new BB cups, installation of new BB, reinstallation of cranks. Bottom bracket not included.","0"
+"62c458b2d3b19819b79d75ba","Replace Fork","32",,,"0"
+"630914a9825c5833c9fa5377","Bike build","50",,"Building a new bike from a box. Bike builds of used bikes may incur additional charges for repairs beyond a normal bike build.","0"
+"6349c2c0da5ca7275bb9932f","Adjust Chain Tension","5",,,"0"
+"63ed15bbe630eff3d1936bb0","press fit b install","30","1",,"0"
+"63ed170fe630eff3d1936bbd","Install Pressfit Bottom Bracket","40",,,"0"
+"63f3a278d29ffe5f51de34d3","Level 1 tune up (Community) ","55",,"Clean & lube chain. Up to 4 cable-based adjustments (e.g. 2 brakes and 2 derailleurs)","0"
+"63f3a2c8d29ffe5f51de34d4","Level 2 tuneup (Community)","80",,"Major clean (includes clean & lube chain). Up to 4 recables (e.g. 2 brakes & 2 derailleurs).","0"
+"63f3a336d29ffe5f51de34d5","Level 3 tune up (Community)","160",,"Major clean (includes clean & lube chain). Replace chain (excludes cost of chain). 2 wheel trues. Up to 4 recables (e.g. 2 brakes & 2 derailleur) and up to 4 bearing adjustments (e.g. bottom bracket, both hubs, and headset). ","0"
+"63f3af06d29ffe5f51de34e0","Install Tubeless Tire","20",,"Installation of new tire including sealant. Does not include cost of tubeless tape (See Install Rim Tape)","0"
+"64019d85fca4c4c81850d944","Install Additional Spoke","5",,,"0"
+"65dcc785a3233b81727e4467","TESTTTed repair","1500","1","test repair ","0"
+"66c0f3fa3810420b4cc5876b","Scooter Flat (DO NOT USE)","50",,,"0"
+"66d78f213810420b4cc65297","Install kickstand","5",,,"0"
+"6719e5c13810420b4cca3c64","Adjust rim brake (rear)","12",,"Adjustment of one v-brake or caliper brake (Adequate power, no rubbing on rim, equivalent gap between rim and right and left pads).","0"
+"671ab9643810420b4cca4b7c","Adjust disc brake (front)","15",,"Adjustment of disc (Adequate power, no rubbing on rotor, equivalent gap between rim and right and left pads).","0"
+"671ab96d3810420b4cca4b7f","Adjust disc brake (rear)","15",,"Adjustment of disc (Adequate power, no rubbing on rotor, equivalent gap between rim and right and left pads).","0"
+"671ab9b63810420b4cca4b82","Brake arm install (front)","20",,,"0"
+"671ab9bd3810420b4cca4b85","Brake arm install (rear)","20",,,"0"
+"671ab9e03810420b4cca4b88","Brake bleed (front)","25",,"Bleed one hydraulic brake. Supplies included.","0"
+"671ab9e83810420b4cca4b8b","Brake bleed (rear)","25",,"Bleed one hydraulic brake. Supplies included.","0"
+"671aba213810420b4cca4b8e","Install brake cable (front)","18",,"Removal of old brake cable and housing, measuring, cutting, installing new cable and housing , brake adjustment.","0"
+"671aba2a3810420b4cca4b94","Install brake cable (rear)","18",,"Removal of old brake cable and housing, measuring, cutting, installing new cable and housing , brake adjustment.","0"
+"671aba4c3810420b4cca4bb0","Install brake pads (front)","15",,"Remove old and install new pads (not included), brake adjust","0"
+"671aba593810420b4cca4bb3","Install brake pads (rear)","15",,"Remove old and install new pads (not included), brake adjust","0"
+"671aba8d3810420b4cca4bcc","Install derailleur (front)","22",,"Removal of old derailleur, installation of new derailleur, adjustment to function properly.","0"
+"671aba973810420b4cca4bdd","Install derailleur (rear)","22",,"Removal of old derailleur, installation of new derailleur, adjustment to function properly.","0"
+"671abab23810420b4cca4c13","Install derailleur cable (front)","20",,"Removal of old cable + housing, installation of new cable and housing, adjustment of derailleur to function as before. Cable, housing, cable ends/small parts included in price.","0"
+"671ababc3810420b4cca4c45","Install derailleur cable (rear)","20",,"Removal of old cable + housing, installation of new cable and housing, adjustment of derailleur to function as before. Cable, housing, cable ends/small parts included in price.","0"
+"671abad63810420b4cca4c8f","Install one tire (front)","12",,"installation of new tire and old tube.","0"
+"671abb003810420b4cca4c9e","Install one tire (rear)","12",,"installation of new tire and old tube.","0"
+"671abb1a3810420b4cca4ca1","Install rim brake (front)","20",,"Removing old brake, installing new parts, and adjusting. Includes new cable and housing","0"
+"671abb213810420b4cca4ca4","Install rim brake (rear)","20",,"Removing old brake, installing new parts, and adjusting. Includes new cable and housing","0"
+"671abb353810420b4cca4ca7","Install rim tape (front)","5",,"Removal of old rim tape if necessary, cleaning of rim, and installation of new rim tape. Includes cost of rim tape.","0"
+"671abb3c3810420b4cca4caa","Install rim tape (rear)","5",,"Removal of old rim tape if necessary, cleaning of rim, and installation of new rim tape. Includes cost of rim tape.","0"
+"671abb573810420b4cca4cad","Install shifter (front)","25",,"Removal of old shifter and cable inner, installation of new shifter and cable inner (retaining original housing), adjustment of derailleur to function as before.","0"
+"671abb5f3810420b4cca4cb0","Install shifter (rear)","25",,"Removal of old shifter and cable inner, installation of new shifter and cable inner (retaining original housing), adjustment of derailleur to function as before.","0"
+"671abb803810420b4cca4cc2","Install tubeless tire (front)","20",,"Installation of new tire including sealant. Does not include cost of tubeless tape (See Install Rim Tape)","0"
+"671abb883810420b4cca4cc5","Install tubeless tire (rear)","20",,"Installation of new tire including sealant. Does not include cost of tubeless tape (See Install Rim Tape)","0"
+"671abba23810420b4cca4cd3","Install wheel (front)","10",,"Transfer of old tire/tube to new wheel, installation on bike ","0"
+"671abba83810420b4cca4cd6","Install wheel (rear)","10",,"Transfer of old tire/tube to new wheel, installation on bike ","0"
+"671abbc13810420b4cca4cd9","Install brake lever (front)","22",,"Removing old lever, installing new parts, and adjusting","0"
+"671abbc83810420b4cca4cdc","Install brake lever (rear)","22",,"Removing old lever, installing new parts, and adjusting","0"
+"671abbff3810420b4cca4cdf","Replace one tire (front)","12",,"Removal of old tire, installation of new tire and old tube.","0"
+"671abc063810420b4cca4ce2","Replace one tire (rear)","12",,"Removal of old tire, installation of new tire and old tube.","0"

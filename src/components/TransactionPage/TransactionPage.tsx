@@ -1,55 +1,72 @@
 import {useLocation} from 'react-router-dom';
-import {useState} from 'react';
-import {Repair} from '../RepairItem/RepairItem';
-import {Part} from '../PartItem/PartItem';
+import {useState, useEffect} from 'react';
+import {Repair, useRepairs} from '../RepairItem/RepairItem';
+import {Part, useParts} from '../PartItem/PartItem';
 
 
 
 const Transaction = () => {
+    const {repairs, loading: repairsLoading } = useRepairs();
+    const {parts, loading: partsLoading} = useParts();
+
     const location = useLocation();
     const transaction = location.state?.transaction;
+
     const [repairSearchQuery, setRepairSearchQuery] = useState('');
     const [partSearchQuery, setPartSearchQuery] = useState('');
     const [filteredRepairs, setFilteredRepairs] = useState<Repair[]>([]);
-    //const [repairs, setRepairs] = useState<Repair[]>([]);
-    const repairs = transaction.Repairs || [];
-    const parts = transaction.parts || [];
+    const [filteredParts, setFilteredParts] = useState<Part[]>([]);
+
     const [currentTransaction, setCurrentTransaction] = useState({
         ...transaction,
-        Repairs: repairs,
-        Parts: parts,
+        Repairs: transaction?.Repairs || [],
+        Parts: transaction?.Parts || [],
     });
-    const [filteredParts, setFilteredParts] = useState<Part[]>([]);
-    //const [parts, setParts] = useState<Part[]>([]);
+
+    useEffect(() => {
+        if(repairSearchQuery.trim() !== '') {
+            const matches = repairs.filter(
+                (repair) => 
+                    repair.name.toLowerCase().includes(repairSearchQuery.toLowerCase()) &&
+                !currentTransaction.Repairs.some((r: Repair) => r._id === repair._id)
+            );
+            setFilteredRepairs(matches);
+        } else {
+            setFilteredRepairs([]);
+        }
+    }, [repairSearchQuery, repairs, currentTransaction.Repairs]);
+
+    useEffect(() => {
+        if(partSearchQuery.trim() !== '') {
+            const matches = parts.filter(
+                (part) => 
+                    part.name.toLowerCase().includes(partSearchQuery.toLowerCase()) &&
+                !currentTransaction.Parts.some((p: Part) => p._id === part._id)
+            );
+            setFilteredParts(matches);
+        } else {
+            setFilteredParts([]);
+        }
+    }, [partSearchQuery, parts, currentTransaction.Parts]);
     
+    if(repairsLoading || partsLoading) {
+        return <p>Loading data...</p>;
+    }
 
     if (!transaction) {
         return <p>No transaction selected!</p>
     }
 
     const handleSearchChangeR = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const query = e.target.value;
-        setRepairSearchQuery(query);
-
-        if(query.trim() !== '') {
-            const matches = repairs.filter((repair: Repair) => repair.name.toLowerCase().includes(query.toLowerCase()) && !currentTransaction.Repairs.some((r:Repair) => r._id === repair._id));
-            setFilteredRepairs(matches);
-        } else {
-            setFilteredRepairs([]);
-        }
+        setRepairSearchQuery(e.target.value);
     };
 
     const handleSearchChangeP = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const query = e.target.value;
-        setPartSearchQuery(query);
-
-        if(query.trim() !== '') {
-            const matches = parts.filter((part: Part) => part.name.toLowerCase().includes(query.toLowerCase()) && !currentTransaction.Parts.some((p:Part) => p._id === part._id));
-            setFilteredParts(matches);
-        }
+        setPartSearchQuery(e.target.value);
     }
 
     const handleAddRepair = (repair: Repair) => {
+        console.log("handle add repai");
         const updatedRepairs = [...currentTransaction.Repairs, repair];
         const updatedTotalCost = currentTransaction.Transaction.total_cost + repair.price;
 

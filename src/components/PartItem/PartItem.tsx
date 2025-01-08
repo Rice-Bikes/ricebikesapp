@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import React, {createContext, useContext, useEffect, useState} from 'react';
 import Papa from 'papaparse'; // Import papaparse
 
 export type Part = { // TODO: what should be optional?
@@ -28,11 +28,19 @@ export type Part = { // TODO: what should be optional?
     threshold_stock?: number;
 }
 
-export const PartItemList = () => {
+type PartsContextType = {
+    parts: Part[];
+    loading: boolean;
+};
+
+const PartsContext = createContext<PartsContextType | undefined>(undefined);
+
+export const PartsProvider: React.FC<{children: React.ReactNode}> = ({children}) => {
     const [parts, setParts] = useState<Part[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('../../parts.bson.csv')
+        fetch('/parts.bson.csv')
             .then((response) => response.text())
             .then((csvData) => {
                 Papa.parse(csvData, {
@@ -64,6 +72,7 @@ export const PartItemList = () => {
                             threshold_stock: row.threshold_stock ? Number(row.threshold_stock): undefined,
                         }));
                         setParts(partsData);
+                        setLoading(false);
                     },
                     header: true,
                     skipEmptyLines: true,
@@ -71,19 +80,22 @@ export const PartItemList = () => {
             })
             .catch((error) => {
                 console.error('Error loading or parsing CSV file: ', error);
+                setLoading(false);
             });
 
     }, []);
+
     return (
-        <div>
-            <h2>Parts List</h2>
-            <ul>
-                {parts.map((part) => (
-                    <li key={part._id}>
-                        {part.name} - ${part.standard_price} ({part.disabled ? 'Disabled' : 'Active'})
-                    </li>
-                ))}
-            </ul>
-        </div>
+        <PartsContext.Provider value={{parts, loading}}>
+            {children}
+        </PartsContext.Provider>
     );
 };
+
+export const useParts = () => {
+    const context = useContext(PartsContext);
+    if (!context) {
+        throw new Error('useParts must be used within a PartsProvider');
+    }
+    return context;
+}
