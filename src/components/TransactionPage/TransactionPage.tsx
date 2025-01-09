@@ -3,8 +3,6 @@ import {useState, useEffect} from 'react';
 import {Repair, useRepairs} from '../RepairItem/RepairItem';
 import {Part, useParts} from '../PartItem/PartItem';
 
-
-
 const Transaction = () => {
     const {repairs, loading: repairsLoading } = useRepairs();
     const {parts, loading: partsLoading} = useParts();
@@ -16,6 +14,8 @@ const Transaction = () => {
     const [partSearchQuery, setPartSearchQuery] = useState('');
     const [filteredRepairs, setFilteredRepairs] = useState<Repair[]>([]);
     const [filteredParts, setFilteredParts] = useState<Part[]>([]);
+
+    const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
 
     const [currentTransaction, setCurrentTransaction] = useState({
         ...transaction,
@@ -129,6 +129,13 @@ const Transaction = () => {
         });
     };
 
+    const toggleDoneRepair = (repairId: string) => {
+        setDoneRepairs((prevState) => ({
+            ...prevState,
+            [repairId]: !prevState[repairId],
+        }));
+    };
+
     return (
         <div style={{padding: '20px'}}>
             <h2>Transaction Details</h2>
@@ -147,9 +154,26 @@ const Transaction = () => {
                 {currentTransaction.Repairs.map((repair: Repair) => (
                     <li key={repair._id}>
                         {repair.name} - ${repair.price.toFixed(2)}
+                        <button
+                            onClick={() => toggleDoneRepair(repair._id)}
+                            style={{
+                                border: '2px solid white',
+                                marginLeft: '10px',
+                                cursor: 'pointer',
+                                backgroundColor: doneRepairs[repair._id] ? 'green' : 'initial',
+                                color: 'white',
+                            }}
+                            >
+                            {doneRepairs[repair._id] ? 'Done' : 'Mark as Done'}
+                        </button>
                         <button 
                             onClick={() => handleRemoveRepair(repair)}
-                            style={{marginLeft: '10px', cursor: 'pointer'}}
+                            style={{
+                                marginLeft: '10px', 
+                                cursor: 'pointer',
+                                border: 'white',
+                                backgroundColor: 'red',
+                            }}
                             >
                             Delete
                         </button>
@@ -179,7 +203,12 @@ const Transaction = () => {
                         {part.name} - ${part.standard_price.toFixed(2)}
                         <button
                             onClick={() => handleRemovePart(part)}
-                            style={{marginLeft: '10px', cursor: 'pointer'}}
+                            style={{
+                                marginLeft: '10px', 
+                                cursor: 'pointer',
+                                border: 'white',
+                                backgroundColor: 'red',
+                            }}
                         >
                             Delete
                         </button>
@@ -203,7 +232,7 @@ const Transaction = () => {
             </ul>
 
             <h3>Total</h3>
-            <p><strong>${currentTransaction.Transaction.total_cost.toFixed(2)}</strong></p>
+            <p><strong>${(currentTransaction.Transaction.total_cost * 1.0625).toFixed(2)}</strong></p>
         </div>
     );
 };
