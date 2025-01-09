@@ -2,8 +2,10 @@ import {useLocation} from 'react-router-dom';
 import {useState, useEffect} from 'react';
 import {Repair, useRepairs} from '../RepairItem/RepairItem';
 import {Part, useParts} from '../PartItem/PartItem';
+import Notes from './Notes';
+import {IRow} from '../../features/TransactionsTable/TransactionsTable';
 
-const Transaction = () => {
+const TransactionDetail = () => {
     const {repairs, loading: repairsLoading } = useRepairs();
     const {parts, loading: partsLoading} = useParts();
 
@@ -21,7 +23,15 @@ const Transaction = () => {
         ...transaction,
         Repairs: transaction?.Repairs || [],
         Parts: transaction?.Parts || [],
+        Notes: transaction?.Notes || "",
     });
+
+    const handleSaveNotes = (newNotes: string) => {
+        setCurrentTransaction((prevTransaction: IRow) => ({
+            ...prevTransaction,
+            Notes: newNotes,
+        }));
+    };
 
     useEffect(() => {
         if(repairSearchQuery.trim() !== '') {
@@ -149,6 +159,8 @@ const Transaction = () => {
             <p><strong>Email: </strong>{currentTransaction.Customer.email}</p>
             <p><strong>Phone: </strong>{currentTransaction.Customer.phone}</p>
 
+            <Notes notes={currentTransaction.Notes} onSave={handleSaveNotes} />
+
             <h3>Repairs</h3>
             <ul>
                 {currentTransaction.Repairs.map((repair: Repair) => (
@@ -237,5 +249,5 @@ const Transaction = () => {
     );
 };
 
-export default Transaction;
+export default TransactionDetail;
 
