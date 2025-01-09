@@ -22,7 +22,7 @@ export const RepairsProvider: React.FC<{children: React.ReactNode}> = ({children
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        console.log('Fetching CSV file...');
+        //console.log('Fetching CSV file...');
         fetch('/repairs.bson.csv')
             .then((response) => {
                 if (!response.ok) {
@@ -31,11 +31,11 @@ export const RepairsProvider: React.FC<{children: React.ReactNode}> = ({children
                 return response.text();
             })
             .then((csvData) => {
-                console.log('CSV Data:', csvData);  // Debug log to ensure CSV is loaded correctly
+                //console.log('CSV Data:', csvData);  // Debug log to ensure CSV is loaded correctly
 
                 Papa.parse(csvData, {
                     complete: (result: Papa.ParseResult<any>) => {
-                        console.log('Parsed Data:', result);  // Debug log for parsed data
+                        //console.log('Parsed Data:', result);  // Debug log for parsed data
                         
                         if (result.errors.length > 0) {
                             console.error('Parsing errors:', result.errors);  // Log parsing errors, if any
@@ -50,7 +50,7 @@ export const RepairsProvider: React.FC<{children: React.ReactNode}> = ({children
                             __v: row.__v ? row.__v : undefined,
                         }));
 
-                        console.log('Mapped Repairs Data:', repairsData);  // Check the mapped data structure
+                        //console.log('Mapped Repairs Data:', repairsData);  // Check the mapped data structure
 
                         setRepairs(repairsData);
                         setLoading(false);

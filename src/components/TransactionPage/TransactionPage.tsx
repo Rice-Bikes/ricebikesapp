@@ -40,7 +40,7 @@ const Transaction = () => {
         if(partSearchQuery.trim() !== '') {
             const matches = parts.filter(
                 (part) => 
-                    part.name.toLowerCase().includes(partSearchQuery.toLowerCase()) &&
+                    part.name && part.name.toLowerCase().includes(partSearchQuery.toLowerCase()) &&
                 !currentTransaction.Parts.some((p: Part) => p._id === part._id)
             );
             setFilteredParts(matches);
@@ -139,7 +139,7 @@ const Transaction = () => {
 
             <h3>Parts</h3>
             <ul>
-                {transaction.Parts.map((part: Part) => (
+                {currentTransaction.Parts.map((part: Part) => (
                     <li key={part._id}>
                         {part.name} - ${part.standard_price.toFixed(2)}
                     </li>

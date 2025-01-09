@@ -40,9 +40,10 @@ export const PartsProvider: React.FC<{children: React.ReactNode}> = ({children})
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('/parts.bson.csv')
+        fetch('/items.bson.csv')
             .then((response) => response.text())
             .then((csvData) => {
+                console.log(csvData);
                 Papa.parse(csvData, {
                     complete: (result: Papa.ParseResult<any>) => {
                         const partsData: Part[] = result.data.map((row: any) => ({
@@ -71,6 +72,8 @@ export const PartsProvider: React.FC<{children: React.ReactNode}> = ({children})
                             last_updated: row.last_updated ? row.last_updated: undefined,
                             threshold_stock: row.threshold_stock ? Number(row.threshold_stock): undefined,
                         }));
+
+                        console.log('Mapped Parts Data:', partsData);
                         setParts(partsData);
                         setLoading(false);
                     },
