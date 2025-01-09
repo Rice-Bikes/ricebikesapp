@@ -34,7 +34,7 @@ function NewTransactionForm({
       // TODO: need to make id generator
       Transaction: {
         transaction_num: "", // TODO: need to figure this out
-        date_created: new Date(),
+        date_created: new Date().toDateString(),
         transaction_type: "", // TODO: need to set based on type
         customer_id: "", // TODO: need to figure this out
         bike_id: "", // TODO: need to figure this out

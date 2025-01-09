@@ -36,55 +36,54 @@ export interface IRow {
   // "#": number;
   Transaction: Transaction;
   Customer: Customer;
-  Bike: Bike;
-  Repairs: Repair[];
-  Parts: Part[];
+  Bike?: Bike;
+  Repairs?: Repair[];
+  Parts?: Part[];
   Submitted: Date;
 }
 
-export type Customer = {
-  customer_id?: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-};
+export type Customer = FromSchema<typeof CustomerSchema>;
+export type Bike = FromSchema<typeof BikeSchema>;
+export const CustomerSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "Customer",
+  type: "object",
+  properties: {
+    customer_id: { type: "string", nullable: true },
+    first_name: { type: "string" },
+    last_name: { type: "string" },
+    email: { type: "string" },
+    phone: { type: ["string", "null"] },
+  },
+  required: ["first_name", "last_name", "email", "phone"],
 
-export type Bike = {
-  bike_id?: string;
-  make: string;
-  model: string;
-  date_created?: Date;
-  description: string;
-};
+  additionalProperties: false,
+} as const satisfies JSONSchema;
 
-// export type Transaction = {
-//   transaction_num: string;
-//   date_created: Date;
-//   transaction_type: string;
-//   customer_id?: string;
-//   bike_id?: string;
-//   total_cost: number;
-//   description: string | null;
-//   is_completed: boolean;
-//   is_paid: boolean;
-//   is_refurb: boolean;
-//   is_urgent: boolean;
-//   is_nuclear?: boolean;
-//   is_beer_bike: boolean;
-//   is_employee: boolean;
-//   is_reserved: boolean;
-//   is_wait_email: boolean;
-//   date_completed: Date | null;
-// };
+export const BikeSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "Bike",
+  type: "object",
+  properties: {
+    bike_id: { type: "string", nullable: true },
+    make: { type: "string" },
+    model: { type: "string" },
+    date_created: { type: "string", nullable: true },
+    description: { type: "string" },
+  },
+  required: ["make", "model", "description"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
 
 export const TransactionSchema = {
   $schema: "http://json-schema.org/draft-07/schema",
   title: "Transaction",
   type: "object",
   properties: {
-    transaction_num: { type: "string" },
-    date_created: { type: "string", format: "date-time" },
+    transaction_num: { type: "number" },
+    transaction_id: { type: "string" },
+    date_created: { type: "string" },
     transaction_type: { type: "string" },
     customer_id: { type: "string", nullable: true },
     bike_id: { type: "string", nullable: true },
@@ -98,8 +97,18 @@ export const TransactionSchema = {
     is_beer_bike: { type: "boolean" },
     is_employee: { type: "boolean" },
     is_reserved: { type: "boolean" },
-    is_wait_email: { type: "boolean" },
-    date_completed: { type: "string", format: "date-time", nullable: true },
+    is_waiting_on_email: { type: "boolean" },
+    date_completed: { type: "string", nullable: true },
+    Bike: {
+      type: ["object", "null"],
+      nullable: true,
+      properties: BikeSchema.properties,
+    },
+    Customer: {
+      type: "object",
+      nullable: true,
+      properties: CustomerSchema.properties,
+    },
   },
   required: [
     "transaction_num",
@@ -113,22 +122,37 @@ export const TransactionSchema = {
     "is_beer_bike",
     "is_employee",
     "is_reserved",
-    "is_wait_email",
+    "is_waiting_on_email",
+    "transaction_id",
   ],
   additionalProperties: false,
 } as const satisfies JSONSchema;
 const TransactionArraySchema = {
   $id: "partArray.json",
   type: "array",
-  items: partSchema,
+  items: TransactionSchema,
 } as const satisfies JSONSchema;
 
-const TransactionResponseSchema = {
-  $id: "partResponse.json",
+const TransactionsResponseSchema = {
+  $id: "transactionsResponse.json",
   type: "object",
   properties: {
     message: { type: "string" },
-    responseObject: { type: "array" },
+    responseObject: { type: ["array"] },
+    statusCode: { type: "number" },
+    success: { type: "boolean" },
+    additionalProperties: false,
+  },
+  required: ["message", "responseObject", "statusCode", "success"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+const TransactionResponseSchema = {
+  $id: "transactionResponse.json",
+  type: "object",
+  properties: {
+    message: { type: "string" },
+    responseObject: { type: ["object"] },
     statusCode: { type: "number" },
     success: { type: "boolean" },
     additionalProperties: false,
@@ -138,6 +162,9 @@ const TransactionResponseSchema = {
 } as const satisfies JSONSchema;
 
 export type Transaction = FromSchema<typeof TransactionSchema>;
+export type TransactionsResponse = FromSchema<
+  typeof TransactionsResponseSchema
+>;
 export type TransactionResponse = FromSchema<typeof TransactionResponseSchema>;
 export type TransactionArray = FromSchema<typeof TransactionArraySchema>;
 // const CompanyLogoRenderer = (param: CustomCellRendererProps) => (
@@ -275,22 +302,51 @@ export function TransactionsTable(): JSX.Element {
     compile(TransactionSchema);
   const validateTransactionsArray: (data: unknown) => data is Transaction[] =
     compile(TransactionArraySchema);
+  const validateTransactionsResponse: (
+    data: unknown
+  ) => data is TransactionsResponse = compile(TransactionsResponseSchema);
   const validateTransactionResponse: (
     data: unknown
   ) => data is TransactionResponse = compile(TransactionResponseSchema);
+  const validateCustomer: (data: unknown) => data is Customer =
+    compile(CustomerSchema);
+  const validateBike: (data: unknown) => data is Bike = compile(BikeSchema);
   const navigate = useNavigate();
   const onRowClicked = (e: RowClickedEvent) => {
-    const selectedTransaction = e.data;
-    navigate("/transaction-details", {
-      state: { transaction: selectedTransaction },
-    });
+    // fetch(`${hostname}/transactions/${e.data.Transaction.transaction_num}`)
+    //   .then((response) => response.json())
+    //   .then((transactionData: unknown) => {
+    //     if (!validateTransactionResponse(transactionData)) {
+    //       throw new Error("Invalid transaction response");
+    //     }
+    //     console.log("Raw Transaction Data:", transactionData);
+    //     if (!validateTransaction(transactionData.responseObject)) {
+    //       throw new Error("Invalid transaction response");
+    //     }
+    //     if (!transactionData.success) {
+    //       throw new Error("Failed to load transaction");
+    //     }
+    //     console.log(" Transaction Data:", transactionData.responseObject);
+    //     return transactionData.responseObject;
+    //   })
+    //   .then((transactionData: Transaction) => {
+        // const selectedTransaction = e.data;
+        navigate("/transaction-details", {
+          state: { transaction: { Transaction: e.data } },
+        // });
+      });
+    // // const selectedTransaction = e.data;
+    // navigate("/transaction-details", {
+    //   state: { transaction: selectedTransaction },
+    // });
   };
 
   const [rowData, setRowData] = useState<IRow[]>([
     {
       // "#": 1,
       Transaction: {
-        transaction_num: "1234",
+        transaction_num: 1234,
+        transaction_id: "1234",
         date_created: new Date("2021-01-16").toTimeString(),
         transaction_type: "Inpatient",
         customer_id: "1234",
@@ -305,13 +361,13 @@ export function TransactionsTable(): JSX.Element {
         is_beer_bike: false,
         is_employee: false,
         is_reserved: false,
-        is_wait_email: false,
+        is_waiting_on_email: false,
         date_completed: null,
       },
       Customer: {
         customer_id: "1234",
-        firstName: "Chase",
-        lastName: "Geyer",
+        first_name: "Chase",
+        last_name: "Geyer",
         email: "chase.geyer@rice.edu",
         phone: "1234567890",
       },
@@ -320,7 +376,7 @@ export function TransactionsTable(): JSX.Element {
         make: "Huffy",
         model: "Rockcreek",
         description: "Blue MTB",
-        date_created: new Date("2021-01-16"),
+        date_created: new Date("2021-01-16").toDateString(),
       },
       Repairs: [],
       Parts: [],
@@ -329,17 +385,24 @@ export function TransactionsTable(): JSX.Element {
   ]);
 
   useEffect(() => {
-    fetch(`${hostname}/transactions` + new URLSearchParams({ limit: "10" }))
+    console.log(
+      `${hostname}/transactions?` +
+        new URLSearchParams({ page_limit: "10", aggregate: "true" })
+    );
+    fetch(
+      `${hostname}/transactions?` +
+        new URLSearchParams({ page_limit: "1000000", aggregate: "true" })
+    )
       .then((response) => response.json())
       .then((itemsData: unknown) => {
         console.log("Raw Parts Data:", itemsData);
-        if (!validateTransactionResponse(itemsData)) {
-          throw new Error("Invalid part response");
+        if (!validateTransactionsResponse(itemsData)) {
+          throw new Error("Invalid transactions response");
         }
         if (!itemsData.success) {
-          throw new Error("Failed to load parts");
+          throw new Error("Failed to load transactions");
         }
-        console.log(" Parts Array Data:", itemsData.responseObject);
+        console.log(" Transaction Array Data:", itemsData.responseObject);
         // if (!validatePartsArray(itemsData.responseObject)) {
         //   throw new Error("Invalid part array");
         // }
@@ -350,22 +413,77 @@ export function TransactionsTable(): JSX.Element {
         console.log("Mapped Parts Data:", partsData);
         partsData.forEach((part) => {
           if (!validateTransaction(part)) {
-            console.log("Invalid Part:", part);
-            throw new Error("Invalid part found");
+            console.log("Invalid transaction:", part);
+            throw new Error("Invalid transaction found");
+          }
+          if (!validateCustomer(part.Customer)) {
+            console.log("Invalid Customer:", part.Customer);
+            throw new Error("Invalid customer found");
+          }
+          if (part.Bike && !validateBike(part.Bike)) {
+            console.log("Invalid Bike:", part.Bike);
+            throw new Error("Invalid bike found");
           }
         });
 
         if (!validateTransactionsArray(partsData)) {
           throw new Error("Invalid part array");
         }
-        setTransactions(partsData);
-        setLoading(false);
+
+        const transactionRows: IRow[] = partsData.map((part) => {
+          if (!part.Customer) {
+            throw Error("Need aggregate data for transaction");
+          }
+          if (!part.Bike) {
+            return {
+              Transaction: part,
+              Customer: {
+                ...part.Customer,
+                first_name: part.Customer.first_name || "Unknown", // Provide a default value
+                last_name: part.Customer.last_name || "Unknown",
+                email: part.Customer.email || "Unknown",
+                phone: part.Customer.phone || "Unknown",
+              },
+              // Bike: part.Bike,
+              // Repairs: part.Repairs,
+              // Parts: part.Parts,
+              Submitted: new Date(part.date_created),
+            };
+          } else {
+            return {
+              Transaction: part,
+              Customer: {
+                ...part.Customer,
+                first_name: part.Customer.first_name || "", // Provide a default value
+                last_name: part.Customer.last_name || "",
+                email: part.Customer.email || "",
+                phone: part.Customer.phone || "",
+              },
+              Bike: {
+                ...part.Bike,
+                make: part.Bike.make || "",
+                model: part.Bike.model || "",
+                description: part.Bike.description || "",
+                date_created: part.Bike.date_created || "",
+              },
+              // Repairs: part.Repairs,
+              // Parts: part.Parts,
+              Submitted: new Date(part.date_created),
+            };
+          }
+        });
+
+        setRowData(transactionRows);
+        // setLoading(false);
       })
       .catch((error) => {
-        console.error("Error loading or parsing CSV file: ", error);
-        setLoading(false);
+        console.error(
+          "Error loading or parsing transactions from server: ",
+          error
+        );
+        // setLoading(false);
       });
-  });
+  }, []);
 
   // Column Definitions: Defines & controls grid columns.
   const [colDefs] = useState<ColDef<IRow>[]>([
@@ -377,15 +495,25 @@ export function TransactionsTable(): JSX.Element {
     {
       headerName: "Name",
       valueGetter: (params) =>
-        `${params.data?.Customer.firstName} ${params.data?.Customer.lastName}`,
+        `${params.data?.Customer.first_name} ${params.data?.Customer.last_name}`,
     },
     {
       headerName: "Make",
-      valueGetter: (params) => params.data?.Bike.make,
+      valueGetter: (params) => {
+        if (!params.data?.Bike || params.data?.Bike.make === "") {
+          return "";
+        }
+        return params.data?.Bike.make;
+      },
     },
     {
       headerName: "Model",
-      valueGetter: (params) => params.data?.Bike.model,
+      valueGetter: (params) => {
+        if (!params.data?.Bike || params.data?.Bike.model === "") {
+          return "";
+        }
+        return params.data?.Bike.model;
+      },
     },
     { field: "Submitted" },
   ]);
@@ -430,6 +558,7 @@ export function TransactionsTable(): JSX.Element {
         defaultColDef={defaultColDef}
         rowSelection={rowSelection}
         onRowClicked={onRowClicked}
+        pagination={true}
       />
     </main>
   );

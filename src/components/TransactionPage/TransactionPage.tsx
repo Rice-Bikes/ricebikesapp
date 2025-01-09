@@ -135,36 +135,43 @@ const Transaction = () => {
       },
     });
   };
-
+  console.log("current transaction: ", currentTransaction);
   return (
     <div style={{ padding: "20px" }}>
       <h2>Transaction Details</h2>
       <h3>Bike Information</h3>
-      <p>
-        <strong>Make: </strong>
-        {currentTransaction.Bike.make}
-      </p>
-      <p>
-        <strong>Model: </strong>
-        {currentTransaction.Bike.model}
-      </p>
-      <p>
-        <strong>Color: </strong>
-        {currentTransaction.Bike.color}
-      </p>
+      {currentTransaction.Bike ? (
+        <>
+          <p>
+            <strong>Make: </strong>
+            {currentTransaction.Bike.make}
+          </p>
+          <p>
+            <strong>Model: </strong>
+            {currentTransaction.Bike.model}
+          </p>
+          <p>
+            <strong>Color: </strong>
+            {currentTransaction.Bike.color}
+          </p>
+        </>
+      ) : (
+        <p>No bike information available</p>
+      )}
 
       <h3>Customer Information</h3>
       <p>
         <strong>Name: </strong>
-        {currentTransaction.Customer.firstName} {transaction.Customer.lastName}
+        {currentTransaction.Transaction.Customer.first_name}{" "}
+        {currentTransaction.Transaction.Customer.last_name}
       </p>
       <p>
         <strong>Email: </strong>
-        {currentTransaction.Customer.email}
+        {currentTransaction.Transaction.Customer.email}
       </p>
       <p>
         <strong>Phone: </strong>
-        {currentTransaction.Customer.phone}
+        {currentTransaction.Transaction.Customer.phone}
       </p>
 
       <h3>Repairs</h3>
