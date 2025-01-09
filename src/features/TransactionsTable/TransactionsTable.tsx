@@ -1,6 +1,6 @@
 import { AgGridReact } from "ag-grid-react"; // React Data Grid Component
 import { useState, useMemo, useRef, useEffect } from "react"; // React State Hook
-import { TransactionTableModel } from "./TransactionTableModel"; // Transaction Table Model
+// import { TransactionTableModel } from "./TransactionTableModel"; // Transaction Table Model
 import {
   Button,
   ButtonGroup,
@@ -13,13 +13,23 @@ import {
   Modal,
   Box,
 } from "@mui/material";
-import type { ColDef, RowSelectionOptions } from "ag-grid-community";
+import type {
+  ColDef,
+  RowClickedEvent,
+  RowSelectionOptions,
+} from "ag-grid-community";
 import "./TransactionsTable.css"; // CSS Stylesheet
 import NewTransactionForm from "../../components/TransactionPage/BikeForm";
-import {Repair} from '../../components/RepairItem/RepairItem';
-import {useNavigate} from "react-router-dom";
-import {Part} from '../../components/PartItem/PartItem';
-
+import { Repair } from "../../components/RepairItem/RepairItem";
+import { useNavigate } from "react-router-dom";
+import { Part } from "../../components/PartItem/PartItem";
+import type { JSONSchema } from "json-schema-to-ts";
+import {
+  wrapCompilerAsTypeGuard,
+  $Compiler,
+  FromSchema,
+} from "json-schema-to-ts";
+import Ajv from "ajv";
 
 // Row Data Interface
 export interface IRow {
@@ -48,26 +58,88 @@ export type Bike = {
   description: string;
 };
 
-export type Transaction = {
-  transaction_num: string;
-  date_created: Date;
-  transaction_type: string;
-  customer_id?: string;
-  bike_id?: string;
-  total_cost: number;
-  description: string | null;
-  is_completed: boolean;
-  is_paid: boolean;
-  is_refurb: boolean;
-  is_urgent: boolean;
-  is_nuclear?: boolean;
-  is_beer_bike: boolean;
-  is_employee: boolean;
-  is_reserved: boolean;
-  is_wait_email: boolean;
-  date_completed: Date | null;
-};
+// export type Transaction = {
+//   transaction_num: string;
+//   date_created: Date;
+//   transaction_type: string;
+//   customer_id?: string;
+//   bike_id?: string;
+//   total_cost: number;
+//   description: string | null;
+//   is_completed: boolean;
+//   is_paid: boolean;
+//   is_refurb: boolean;
+//   is_urgent: boolean;
+//   is_nuclear?: boolean;
+//   is_beer_bike: boolean;
+//   is_employee: boolean;
+//   is_reserved: boolean;
+//   is_wait_email: boolean;
+//   date_completed: Date | null;
+// };
 
+export const TransactionSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "Transaction",
+  type: "object",
+  properties: {
+    transaction_num: { type: "string" },
+    date_created: { type: "string", format: "date-time" },
+    transaction_type: { type: "string" },
+    customer_id: { type: "string", nullable: true },
+    bike_id: { type: "string", nullable: true },
+    total_cost: { type: "number" },
+    description: { type: "string", nullable: true },
+    is_completed: { type: "boolean" },
+    is_paid: { type: "boolean" },
+    is_refurb: { type: "boolean" },
+    is_urgent: { type: "boolean" },
+    is_nuclear: { type: "boolean", nullable: true },
+    is_beer_bike: { type: "boolean" },
+    is_employee: { type: "boolean" },
+    is_reserved: { type: "boolean" },
+    is_wait_email: { type: "boolean" },
+    date_completed: { type: "string", format: "date-time", nullable: true },
+  },
+  required: [
+    "transaction_num",
+    "date_created",
+    "transaction_type",
+    "total_cost",
+    "is_completed",
+    "is_paid",
+    "is_refurb",
+    "is_urgent",
+    "is_beer_bike",
+    "is_employee",
+    "is_reserved",
+    "is_wait_email",
+  ],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+const TransactionArraySchema = {
+  $id: "partArray.json",
+  type: "array",
+  items: partSchema,
+} as const satisfies JSONSchema;
+
+const TransactionResponseSchema = {
+  $id: "partResponse.json",
+  type: "object",
+  properties: {
+    message: { type: "string" },
+    responseObject: { type: "array" },
+    statusCode: { type: "number" },
+    success: { type: "boolean" },
+    additionalProperties: false,
+  },
+  required: ["message", "responseObject", "statusCode", "success"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+export type Transaction = FromSchema<typeof TransactionSchema>;
+export type TransactionResponse = FromSchema<typeof TransactionResponseSchema>;
+export type TransactionArray = FromSchema<typeof TransactionArraySchema>;
 // const CompanyLogoRenderer = (param: CustomCellRendererProps) => (
 //   <div className="tags">
 //     {param.value.inpatient && <button>Inpatient</button>}
@@ -192,14 +264,26 @@ function CreateTransactionDropdown({
   );
 }
 
-export function Transactions(): JSX.Element {
-  const model = new TransactionTableModel();
+export function TransactionsTable(): JSX.Element {
+  // const model = new TransactionTableModel();
   // Row Data: The data to be displayed.
-
+  const hostname = import.meta.env.VITE_API_URL;
+  const ajv = new Ajv();
+  const $compile: $Compiler = (schema) => ajv.compile(schema);
+  const compile = wrapCompilerAsTypeGuard($compile);
+  const validateTransaction: (data: unknown) => data is Transaction =
+    compile(TransactionSchema);
+  const validateTransactionsArray: (data: unknown) => data is Transaction[] =
+    compile(TransactionArraySchema);
+  const validateTransactionResponse: (
+    data: unknown
+  ) => data is TransactionResponse = compile(TransactionResponseSchema);
   const navigate = useNavigate();
-  const onRowClicked = (e: any) => {
+  const onRowClicked = (e: RowClickedEvent) => {
     const selectedTransaction = e.data;
-    navigate("/transaction-details", {state: {transaction: selectedTransaction}});
+    navigate("/transaction-details", {
+      state: { transaction: selectedTransaction },
+    });
   };
 
   const [rowData, setRowData] = useState<IRow[]>([
@@ -207,7 +291,7 @@ export function Transactions(): JSX.Element {
       // "#": 1,
       Transaction: {
         transaction_num: "1234",
-        date_created: new Date("2021-01-16"),
+        date_created: new Date("2021-01-16").toTimeString(),
         transaction_type: "Inpatient",
         customer_id: "1234",
         bike_id: "1234",
@@ -245,18 +329,42 @@ export function Transactions(): JSX.Element {
   ]);
 
   useEffect(() => {
-    model
-      .pollTransactions()
-      .then((data) => {
-        console.log("checking current bulk operation");
-        console.log(data);
-        setRowData(data);
+    fetch(`${hostname}/transactions` + new URLSearchParams({ limit: "10" }))
+      .then((response) => response.json())
+      .then((itemsData: unknown) => {
+        console.log("Raw Parts Data:", itemsData);
+        if (!validateTransactionResponse(itemsData)) {
+          throw new Error("Invalid part response");
+        }
+        if (!itemsData.success) {
+          throw new Error("Failed to load parts");
+        }
+        console.log(" Parts Array Data:", itemsData.responseObject);
+        // if (!validatePartsArray(itemsData.responseObject)) {
+        //   throw new Error("Invalid part array");
+        // }
+        // validateParts(itemsData)}
+        return itemsData.responseObject;
       })
-      .catch((err) => console.error(err));
+      .then((partsData: unknown[]) => {
+        console.log("Mapped Parts Data:", partsData);
+        partsData.forEach((part) => {
+          if (!validateTransaction(part)) {
+            console.log("Invalid Part:", part);
+            throw new Error("Invalid part found");
+          }
+        });
 
-    // .then((res) => res.json())
-    // .then((data) => console.log(data))
-    // .then((data) => setRowData(data));
+        if (!validateTransactionsArray(partsData)) {
+          throw new Error("Invalid part array");
+        }
+        setTransactions(partsData);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error loading or parsing CSV file: ", error);
+        setLoading(false);
+      });
   });
 
   // Column Definitions: Defines & controls grid columns.

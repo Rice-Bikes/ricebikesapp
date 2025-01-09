@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { IRow } from "../../features/TransactionsTable/TransactionsTable";
 
+
 interface NewTransactionFormProps {
-  onTransactionCreated: (newTransaction: any) => void;
+  onTransactionCreated: (newTransaction: IRow) => void;
   isOpen: boolean;
   onClose: () => void;
 }
