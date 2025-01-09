@@ -2,7 +2,7 @@ import React, {createContext, useContext, useEffect, useState} from 'react';
 import Papa from 'papaparse'; // Import papaparse
 
 export type Part = { // TODO: what should be optional?
-    _id: number;
+    _id: string;
     name: string;
     description?: string;
     category?: string;
@@ -47,7 +47,7 @@ export const PartsProvider: React.FC<{children: React.ReactNode}> = ({children})
                 Papa.parse(csvData, {
                     complete: (result: Papa.ParseResult<any>) => {
                         const partsData: Part[] = result.data.map((row: any) => ({
-                            _id: Number(row._id),
+                            _id: row._id,
                             name: row.name,
                             description: row.description ? row.description: undefined,
                             category: row.category ? row.category: undefined,

@@ -83,6 +83,20 @@ const Transaction = () => {
         setFilteredRepairs([]);
     };
 
+    const handleRemoveRepair = (repair: Repair) => {
+        const updatedRepairs = currentTransaction.Repairs.filter((r: Repair) => r._id !== repair._id);
+        const updatedTotalCost = currentTransaction.Transaction.total_cost - repair.price;
+
+        setCurrentTransaction({
+            ...currentTransaction,
+            Repairs: updatedRepairs,
+            Transaction: {
+                ...currentTransaction.Transaction,
+                total_cost: updatedTotalCost,
+            },
+        });
+    };
+
     const handleAddPart = (part: Part) => {
         const updatedParts = [...currentTransaction.Parts, part];
         const updatedTotalCost = currentTransaction.Transaction.total_cost + part.standard_price;
@@ -98,6 +112,21 @@ const Transaction = () => {
 
         setRepairSearchQuery('');
         setFilteredParts([]);
+    };
+
+    const handleRemovePart = (part: Part) => {
+        const updatedParts = currentTransaction.Parts.filter((p: Part) => p._id !== part._id);
+        console.log("updated parts: ", updatedParts);
+        const updatedTotalCost = currentTransaction.Transaction.total_cost - part.standard_price;
+
+        setCurrentTransaction({
+            ...currentTransaction,
+            Parts: updatedParts,
+            Transaction: {
+                ...currentTransaction.Transaction,
+                total_cost: updatedTotalCost,
+            },
+        });
     };
 
     return (
@@ -118,6 +147,12 @@ const Transaction = () => {
                 {currentTransaction.Repairs.map((repair: Repair) => (
                     <li key={repair._id}>
                         {repair.name} - ${repair.price.toFixed(2)}
+                        <button 
+                            onClick={() => handleRemoveRepair(repair)}
+                            style={{marginLeft: '10px', cursor: 'pointer'}}
+                            >
+                            Delete
+                        </button>
                     </li>
                 ))}
             </ul>
@@ -142,6 +177,12 @@ const Transaction = () => {
                 {currentTransaction.Parts.map((part: Part) => (
                     <li key={part._id}>
                         {part.name} - ${part.standard_price.toFixed(2)}
+                        <button
+                            onClick={() => handleRemovePart(part)}
+                            style={{marginLeft: '10px', cursor: 'pointer'}}
+                        >
+                            Delete
+                        </button>
                     </li>
                 ))}
             </ul>

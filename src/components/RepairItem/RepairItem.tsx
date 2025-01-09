@@ -2,7 +2,7 @@ import {createContext, useContext, useEffect, useState} from 'react';
 import Papa from 'papaparse'; // Import papaparse
 
 export type Repair = { // TODO what is usually optional
-    _id: number;
+    _id: string;
     name: string;
     price: number;
     disabled: boolean; 
@@ -42,7 +42,7 @@ export const RepairsProvider: React.FC<{children: React.ReactNode}> = ({children
                         }
 
                         const repairsData: Repair[] = result.data.map((row: any) => ({
-                            _id: Number(row._id),
+                            _id: row._id,
                             name: row.name,
                             price: Number(row.price),
                             disabled: row.disabled === 'true',
