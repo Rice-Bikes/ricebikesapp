@@ -71,7 +71,6 @@ export const RepairsProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!loading || repairs.length > 0) {
       return;
     }
-    //console.log('Fetching CSV file...');
     fetch(`${hostname}/repairs`)
       .then((response) => response.json())
       .then((itemsData: unknown) => {

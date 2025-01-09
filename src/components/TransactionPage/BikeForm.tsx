@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { IRow } from "../../features/TransactionsTable/TransactionsTable";
 
-
 interface NewTransactionFormProps {
   onTransactionCreated: (newTransaction: IRow) => void;
   isOpen: boolean;
@@ -14,8 +13,8 @@ function NewTransactionForm({
   onClose,
 }: NewTransactionFormProps) {
   const [formState, setFormState] = useState({
-    firstName: "",
-    lastName: "",
+    first_name: "",
+    last_name: "",
     email: "",
     phone: "",
     make: "",
@@ -33,12 +32,12 @@ function NewTransactionForm({
     const newTransaction: IRow = {
       // TODO: need to make id generator
       Transaction: {
-        transaction_num: "", // TODO: need to figure this out
+        // transaction_num: 0, // TODO: need to figure this out
         date_created: new Date().toDateString(),
         transaction_type: "", // TODO: need to set based on type
         customer_id: "", // TODO: need to figure this out
         bike_id: "", // TODO: need to figure this out
-        total_cost: 0.00,
+        total_cost: 0.0,
         description: "",
         is_completed: false,
         is_paid: false,
@@ -48,12 +47,12 @@ function NewTransactionForm({
         is_beer_bike: false,
         is_employee: false, // TODO: should be based on if custy is recognized as employee
         is_reserved: false,
-        is_wait_email: false,
+        is_waiting_on_email: false,
         date_completed: null,
       },
       Customer: {
-        firstName: formState.firstName,
-        lastName: formState.lastName,
+        first_name: formState.first_name,
+        last_name: formState.last_name,
         email: formState.email,
         phone: formState.phone,
       },
@@ -92,8 +91,8 @@ function NewTransactionForm({
                 First Name:
                 <input
                   type="text"
-                  name="firstName"
-                  value={formState.firstName}
+                  name="first_name"
+                  value={formState.first_name}
                   onChange={handleInputChange}
                 />
               </label>
@@ -102,8 +101,8 @@ function NewTransactionForm({
                 Last Name:
                 <input
                   type="text"
-                  name="lastName"
-                  value={formState.lastName}
+                  name="last_name"
+                  value={formState.last_name}
                   onChange={handleInputChange}
                 />
               </label>

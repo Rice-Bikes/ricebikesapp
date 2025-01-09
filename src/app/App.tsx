@@ -4,7 +4,7 @@ import RiceBikesIcon from "../assets/img/rice-bikes_white.png";
 import "./App.css";
 import { Button } from "@mui/material";
 import { Routes, Route } from "react-router-dom";
-import Transaction from "../components/TransactionPage/TransactionPage";
+import TransactionDetail from "../components/TransactionPage/TransactionPage";
 //import {RepairItemList} from '../components/RepairItem/RepairItem';
 
 function App() {
@@ -20,7 +20,7 @@ function App() {
       </header>
       <Routes>
         <Route path="/" element={<TransactionsTable />} />
-        <Route path="/transaction-details" element={<Transaction />} />
+        <Route path="/transaction-details" element={<TransactionDetail />} />
       </Routes>
     </>
   );

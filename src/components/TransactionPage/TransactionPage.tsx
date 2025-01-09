@@ -2,32 +2,69 @@ import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Repair, useRepairs } from "../RepairItem/RepairItem";
 import { Part, useParts } from "../PartItem/PartItem";
+import Notes from "./Notes";
+import { IRow } from "../../features/TransactionsTable/TransactionsTable";
 
-const Transaction = () => {
+const TransactionDetail = () => {
   const { repairs, loading: repairsLoading } = useRepairs();
   const { parts, loading: partsLoading } = useParts();
 
   const location = useLocation();
   const transaction = location.state?.transaction;
 
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [showMarkDone, setShowMarkDone] = useState(false);
+
   const [repairSearchQuery, setRepairSearchQuery] = useState("");
   const [partSearchQuery, setPartSearchQuery] = useState("");
   const [filteredRepairs, setFilteredRepairs] = useState<Repair[]>([]);
   const [filteredParts, setFilteredParts] = useState<Part[]>([]);
 
+  const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
+
   const [currentTransaction, setCurrentTransaction] = useState({
     ...transaction,
     Repairs: transaction?.Repairs || [],
     Parts: transaction?.Parts || [],
+    Notes: transaction?.Notes || "",
   });
+
+  const handleMarkDone = () => {
+    setShowMarkDone(true);
+  };
+
+  const handleMarkDoneClose = () => {
+    setShowMarkDone(false);
+  };
+
+  const handleCheckout = () => {
+    setShowCheckout(true);
+  };
+
+  const closeCheckout = () => {
+    setShowCheckout(false);
+  };
+
+  const handleSaveNotes = (newNotes: string) => {
+    setCurrentTransaction((prevTransaction: IRow) => ({
+      ...prevTransaction,
+      Notes: newNotes,
+    }));
+  };
 
   useEffect(() => {
     if (repairSearchQuery.trim() !== "") {
-      const matches = repairs.filter(
-        (repair) =>
-          repair.name.toLowerCase().includes(repairSearchQuery.toLowerCase()) &&
-          !currentTransaction.Repairs.some((r: Repair) => r._id === repair._id)
-      );
+      const matches = repairs
+        .filter(
+          (repair) =>
+            repair.name
+              .toLowerCase()
+              .includes(repairSearchQuery.toLowerCase()) &&
+            !currentTransaction.Repairs.some(
+              (r: Repair) => r._id === repair.repair_id
+            )
+        )
+        .slice(0, 10);
       setFilteredRepairs(matches);
     } else {
       setFilteredRepairs([]);
@@ -36,12 +73,14 @@ const Transaction = () => {
 
   useEffect(() => {
     if (partSearchQuery.trim() !== "") {
-      const matches = parts.filter(
-        (part) =>
-          part.name &&
-          part.name.toLowerCase().includes(partSearchQuery.toLowerCase()) &&
-          !currentTransaction.Parts.some((p: Part) => p._id === part._id)
-      );
+      const matches = parts
+        .filter(
+          (part) =>
+            part.name &&
+            part.name.toLowerCase().includes(partSearchQuery.toLowerCase()) &&
+            !currentTransaction.Parts.some((p: Part) => p.upc === part.upc)
+        )
+        .slice(0, 10);
       setFilteredParts(matches);
     } else {
       setFilteredParts([]);
@@ -85,7 +124,7 @@ const Transaction = () => {
 
   const handleRemoveRepair = (repair: Repair) => {
     const updatedRepairs = currentTransaction.Repairs.filter(
-      (r: Repair) => r._id !== repair._id
+      (r: Repair) => r._id !== repair.repair_id
     );
     const updatedTotalCost =
       currentTransaction.Transaction.total_cost - repair.price;
@@ -120,7 +159,7 @@ const Transaction = () => {
 
   const handleRemovePart = (part: Part) => {
     const updatedParts = currentTransaction.Parts.filter(
-      (p: Part) => p._id !== part._id
+      (p: Part) => p._id !== part.upc
     );
     console.log("updated parts: ", updatedParts);
     const updatedTotalCost =
@@ -136,6 +175,19 @@ const Transaction = () => {
     });
   };
   console.log("current transaction: ", currentTransaction);
+  const toggleDoneRepair = (repairId: string) => {
+    setDoneRepairs((prevState) => ({
+      ...prevState,
+      [repairId]: !prevState[repairId],
+    }));
+  };
+
+  const allRepairsDone = () => {
+    return currentTransaction.Repairs.every(
+      (repair: Repair) => doneRepairs[repair.repair_id]
+    );
+  };
+
   return (
     <div style={{ padding: "20px" }}>
       <h2>Transaction Details</h2>
@@ -174,14 +226,35 @@ const Transaction = () => {
         {currentTransaction.Transaction.Customer.phone}
       </p>
 
+      <Notes notes={currentTransaction.Notes} onSave={handleSaveNotes} />
+
       <h3>Repairs</h3>
       <ul>
         {currentTransaction.Repairs.map((repair: Repair) => (
           <li key={repair.repair_id}>
             {repair.name} - ${repair.price.toFixed(2)}
             <button
+              onClick={() => toggleDoneRepair(repair.repair_id)}
+              style={{
+                border: "2px solid white",
+                marginLeft: "10px",
+                cursor: "pointer",
+                backgroundColor: doneRepairs[repair.repair_id]
+                  ? "green"
+                  : "initial",
+                color: "white",
+              }}
+            >
+              {doneRepairs[repair.repair_id] ? "Done" : "Mark as Done"}
+            </button>
+            <button
               onClick={() => handleRemoveRepair(repair)}
-              style={{ marginLeft: "10px", cursor: "pointer" }}
+              style={{
+                marginLeft: "10px",
+                cursor: "pointer",
+                border: "white",
+                backgroundColor: "red",
+              }}
             >
               Delete
             </button>
@@ -215,7 +288,12 @@ const Transaction = () => {
             {part.name} - ${part.standard_price.toFixed(2)}
             <button
               onClick={() => handleRemovePart(part)}
-              style={{ marginLeft: "10px", cursor: "pointer" }}
+              style={{
+                marginLeft: "10px",
+                cursor: "pointer",
+                border: "white",
+                backgroundColor: "red",
+              }}
             >
               Delete
             </button>
@@ -244,10 +322,146 @@ const Transaction = () => {
 
       <h3>Total</h3>
       <p>
-        <strong>${currentTransaction.Transaction.total_cost.toFixed(2)}</strong>
+        <strong>
+          ${(currentTransaction.Transaction.total_cost * 1.0625).toFixed(2)}
+        </strong>
       </p>
+
+      <button
+        onClick={handleCheckout}
+        disabled={!allRepairsDone()}
+        style={{
+          backgroundColor: "green",
+          border: "white",
+          marginRight: "10px",
+          cursor: allRepairsDone() ? "pointer" : "not-allowed",
+          opacity: allRepairsDone() ? 1 : 0.5,
+        }}
+      >
+        Checkout
+      </button>
+      {showCheckout && (
+        <div className="checkout">
+          <div className="checkout-content">
+            <p>
+              <strong>
+                $
+                {(currentTransaction.Transaction.total_cost * 1.0625).toFixed(
+                  2
+                )}
+              </strong>
+            </p>
+
+            <p>
+              <strong>Repairs:</strong>
+            </p>
+            <ul>
+              {currentTransaction.Repairs.map((repair: Repair) => (
+                <li key={repair.repair_id}>
+                  {repair.name} - ${repair.price.toFixed(2)}
+                </li>
+              ))}
+            </ul>
+
+            <p>
+              <strong>Parts</strong>
+            </p>
+            <ul>
+              {currentTransaction.Parts.map((part: Part) => (
+                <li key={part.upc}>
+                  {part.name} - ${part.standard_price.toFixed(2)}
+                </li>
+              ))}
+            </ul>
+            <button
+              style={{
+                backgroundColor: "green",
+                cursor: "pointer",
+              }}
+            >
+              Finish
+            </button>
+            <button onClick={closeCheckout}>Back</button>
+          </div>
+        </div>
+      )}
+      <style>
+        {`
+                .checkout {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                .checkout-content {
+                    background-color: grey;
+                    padding: 20px;
+                    border-radius: 5px;
+                    text-align: center;
+                }
+                button {
+                    padding: 10px 20px;
+                    font-size: 16px;
+                    cursor: pointer;
+                }
+                `}
+      </style>
+      <button
+        onClick={handleMarkDone}
+        style={{
+          marginRight: "10px",
+          cursor: "pointer",
+          border: "white",
+          color: "white",
+        }}
+      >
+        Mark Transaction as Complete
+      </button>
+      {showMarkDone && (
+        <div className="markDone">
+          <div className="markDone-content">
+            <p>
+              Are you sure you want to mark this transaction as complete? You{" "}
+              <strong>MUST</strong> checkout first.
+            </p>
+            <button>Complete</button>
+            <button onClick={handleMarkDoneClose}>Go Back</button>
+          </div>
+        </div>
+      )}
+      <style>
+        {`
+                .markDone {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                .markDone-content {
+                    background-color: grey;
+                    padding: 20px;
+                    border-radius: 5px;
+                    text-align: center;
+                }
+                button {
+                    padding: 10px 20px;
+                    font-size: 16px;
+                    cursor: pointer;
+                }
+                `}
+      </style>
     </div>
   );
 };
 
-export default Transaction;
+export default TransactionDetail;

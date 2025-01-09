@@ -75,7 +75,6 @@ export const BikeSchema = {
   additionalProperties: false,
 } as const satisfies JSONSchema;
 
-
 export const TransactionSchema = {
   $schema: "http://json-schema.org/draft-07/schema",
   title: "Transaction",
@@ -147,25 +146,25 @@ const TransactionsResponseSchema = {
   additionalProperties: false,
 } as const satisfies JSONSchema;
 
-const TransactionResponseSchema = {
-  $id: "transactionResponse.json",
-  type: "object",
-  properties: {
-    message: { type: "string" },
-    responseObject: { type: ["object"] },
-    statusCode: { type: "number" },
-    success: { type: "boolean" },
-    additionalProperties: false,
-  },
-  required: ["message", "responseObject", "statusCode", "success"],
-  additionalProperties: false,
-} as const satisfies JSONSchema;
+// const TransactionResponseSchema = {
+//   $id: "transactionResponse.json",
+//   type: "object",
+//   properties: {
+//     message: { type: "string" },
+//     responseObject: { type: ["object"] },
+//     statusCode: { type: "number" },
+//     success: { type: "boolean" },
+//     additionalProperties: false,
+//   },
+//   required: ["message", "responseObject", "statusCode", "success"],
+//   additionalProperties: false,
+// } as const satisfies JSONSchema;
 
 export type Transaction = FromSchema<typeof TransactionSchema>;
 export type TransactionsResponse = FromSchema<
   typeof TransactionsResponseSchema
 >;
-export type TransactionResponse = FromSchema<typeof TransactionResponseSchema>;
+// export type TransactionResponse = FromSchema<typeof TransactionResponseSchema>;
 export type TransactionArray = FromSchema<typeof TransactionArraySchema>;
 // const CompanyLogoRenderer = (param: CustomCellRendererProps) => (
 //   <div className="tags">
@@ -305,9 +304,9 @@ export function TransactionsTable(): JSX.Element {
   const validateTransactionsResponse: (
     data: unknown
   ) => data is TransactionsResponse = compile(TransactionsResponseSchema);
-  const validateTransactionResponse: (
-    data: unknown
-  ) => data is TransactionResponse = compile(TransactionResponseSchema);
+  // const validateTransactionResponse: (
+  //   data: unknown
+  // ) => data is TransactionResponse = compile(TransactionResponseSchema);
   const validateCustomer: (data: unknown) => data is Customer =
     compile(CustomerSchema);
   const validateBike: (data: unknown) => data is Bike = compile(BikeSchema);
@@ -330,11 +329,11 @@ export function TransactionsTable(): JSX.Element {
     //     return transactionData.responseObject;
     //   })
     //   .then((transactionData: Transaction) => {
-        // const selectedTransaction = e.data;
-        navigate("/transaction-details", {
-          state: { transaction: { Transaction: e.data } },
-        // });
-      });
+    // const selectedTransaction = e.data;
+    navigate("/transaction-details", {
+      state: { transaction: { Transaction: e.data } },
+      // });
+    });
     // // const selectedTransaction = e.data;
     // navigate("/transaction-details", {
     //   state: { transaction: selectedTransaction },
