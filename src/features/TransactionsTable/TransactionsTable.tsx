@@ -17,10 +17,11 @@ import type {
   ColDef,
   RowClickedEvent,
   RowSelectionOptions,
+  ICellRendererParams,
 } from "ag-grid-community";
 import "./TransactionsTable.css"; // CSS Stylesheet
 import NewTransactionForm from "../../components/TransactionPage/BikeForm";
-import { Part, Repair } from "../../queries";
+import { Part, Repair, Transaction, Bike, Customer } from "../../queries";
 import { useNavigate } from "react-router-dom";
 import DBQueries from "../../queries";
 
@@ -35,37 +36,7 @@ export interface IRow {
   Submitted: Date;
 }
 
-interface Bike {
-  make: string;
-  model: string;
-  date_created?: string;
-  description: string;
-  bike_id: string;
-}
 
-interface Customer {
-  customer_id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-}
-
-interface Transaction {
-  transaction_num: number;
-  transaction_id: string;
-  date_created: string;
-  transaction_type: string;
-  customer_id: string;
-  bike_id: string;
-  total_cost: number;
-  description: string;
-  is_completed: boolean;
-  is_paid: boolean;
-  is_refurb: boolean;
-  Customer: Customer;
-  Bike?: Bike;
-}
 
 // Creating new transaction
 interface CreateTransactionDropdownProps {
@@ -174,6 +145,7 @@ function CreateTransactionDropdown({
             onTransactionCreated={handleTransactionCreated}
             isOpen={showForm}
             onClose={() => setShowForm(false)}
+            t_type={options[selectedIndex]}
           />
         </Box>
       </Modal>
@@ -205,6 +177,39 @@ export function TransactionsTable(): JSX.Element {
       headerName: "#",
       valueGetter: (params) => params.data?.Transaction.transaction_num,
       filter: true,
+    },
+    {
+      headerName: "Type",
+      valueGetter: (params) => params.data?.Transaction.transaction_type,
+    },
+    {
+      headerName: "Status",
+      valueGetter: (params) => {
+        const isWaitEmail = params.data?.Transaction.is_waiting_on_email;
+        const isUrgent = params.data?.Transaction.is_urgent;
+        const isNuclear = params.data?.Transaction.is_nuclear;
+        const isBeerBike = params.data?.Transaction.is_beer_bike;
+
+        return (
+          <span>
+            {isWaitEmail && <i className="fas fa-envelope" style={{marginRight: '5px'}}></i>}
+            {isUrgent && <i className="fas fa-exclamation-circle" style={{color: 'red', marginRight: '5px'}}></i>}
+            {isNuclear && <i className="fas fa-radiation" style={{color: 'red', marginRight: '5px'}}></i>}
+            {isBeerBike && <i className="bb">Beer Bike</i>}
+          </span>
+        )
+        // let iconHtml = '';
+        // if(isWaitEmail) {
+        //   iconHtml += '<i className="fas fa-envelope"></i>';
+        // }
+        // if(isUrgent) {
+        //   iconHtml += '<i className="fas fa-exclamation" style="color: red;"></i>';
+        // }
+        // return iconHtml;
+      },
+      cellRenderer: (params: ICellRendererParams) => {
+        return params.value;
+      }
     },
     {
       headerName: "Name",
