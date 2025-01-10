@@ -1,5 +1,6 @@
 import { AgGridReact } from "ag-grid-react"; // React Data Grid Component
-import { useState, useMemo, useRef, useEffect } from "react"; // React State Hook
+import { useState, useMemo, useRef } from "react"; // React State Hook
+import { useQuery } from "@tanstack/react-query";
 import {
   Button,
   ButtonGroup,
@@ -19,16 +20,9 @@ import type {
 } from "ag-grid-community";
 import "./TransactionsTable.css"; // CSS Stylesheet
 import NewTransactionForm from "../../components/TransactionPage/BikeForm";
-import { Repair } from "../../components/RepairItem/RepairItem";
+import { Part, Repair } from "../../queries";
 import { useNavigate } from "react-router-dom";
-import { Part } from "../../components/PartItem/PartItem";
-import type { JSONSchema } from "json-schema-to-ts";
-import {
-  wrapCompilerAsTypeGuard,
-  $Compiler,
-  FromSchema,
-} from "json-schema-to-ts";
-import Ajv from "ajv";
+import DBQueries from "../../queries";
 
 // Row Data Interface
 export interface IRow {
@@ -41,152 +35,37 @@ export interface IRow {
   Submitted: Date;
 }
 
-export type Customer = FromSchema<typeof CustomerSchema>;
-export type Bike = FromSchema<typeof BikeSchema>;
-export const CustomerSchema = {
-  $schema: "http://json-schema.org/draft-07/schema",
-  title: "Customer",
-  type: "object",
-  properties: {
-    customer_id: { type: "string", nullable: true },
-    first_name: { type: "string" },
-    last_name: { type: "string" },
-    email: { type: "string" },
-    phone: { type: ["string", "null"] },
-  },
-  required: ["first_name", "last_name", "email", "phone"],
+interface Bike {
+  make: string;
+  model: string;
+  date_created?: string;
+  description: string;
+  bike_id: string;
+}
 
-  additionalProperties: false,
-} as const satisfies JSONSchema;
+interface Customer {
+  customer_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+}
 
-export const BikeSchema = {
-  $schema: "http://json-schema.org/draft-07/schema",
-  title: "Bike",
-  type: ["object", "null"],
-  properties: {
-    bike_id: { type: "string" },
-    make: { type: "string" },
-    model: { type: "string" },
-    date_created: { type: "string", nullable: true },
-    description: { type: "string" },
-  },
-  required: ["make", "model", "description"],
-  additionalProperties: false,
-} as const satisfies JSONSchema;
-
-export const TransactionSchema = {
-  $schema: "http://json-schema.org/draft-07/schema",
-  title: "Transaction",
-  type: "object",
-  properties: {
-    transaction_num: { type: "number" },
-    transaction_id: { type: "string" },
-    date_created: { type: "string" },
-    transaction_type: { type: "string" },
-    customer_id: { type: "string", nullable: true },
-    bike_id: { type: "string", nullable: true },
-    total_cost: { type: "number" },
-    description: { type: "string", nullable: true },
-    is_completed: { type: "boolean" },
-    is_paid: { type: "boolean" },
-    is_refurb: { type: "boolean" },
-    is_urgent: { type: "boolean" },
-    is_nuclear: { type: "boolean", nullable: true },
-    is_beer_bike: { type: "boolean" },
-    is_employee: { type: "boolean" },
-    is_reserved: { type: "boolean" },
-    is_waiting_on_email: { type: "boolean" },
-    date_completed: { type: "string", nullable: true },
-    Bike: {
-      type: ["object", "null"],
-      nullable: true,
-      properties: BikeSchema.properties,
-    },
-    Customer: {
-      type: "object",
-      nullable: true,
-      properties: CustomerSchema.properties,
-    },
-  },
-  required: [
-    "transaction_num",
-    "date_created",
-    "transaction_type",
-    "total_cost",
-    "is_completed",
-    "is_paid",
-    "is_refurb",
-    "is_urgent",
-    "is_beer_bike",
-    "is_employee",
-    "is_reserved",
-    "is_waiting_on_email",
-    "transaction_id",
-  ],
-  additionalProperties: false,
-} as const satisfies JSONSchema;
-const TransactionArraySchema = {
-  $id: "partArray.json",
-  type: "array",
-  items: TransactionSchema,
-} as const satisfies JSONSchema;
-
-const ArrayResponseSchema = {
-  $id: "ArrayResponse.json",
-  type: "object",
-  properties: {
-    message: { type: "string" },
-    responseObject: { type: ["array"] },
-    statusCode: { type: "number" },
-    success: { type: "boolean" },
-    additionalProperties: false,
-  },
-  required: ["message", "responseObject", "statusCode", "success"],
-  additionalProperties: false,
-} as const satisfies JSONSchema;
-
-const ObjectResponseSchema = {
-  $id: "ObjectResponse.json",
-  type: "object",
-  properties: {
-    message: { type: "string" },
-    responseObject: { type: ["object"] },
-    statusCode: { type: "number" },
-    success: { type: "boolean" },
-    additionalProperties: false,
-  },
-  required: ["message", "responseObject", "statusCode", "success"],
-  additionalProperties: false,
-} as const satisfies JSONSchema;
-
-// const TransactionResponseSchema = {
-//   $id: "transactionResponse.json",
-//   type: "object",
-//   properties: {
-//     message: { type: "string" },
-//     responseObject: { type: ["object"] },
-//     statusCode: { type: "number" },
-//     success: { type: "boolean" },
-//     additionalProperties: false,
-//   },
-//   required: ["message", "responseObject", "statusCode", "success"],
-//   additionalProperties: false,
-// } as const satisfies JSONSchema;
-
-export type Transaction = FromSchema<typeof TransactionSchema>;
-export type ArrayResponse = FromSchema<typeof ArrayResponseSchema>;
-export type ObjectResponse = FromSchema<typeof ObjectResponseSchema>;
-// export type TransactionResponse = FromSchema<typeof TransactionResponseSchema>;
-export type TransactionArray = FromSchema<typeof TransactionArraySchema>;
-// const CompanyLogoRenderer = (param: CustomCellRendererProps) => (
-//   <div className="tags">
-//     {param.value.inpatient && <button>Inpatient</button>}
-//     {param.value.beerBike && <button>Beer Bike</button>}
-//     {param.value.nuclear && <button>Nuclear</button>}
-//     {param.value.retrospec && <button>Retrospec</button>}
-//     {param.value.merch && <button>Merch</button>}
-//   </div>
-// );
+interface Transaction {
+  transaction_num: number;
+  transaction_id: string;
+  date_created: string;
+  transaction_type: string;
+  customer_id: string;
+  bike_id: string;
+  total_cost: number;
+  description: string;
+  is_completed: boolean;
+  is_paid: boolean;
+  is_refurb: boolean;
+  Customer: Customer;
+  Bike?: Bike;
+}
 
 // Creating new transaction
 interface CreateTransactionDropdownProps {
@@ -305,162 +184,20 @@ function CreateTransactionDropdown({
 export function TransactionsTable(): JSX.Element {
   // const model = new TransactionTableModel();
   // Row Data: The data to be displayed.
-  const hostname = import.meta.env.VITE_API_URL;
-  const ajv = new Ajv();
-  const $compile: $Compiler = (schema) => ajv.compile(schema);
-  const compile = wrapCompilerAsTypeGuard($compile);
-  const validateTransaction: (data: unknown) => data is Transaction =
-    compile(TransactionSchema);
-  const validateTransactionsArray: (data: unknown) => data is Transaction[] =
-    compile(TransactionArraySchema);
-  const validateArrayResponse: (data: unknown) => data is ArrayResponse =
-    compile(ArrayResponseSchema);
-  const validateObjectResponse: (data: unknown) => data is ObjectResponse =
-    compile(ObjectResponseSchema);
-  const validateCustomer: (data: unknown) => data is Customer =
-    compile(CustomerSchema);
-  const validateBike: (data: unknown) => data is Bike = compile(BikeSchema);
-  const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(true);
-  const [pageSize, setPageSize] = useState(100);
+  const navigate = useNavigate();
+  // const [pageSize, setPageSize] = useState(100);
   const onRowClicked = (e: RowClickedEvent) => {
     navigate("/transaction-details", {
       state: { transaction: e.data },
     });
   };
 
-  const [rowData, setRowData] = useState<IRow[]>([]);
+  const { status, data, error } = useQuery(
+    DBQueries.getTransactionsQuery(10000000, true)
+  );
 
-  useEffect(() => {
-    console.log(
-      `${hostname}/transactions?` +
-        new URLSearchParams({
-          page_limit: String(pageSize),
-          aggregate: "true",
-        })
-    );
-    fetch(
-      `${hostname}/transactions?` +
-        new URLSearchParams({
-          page_limit: String(pageSize),
-          aggregate: "false",
-        })
-    )
-      .then((response) => response.json())
-      .then((transactionData: unknown) => {
-        console.log("Raw Parts Data:", transactionData);
-        if (!validateArrayResponse(transactionData)) {
-          throw new Error("Invalid transactions response");
-        }
-        if (!transactionData.success) {
-          throw new Error("Failed to load transactions");
-        }
-        console.log(" Transaction Array Data:", transactionData.responseObject);
-        // if (!validatePartsArray(itemsData.responseObject)) {
-        //   throw new Error("Invalid part array");
-        // }
-        // validateParts(itemsData)}
-        return transactionData.responseObject;
-      })
-      .then((partsData: unknown[]) => {
-        console.log("Mapped Parts Data:", partsData);
-        partsData.forEach((part) => {
-          if (!validateTransaction(part)) {
-            console.log("Invalid transaction:", part);
-            throw new Error("Invalid transaction found");
-          }
-        });
-
-        if (!validateTransactionsArray(partsData)) {
-          throw new Error("Invalid part array");
-        }
-
-        const transactionRowsPromises: Promise<IRow>[] = partsData.map(
-          (part) => {
-            let bikePromise: Promise<Bike> = Promise.resolve(null);
-            if (part.bike_id) {
-              bikePromise = fetch(`${hostname}/bikes/${part.bike_id}`)
-                .then((response) => response.json())
-                .then((bikeData: unknown) => {
-                  if (!validateObjectResponse(bikeData)) {
-                    console.log("Invalid bike response:", bikeData);
-                    throw new Error("Invalid bike response");
-                  }
-                  return bikeData.responseObject;
-                })
-                .then((bikeData: unknown) => {
-                  if (!validateBike(bikeData)) {
-                    console.log("Invalid Bike:", bikeData);
-                    throw new Error("Invalid bike found");
-                  }
-                  return bikeData;
-                });
-            }
-
-            const customerPromise = fetch(
-              `${hostname}/customers/${part.customer_id}`
-            )
-              .then((response) => response.json())
-              .then((customerResponse: unknown) => {
-                if (!validateObjectResponse(customerResponse)) {
-                  console.log("Invalid customer response:", customerResponse);
-                  throw new Error("Invalid customer response");
-                }
-                return customerResponse.responseObject;
-              })
-              .then((customerData: unknown) => {
-                if (!validateCustomer(customerData)) {
-                  console.log("Invalid customer:", customerData);
-                  throw new Error("Invalid customer found");
-                }
-                return customerData;
-              });
-            return Promise.all([customerPromise, bikePromise]).then(
-              ([customerData, bikeData]) => {
-                return {
-                  Transaction: part,
-                  Customer: customerData,
-                  Bike: bikeData,
-                  // Repairs: part.Repairs,
-                  // Parts: part.Parts,
-                  Submitted: new Date(part.date_created),
-                };
-              }
-            );
-          }
-        );
-
-        Promise.all(transactionRowsPromises)
-          .then((transactionRows) => {
-            setRowData(transactionRows);
-          })
-          .catch((error) => {
-            console.error(
-              "Error loading or parsing transactions from server: ",
-              error
-            );
-          });
-        // setLoading(false);
-      })
-      .catch((error) => {
-        console.error(
-          "Error loading or parsing transactions from server: ",
-          error
-        );
-        // setLoading(false);
-      });
-    setLoading(false);
-  }, [
-    // hostname,
-    pageSize,
-    // validateArrayResponse,
-    // validateBike,
-    // validateCustomer,
-    // validateObjectResponse,
-    // validateTransaction,
-    // validateTransactionsArray,
-  ]);
+  console.log(status, data, error);
 
   // Column Definitions: Defines & controls grid columns.
   const [colDefs] = useState<ColDef<IRow>[]>([
@@ -530,25 +267,31 @@ export function TransactionsTable(): JSX.Element {
         </article>
       </header>
       <section
-        className={loading ? "lds-dual-ring" : ""}
+        className={status === "pending" ? "lds-dual-ring" : ""}
         id="transactions-table"
       >
-        <AgGridReact
-          rowData={rowData}
-          columnDefs={colDefs}
-          defaultColDef={defaultColDef}
-          rowSelection={rowSelection}
-          onRowClicked={onRowClicked}
-          pagination={true}
-          onPaginationChanged={(e) => {
-            console.log(e);
-            if (e.newPageSize) {
-              setPageSize(e.api.paginationGetPageSize());
-            }
-          }}
-          // paginationPageSize={10}
-          // paginationPageSize={true}
-        />
+        {status === "pending" ? (
+          "Loading..."
+        ) : status === "error" ? (
+          "Error loading data"
+        ) : (
+          <AgGridReact
+            rowData={data}
+            columnDefs={colDefs}
+            defaultColDef={defaultColDef}
+            rowSelection={rowSelection}
+            onRowClicked={onRowClicked}
+            pagination={true}
+            // onPaginationChanged={(e) => {
+            //   console.log(e);
+            //   if (e.newPageSize) {
+            //     setPageSize(e.api.paginationGetPageSize());
+            //   }
+            // }}
+            // paginationPageSize={10}
+            // paginationPageSize={true}
+          />
+        )}
       </section>
     </main>
   );

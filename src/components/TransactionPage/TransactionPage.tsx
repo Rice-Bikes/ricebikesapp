@@ -1,14 +1,16 @@
 import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Repair, useRepairs } from "../RepairItem/RepairItem";
-import { Part, useParts } from "../PartItem/PartItem";
+// import { Repair, useRepairs } from "../RepairItem/RepairItem";
+// import { Part, useParts } from "../PartItem/PartItem";
 import { Button } from "@mui/material";
 import Notes from "./Notes";
 import { IRow } from "../../features/TransactionsTable/TransactionsTable";
+import DBQueries, { Part, Repair } from "../../queries";
+import { useQueries } from "@tanstack/react-query";
 
 const TransactionDetail = () => {
-  const { repairs, loading: repairsLoading } = useRepairs();
-  const { parts, loading: partsLoading } = useParts();
+  // const { repairs, loading: repairsLoading } = useRepairs();
+  // const { parts, loading: partsLoading } = useParts();
 
   const location = useLocation();
   const transaction = location.state?.transaction;
@@ -29,6 +31,35 @@ const TransactionDetail = () => {
     Parts: transaction?.Parts || [],
     Notes: transaction?.Notes || "",
   });
+
+  const [itemsQuery, repairsQuery, transactionDetailsQuery] = useQueries({
+    queries: [
+      DBQueries.getItemsQuery(),
+      DBQueries.getRepairsQuery(),
+      DBQueries.getTransactionDetailsQuery(
+        currentTransaction.Transaction.transaction_id
+      ),
+    ],
+  });
+
+  const {
+    isLoading: partsLoading,
+    data: parts,
+    error: partsError,
+  } = itemsQuery;
+  console.error("parts: ", partsError);
+  const {
+    isLoading: repairsLoading,
+    data: repairs,
+    error: repairError,
+  } = repairsQuery;
+  console.error("repairs: ", repairError);
+  const {
+    isLoading: transactionDetailsLoading,
+    data: transactionDetails,
+    error: transactionDetailsError,
+  } = transactionDetailsQuery;
+  console.error("transactionDetails: ", repairError);
 
   const handleMarkDone = () => {
     setShowMarkDone(true);
@@ -54,10 +85,14 @@ const TransactionDetail = () => {
   };
 
   useEffect(() => {
-    if (repairSearchQuery.trim() !== "") {
+    if (
+      repairSearchQuery.trim() !== "" &&
+      repairsLoading === false &&
+      repairs
+    ) {
       const matches = repairs
         .filter(
-          (repair) =>
+          (repair: Repair) =>
             repair.name
               .toLowerCase()
               .includes(repairSearchQuery.toLowerCase()) &&
@@ -70,10 +105,10 @@ const TransactionDetail = () => {
     } else {
       setFilteredRepairs([]);
     }
-  }, [repairSearchQuery, repairs, currentTransaction.Repairs]);
+  }, [repairSearchQuery, repairs, currentTransaction.Repairs, repairsLoading]);
 
   useEffect(() => {
-    if (partSearchQuery.trim() !== "") {
+    if (partSearchQuery.trim() !== "" && partsLoading === false && parts) {
       const matches = parts
         .filter(
           (part) =>
