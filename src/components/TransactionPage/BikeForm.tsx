@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { IRow } from "../../features/TransactionsTable/TransactionsTable";
+import { v4 as uuidv4 } from 'uuid';
 
 interface NewTransactionFormProps {
   onTransactionCreated: (newTransaction: IRow) => void;
@@ -31,13 +32,13 @@ function NewTransactionForm({
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     console.log("handle submit");
+    const id = uuidv4();
     const newTransaction: IRow = {
-      // TODO: need to make id generator
       Transaction: {
         transaction_num: 0, // TODO: need to figure this out
-        transaction_id: "", // TODO: need to figure this out
+        transaction_id: id, 
         date_created: new Date().toDateString(),
-        transaction_type: t_type, // TODO: need to set based on type
+        transaction_type: t_type, 
         customer_id: "", // TODO: need to figure this out
         bike_id: "", // TODO: need to figure this out
         total_cost: 0.0,
