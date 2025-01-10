@@ -2,6 +2,7 @@ import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Repair, useRepairs } from "../RepairItem/RepairItem";
 import { Part, useParts } from "../PartItem/PartItem";
+import { Button } from "@mui/material";
 import Notes from "./Notes";
 import { IRow } from "../../features/TransactionsTable/TransactionsTable";
 
@@ -188,6 +189,10 @@ const TransactionDetail = () => {
     );
   };
 
+  console.log(
+    "current transaction cost ",
+    currentTransaction.Transaction.total_cost
+  );
   return (
     <div style={{ padding: "20px" }}>
       <h2>Transaction Details</h2>
@@ -233,7 +238,7 @@ const TransactionDetail = () => {
         {currentTransaction.Repairs.map((repair: Repair) => (
           <li key={repair.repair_id}>
             {repair.name} - ${repair.price.toFixed(2)}
-            <button
+            <Button
               onClick={() => toggleDoneRepair(repair.repair_id)}
               style={{
                 border: "2px solid white",
@@ -246,8 +251,8 @@ const TransactionDetail = () => {
               }}
             >
               {doneRepairs[repair.repair_id] ? "Done" : "Mark as Done"}
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => handleRemoveRepair(repair)}
               style={{
                 marginLeft: "10px",
@@ -257,7 +262,7 @@ const TransactionDetail = () => {
               }}
             >
               Delete
-            </button>
+            </Button>
           </li>
         ))}
       </ul>
@@ -276,7 +281,9 @@ const TransactionDetail = () => {
             onClick={() => handleAddRepair(repair)}
             style={{ cursor: "pointer" }}
           >
-            {repair.name} - ${repair.price.toFixed(2)}
+            <Button>
+              {repair.name} - ${repair.price.toFixed(2)}
+            </Button>
           </li>
         ))}
       </ul>
@@ -310,12 +317,14 @@ const TransactionDetail = () => {
       />
       <ul>
         {filteredParts.map((part) => (
-          <li
-            key={part.upc}
-            onClick={() => handleAddPart(part)}
-            style={{ cursor: "pointer" }}
-          >
-            {part.name} - ${part.standard_price.toFixed(2)}
+          <li>
+            <Button
+              key={part.upc}
+              onClick={() => handleAddPart(part)}
+              style={{ cursor: "pointer" }}
+            >
+              {part.name} - ${part.standard_price.toFixed(2)}
+            </Button>
           </li>
         ))}
       </ul>
@@ -323,7 +332,10 @@ const TransactionDetail = () => {
       <h3>Total</h3>
       <p>
         <strong>
-          ${(currentTransaction.Transaction.total_cost * 1.0625).toFixed(2)}
+          $
+          {currentTransaction.Transaction.total_cost
+            ? 0
+            : (currentTransaction.Transaction.total_cost * 1.0625).toFixed(2)}
         </strong>
       </p>
 

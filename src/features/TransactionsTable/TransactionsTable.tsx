@@ -1,6 +1,5 @@
 import { AgGridReact } from "ag-grid-react"; // React Data Grid Component
 import { useState, useMemo, useRef, useEffect } from "react"; // React State Hook
-// import { TransactionTableModel } from "./TransactionTableModel"; // Transaction Table Model
 import {
   Button,
   ButtonGroup,
@@ -63,9 +62,9 @@ export const CustomerSchema = {
 export const BikeSchema = {
   $schema: "http://json-schema.org/draft-07/schema",
   title: "Bike",
-  type: "object",
+  type: ["object", "null"],
   properties: {
-    bike_id: { type: "string", nullable: true },
+    bike_id: { type: "string" },
     make: { type: "string" },
     model: { type: "string" },
     date_created: { type: "string", nullable: true },
@@ -132,12 +131,26 @@ const TransactionArraySchema = {
   items: TransactionSchema,
 } as const satisfies JSONSchema;
 
-const TransactionsResponseSchema = {
-  $id: "transactionsResponse.json",
+const ArrayResponseSchema = {
+  $id: "ArrayResponse.json",
   type: "object",
   properties: {
     message: { type: "string" },
     responseObject: { type: ["array"] },
+    statusCode: { type: "number" },
+    success: { type: "boolean" },
+    additionalProperties: false,
+  },
+  required: ["message", "responseObject", "statusCode", "success"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+const ObjectResponseSchema = {
+  $id: "ObjectResponse.json",
+  type: "object",
+  properties: {
+    message: { type: "string" },
+    responseObject: { type: ["object"] },
     statusCode: { type: "number" },
     success: { type: "boolean" },
     additionalProperties: false,
@@ -161,9 +174,8 @@ const TransactionsResponseSchema = {
 // } as const satisfies JSONSchema;
 
 export type Transaction = FromSchema<typeof TransactionSchema>;
-export type TransactionsResponse = FromSchema<
-  typeof TransactionsResponseSchema
->;
+export type ArrayResponse = FromSchema<typeof ArrayResponseSchema>;
+export type ObjectResponse = FromSchema<typeof ObjectResponseSchema>;
 // export type TransactionResponse = FromSchema<typeof TransactionResponseSchema>;
 export type TransactionArray = FromSchema<typeof TransactionArraySchema>;
 // const CompanyLogoRenderer = (param: CustomCellRendererProps) => (
@@ -301,112 +313,55 @@ export function TransactionsTable(): JSX.Element {
     compile(TransactionSchema);
   const validateTransactionsArray: (data: unknown) => data is Transaction[] =
     compile(TransactionArraySchema);
-  const validateTransactionsResponse: (
-    data: unknown
-  ) => data is TransactionsResponse = compile(TransactionsResponseSchema);
-  // const validateTransactionResponse: (
-  //   data: unknown
-  // ) => data is TransactionResponse = compile(TransactionResponseSchema);
+  const validateArrayResponse: (data: unknown) => data is ArrayResponse =
+    compile(ArrayResponseSchema);
+  const validateObjectResponse: (data: unknown) => data is ObjectResponse =
+    compile(ObjectResponseSchema);
   const validateCustomer: (data: unknown) => data is Customer =
     compile(CustomerSchema);
   const validateBike: (data: unknown) => data is Bike = compile(BikeSchema);
   const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
+  const [pageSize, setPageSize] = useState(100);
   const onRowClicked = (e: RowClickedEvent) => {
-    // fetch(`${hostname}/transactions/${e.data.Transaction.transaction_num}`)
-    //   .then((response) => response.json())
-    //   .then((transactionData: unknown) => {
-    //     if (!validateTransactionResponse(transactionData)) {
-    //       throw new Error("Invalid transaction response");
-    //     }
-    //     console.log("Raw Transaction Data:", transactionData);
-    //     if (!validateTransaction(transactionData.responseObject)) {
-    //       throw new Error("Invalid transaction response");
-    //     }
-    //     if (!transactionData.success) {
-    //       throw new Error("Failed to load transaction");
-    //     }
-    //     console.log(" Transaction Data:", transactionData.responseObject);
-    //     return transactionData.responseObject;
-    //   })
-    //   .then((transactionData: Transaction) => {
-    // const selectedTransaction = e.data;
     navigate("/transaction-details", {
-      state: { transaction: { Transaction: e.data } },
-      // });
+      state: { transaction: e.data },
     });
-    // // const selectedTransaction = e.data;
-    // navigate("/transaction-details", {
-    //   state: { transaction: selectedTransaction },
-    // });
   };
 
-  const [rowData, setRowData] = useState<IRow[]>([
-    {
-      // "#": 1,
-      Transaction: {
-        transaction_num: 1234,
-        transaction_id: "1234",
-        date_created: new Date("2021-01-16").toTimeString(),
-        transaction_type: "Inpatient",
-        customer_id: "1234",
-        bike_id: "1234",
-        total_cost: 100,
-        description: "Bike repair",
-        is_completed: false,
-        is_paid: false,
-        is_refurb: false,
-        is_urgent: false,
-        is_nuclear: false,
-        is_beer_bike: false,
-        is_employee: false,
-        is_reserved: false,
-        is_waiting_on_email: false,
-        date_completed: null,
-      },
-      Customer: {
-        customer_id: "1234",
-        first_name: "Chase",
-        last_name: "Geyer",
-        email: "chase.geyer@rice.edu",
-        phone: "1234567890",
-      },
-      Bike: {
-        bike_id: "1234",
-        make: "Huffy",
-        model: "Rockcreek",
-        description: "Blue MTB",
-        date_created: new Date("2021-01-16").toDateString(),
-      },
-      Repairs: [],
-      Parts: [],
-      Submitted: new Date("2018-01-16"),
-    },
-  ]);
+  const [rowData, setRowData] = useState<IRow[]>([]);
 
   useEffect(() => {
     console.log(
       `${hostname}/transactions?` +
-        new URLSearchParams({ page_limit: "10", aggregate: "true" })
+        new URLSearchParams({
+          page_limit: String(pageSize),
+          aggregate: "true",
+        })
     );
     fetch(
       `${hostname}/transactions?` +
-        new URLSearchParams({ page_limit: "1000000", aggregate: "true" })
+        new URLSearchParams({
+          page_limit: String(pageSize),
+          aggregate: "false",
+        })
     )
       .then((response) => response.json())
-      .then((itemsData: unknown) => {
-        console.log("Raw Parts Data:", itemsData);
-        if (!validateTransactionsResponse(itemsData)) {
+      .then((transactionData: unknown) => {
+        console.log("Raw Parts Data:", transactionData);
+        if (!validateArrayResponse(transactionData)) {
           throw new Error("Invalid transactions response");
         }
-        if (!itemsData.success) {
+        if (!transactionData.success) {
           throw new Error("Failed to load transactions");
         }
-        console.log(" Transaction Array Data:", itemsData.responseObject);
+        console.log(" Transaction Array Data:", transactionData.responseObject);
         // if (!validatePartsArray(itemsData.responseObject)) {
         //   throw new Error("Invalid part array");
         // }
         // validateParts(itemsData)}
-        return itemsData.responseObject;
+        return transactionData.responseObject;
       })
       .then((partsData: unknown[]) => {
         console.log("Mapped Parts Data:", partsData);
@@ -415,64 +370,77 @@ export function TransactionsTable(): JSX.Element {
             console.log("Invalid transaction:", part);
             throw new Error("Invalid transaction found");
           }
-          if (!validateCustomer(part.Customer)) {
-            console.log("Invalid Customer:", part.Customer);
-            throw new Error("Invalid customer found");
-          }
-          if (part.Bike && !validateBike(part.Bike)) {
-            console.log("Invalid Bike:", part.Bike);
-            throw new Error("Invalid bike found");
-          }
         });
 
         if (!validateTransactionsArray(partsData)) {
           throw new Error("Invalid part array");
         }
 
-        const transactionRows: IRow[] = partsData.map((part) => {
-          if (!part.Customer) {
-            throw Error("Need aggregate data for transaction");
-          }
-          if (!part.Bike) {
-            return {
-              Transaction: part,
-              Customer: {
-                ...part.Customer,
-                first_name: part.Customer.first_name || "Unknown", // Provide a default value
-                last_name: part.Customer.last_name || "Unknown",
-                email: part.Customer.email || "Unknown",
-                phone: part.Customer.phone || "Unknown",
-              },
-              // Bike: part.Bike,
-              // Repairs: part.Repairs,
-              // Parts: part.Parts,
-              Submitted: new Date(part.date_created),
-            };
-          } else {
-            return {
-              Transaction: part,
-              Customer: {
-                ...part.Customer,
-                first_name: part.Customer.first_name || "", // Provide a default value
-                last_name: part.Customer.last_name || "",
-                email: part.Customer.email || "",
-                phone: part.Customer.phone || "",
-              },
-              Bike: {
-                ...part.Bike,
-                make: part.Bike.make || "",
-                model: part.Bike.model || "",
-                description: part.Bike.description || "",
-                date_created: part.Bike.date_created || "",
-              },
-              // Repairs: part.Repairs,
-              // Parts: part.Parts,
-              Submitted: new Date(part.date_created),
-            };
-          }
-        });
+        const transactionRowsPromises: Promise<IRow>[] = partsData.map(
+          (part) => {
+            let bikePromise: Promise<Bike> = Promise.resolve(null);
+            if (part.bike_id) {
+              bikePromise = fetch(`${hostname}/bikes/${part.bike_id}`)
+                .then((response) => response.json())
+                .then((bikeData: unknown) => {
+                  if (!validateObjectResponse(bikeData)) {
+                    console.log("Invalid bike response:", bikeData);
+                    throw new Error("Invalid bike response");
+                  }
+                  return bikeData.responseObject;
+                })
+                .then((bikeData: unknown) => {
+                  if (!validateBike(bikeData)) {
+                    console.log("Invalid Bike:", bikeData);
+                    throw new Error("Invalid bike found");
+                  }
+                  return bikeData;
+                });
+            }
 
-        setRowData(transactionRows);
+            const customerPromise = fetch(
+              `${hostname}/customers/${part.customer_id}`
+            )
+              .then((response) => response.json())
+              .then((customerResponse: unknown) => {
+                if (!validateObjectResponse(customerResponse)) {
+                  console.log("Invalid customer response:", customerResponse);
+                  throw new Error("Invalid customer response");
+                }
+                return customerResponse.responseObject;
+              })
+              .then((customerData: unknown) => {
+                if (!validateCustomer(customerData)) {
+                  console.log("Invalid customer:", customerData);
+                  throw new Error("Invalid customer found");
+                }
+                return customerData;
+              });
+            return Promise.all([customerPromise, bikePromise]).then(
+              ([customerData, bikeData]) => {
+                return {
+                  Transaction: part,
+                  Customer: customerData,
+                  Bike: bikeData,
+                  // Repairs: part.Repairs,
+                  // Parts: part.Parts,
+                  Submitted: new Date(part.date_created),
+                };
+              }
+            );
+          }
+        );
+
+        Promise.all(transactionRowsPromises)
+          .then((transactionRows) => {
+            setRowData(transactionRows);
+          })
+          .catch((error) => {
+            console.error(
+              "Error loading or parsing transactions from server: ",
+              error
+            );
+          });
         // setLoading(false);
       })
       .catch((error) => {
@@ -482,7 +450,17 @@ export function TransactionsTable(): JSX.Element {
         );
         // setLoading(false);
       });
-  }, []);
+    setLoading(false);
+  }, [
+    // hostname,
+    pageSize,
+    // validateArrayResponse,
+    // validateBike,
+    // validateCustomer,
+    // validateObjectResponse,
+    // validateTransaction,
+    // validateTransactionsArray,
+  ]);
 
   // Column Definitions: Defines & controls grid columns.
   const [colDefs] = useState<ColDef<IRow>[]>([
@@ -537,7 +515,7 @@ export function TransactionsTable(): JSX.Element {
 
   // Container: Defines the grid's theme & dimensions.
   return (
-    <main style={{ width: "100vw", height: "80vh" }}>
+    <main style={{ width: "100vw", height: "66vh" }}>
       <Button></Button>
       <header>
         <ButtonGroup id="nav-buttons">
@@ -551,14 +529,27 @@ export function TransactionsTable(): JSX.Element {
           <button># Bike Awaiting Safety Check</button>
         </article>
       </header>
-      <AgGridReact
-        rowData={rowData}
-        columnDefs={colDefs}
-        defaultColDef={defaultColDef}
-        rowSelection={rowSelection}
-        onRowClicked={onRowClicked}
-        pagination={true}
-      />
+      <section
+        className={loading ? "lds-dual-ring" : ""}
+        id="transactions-table"
+      >
+        <AgGridReact
+          rowData={rowData}
+          columnDefs={colDefs}
+          defaultColDef={defaultColDef}
+          rowSelection={rowSelection}
+          onRowClicked={onRowClicked}
+          pagination={true}
+          onPaginationChanged={(e) => {
+            console.log(e);
+            if (e.newPageSize) {
+              setPageSize(e.api.paginationGetPageSize());
+            }
+          }}
+          // paginationPageSize={10}
+          // paginationPageSize={true}
+        />
+      </section>
     </main>
   );
 }
