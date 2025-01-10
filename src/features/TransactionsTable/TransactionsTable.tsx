@@ -17,6 +17,7 @@ import type {
   ColDef,
   RowClickedEvent,
   RowSelectionOptions,
+  ICellRendererParams,
 } from "ag-grid-community";
 import "./TransactionsTable.css"; // CSS Stylesheet
 import NewTransactionForm from "../../components/TransactionPage/BikeForm";
@@ -283,6 +284,7 @@ function CreateTransactionDropdown({
             onTransactionCreated={handleTransactionCreated}
             isOpen={showForm}
             onClose={() => setShowForm(false)}
+            t_type={options[selectedIndex]}
           />
         </Box>
       </Modal>
@@ -355,12 +357,12 @@ export function TransactionsTable(): JSX.Element {
         is_completed: false,
         is_paid: false,
         is_refurb: false,
-        is_urgent: false,
-        is_nuclear: false,
-        is_beer_bike: false,
+        is_urgent: true,
+        is_nuclear: true,
+        is_beer_bike: true,
         is_employee: false,
         is_reserved: false,
-        is_waiting_on_email: false,
+        is_waiting_on_email: true,
         date_completed: null,
       },
       Customer: {
@@ -490,6 +492,39 @@ export function TransactionsTable(): JSX.Element {
       headerName: "#",
       valueGetter: (params) => params.data?.Transaction.transaction_num,
       filter: true,
+    },
+    {
+      headerName: "Type",
+      valueGetter: (params) => params.data?.Transaction.transaction_type,
+    },
+    {
+      headerName: "Status",
+      valueGetter: (params) => {
+        const isWaitEmail = params.data?.Transaction.is_waiting_on_email;
+        const isUrgent = params.data?.Transaction.is_urgent;
+        const isNuclear = params.data?.Transaction.is_nuclear;
+        const isBeerBike = params.data?.Transaction.is_beer_bike;
+
+        return (
+          <span>
+            {isWaitEmail && <i className="fas fa-envelope" style={{marginRight: '5px'}}></i>}
+            {isUrgent && <i className="fas fa-exclamation-circle" style={{color: 'red', marginRight: '5px'}}></i>}
+            {isNuclear && <i className="fas fa-radiation" style={{color: 'red', marginRight: '5px'}}></i>}
+            {isBeerBike && <i className="bb">Beer Bike</i>}
+          </span>
+        )
+        // let iconHtml = '';
+        // if(isWaitEmail) {
+        //   iconHtml += '<i className="fas fa-envelope"></i>';
+        // }
+        // if(isUrgent) {
+        //   iconHtml += '<i className="fas fa-exclamation" style="color: red;"></i>';
+        // }
+        // return iconHtml;
+      },
+      cellRenderer: (params: ICellRendererParams) => {
+        return params.value;
+      }
     },
     {
       headerName: "Name",

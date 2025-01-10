@@ -5,12 +5,14 @@ interface NewTransactionFormProps {
   onTransactionCreated: (newTransaction: IRow) => void;
   isOpen: boolean;
   onClose: () => void;
+  t_type: string;
 }
 
 function NewTransactionForm({
   onTransactionCreated,
   isOpen,
   onClose,
+  t_type,
 }: NewTransactionFormProps) {
   const [formState, setFormState] = useState({
     first_name: "",
@@ -35,7 +37,7 @@ function NewTransactionForm({
         transaction_num: 0, // TODO: need to figure this out
         transaction_id: "", // TODO: need to figure this out
         date_created: new Date().toDateString(),
-        transaction_type: "", // TODO: need to set based on type
+        transaction_type: t_type, // TODO: need to set based on type
         customer_id: "", // TODO: need to figure this out
         bike_id: "", // TODO: need to figure this out
         total_cost: 0.0,
