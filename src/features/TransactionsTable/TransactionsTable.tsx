@@ -158,6 +158,8 @@ export function TransactionsTable(): JSX.Element {
   // Row Data: The data to be displayed.
 
   const navigate = useNavigate();
+  const [rowData, setRowData] = useState<IRow[]>([]);
+  console.log(rowData);
   // const [pageSize, setPageSize] = useState(100);
   const onRowClicked = (e: RowClickedEvent) => {
     navigate("/transaction-details", {

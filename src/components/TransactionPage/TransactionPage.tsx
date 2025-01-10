@@ -68,68 +68,69 @@ const TransactionDetail = () => {
 
   const handlePaid = () => {
     setCurrentTransaction({
-        ...currentTransaction,
-        Transaction: {
-            ...currentTransaction.Transaction,
-            is_paid: true,
-        },
+      ...currentTransaction,
+      Transaction: {
+        ...currentTransaction.Transaction,
+        is_paid: true,
+      },
     });
-}
+  };
 
-    const handleCompleteT = () => { // TODO: need to close transaction and go back to home page
-        setCurrentTransaction({
-            ...currentTransaction,
-            Transaction: {
-                ...currentTransaction.Transaction,
-                is_completed: true,
-            },
-        });
-    }
+  const handleCompleteT = () => {
+    // TODO: need to close transaction and go back to home page
+    setCurrentTransaction({
+      ...currentTransaction,
+      Transaction: {
+        ...currentTransaction.Transaction,
+        is_completed: true,
+      },
+    });
+  };
 
-    const handleWaitEmail = () => {
-        setWaitEmail(!waitEmail);
-        setCurrentTransaction({
-            ...currentTransaction,
-            Transaction: {
-                ...currentTransaction.Transaction,
-                is_wait_email: waitEmail,
-            },
-        });
-    };
+  const handleWaitEmail = () => {
+    setWaitEmail(!waitEmail);
+    setCurrentTransaction({
+      ...currentTransaction,
+      Transaction: {
+        ...currentTransaction.Transaction,
+        is_wait_email: waitEmail,
+      },
+    });
+  };
 
-    const handleWaitPart = () => {
-        setWaitPart(!waitPart);
-        // setCurrentTransaction({
-        //     ...currentTransaction,
-        //     Transaction: {
-        //         ...currentTransaction.Transaction,
-        //         is_wait_email: waitEmail,
-        //     },
-        // });
-        // TODO: there is no boolean?
-    };
+  const handleWaitPart = () => {
+    setWaitPart(!waitPart);
+    // setCurrentTransaction({
+    //     ...currentTransaction,
+    //     Transaction: {
+    //         ...currentTransaction.Transaction,
+    //         is_wait_email: waitEmail,
+    //     },
+    // });
+    // TODO: there is no boolean?
+  };
 
-    const handlePriority = () => {
-        setPriority(!priority);
-        setCurrentTransaction({
-            ...currentTransaction,
-            Transaction: {
-                ...currentTransaction.Transaction,
-                is_urgent: priority,
-            },
-        });
-    };
+  const handlePriority = () => {
+    setPriority(!priority);
+    setCurrentTransaction({
+      ...currentTransaction,
+      Transaction: {
+        ...currentTransaction.Transaction,
+        is_urgent: priority,
+      },
+    });
+  };
 
-    const handleNuclear = () => {
-        setNuclear(!nuclear);
-        setCurrentTransaction({
-            ...currentTransaction,
-            Transaction: {
-                ...currentTransaction.Transaction,
-                is_nuclear: nuclear,
-            },
-        });
-    }
+  const handleNuclear = () => {
+    setNuclear(!nuclear);
+    setCurrentTransaction({
+      ...currentTransaction,
+      Transaction: {
+        ...currentTransaction.Transaction,
+        is_nuclear: nuclear,
+      },
+    });
+  };
 
   const handleMarkDone = () => {
     setShowMarkDone(true);
@@ -213,7 +214,7 @@ const TransactionDetail = () => {
     console.log("handle add repair");
     const updatedRepairs = [...currentTransaction.Repairs, repair];
     const updatedTotalCost =
-      currentTransaction.Transaction.Transaction.total_cost + repair.price;
+      currentTransaction.Transaction.total_cost + repair.price;
 
     setCurrentTransaction({
       ...currentTransaction,
@@ -233,7 +234,7 @@ const TransactionDetail = () => {
       (r: Repair) => r._id !== repair.repair_id
     );
     const updatedTotalCost =
-      currentTransaction.Transaction.Transaction.total_cost - repair.price;
+      currentTransaction.Transaction.total_cost - repair.price;
 
     setCurrentTransaction({
       ...currentTransaction,
@@ -248,7 +249,7 @@ const TransactionDetail = () => {
   const handleAddPart = (part: Part) => {
     const updatedParts = [...currentTransaction.Parts, part];
     const updatedTotalCost =
-      currentTransaction.Transaction.Transaction.total_cost + part.standard_price;
+      currentTransaction.Transaction.total_cost + part.standard_price;
 
     setCurrentTransaction({
       ...currentTransaction,
@@ -269,7 +270,7 @@ const TransactionDetail = () => {
     );
     console.log("updated parts: ", updatedParts);
     const updatedTotalCost =
-      currentTransaction.Transaction.Transaction.total_cost - part.standard_price;
+      currentTransaction.Transaction.total_cost - part.standard_price;
 
     setCurrentTransaction({
       ...currentTransaction,
@@ -437,47 +438,44 @@ const TransactionDetail = () => {
       <h3>Total</h3>
       <p>
         <strong>
-          $
-          {currentTransaction.Transaction.total_cost
-            ? 0
-            : (currentTransaction.Transaction.total_cost * 1.0625).toFixed(2)}
+          ${(currentTransaction.Transaction.total_cost * 1.0625).toFixed(2)}
         </strong>
       </p>
 
-      <div style={{ marginBottom: '20px' }}>
-                <button
-                    onClick={handleWaitPart}
-                    style={{
-                        backgroundColor: waitPart ? 'red': 'grey'
-                    }}
-                >
-                    Wait on Part
-                </button>
-                <button
-                    onClick={handleWaitEmail}
-                    style={{
-                        backgroundColor: waitEmail ? 'red': 'grey'
-                    }}
-                >
-                    Wait on Email
-                </button>
-                <button
-                    onClick={handlePriority}
-                    style={{
-                        backgroundColor: priority ? 'red': 'grey'
-                    }}
-                >
-                    Mark as Priority
-                </button>
-                <button
-                    onClick={handleNuclear}
-                    style={{
-                        backgroundColor: nuclear ? 'red': 'grey'
-                    }}
-                >
-                    Mark as Nuclear
-                </button>
-            </div>
+      <div style={{ marginBottom: "20px" }}>
+        <button
+          onClick={handleWaitPart}
+          style={{
+            backgroundColor: waitPart ? "red" : "grey",
+          }}
+        >
+          Wait on Part
+        </button>
+        <button
+          onClick={handleWaitEmail}
+          style={{
+            backgroundColor: waitEmail ? "red" : "grey",
+          }}
+        >
+          Wait on Email
+        </button>
+        <button
+          onClick={handlePriority}
+          style={{
+            backgroundColor: priority ? "red" : "grey",
+          }}
+        >
+          Mark as Priority
+        </button>
+        <button
+          onClick={handleNuclear}
+          style={{
+            backgroundColor: nuclear ? "red" : "grey",
+          }}
+        >
+          Mark as Nuclear
+        </button>
+      </div>
 
       <button
         onClick={handleCheckout}
@@ -498,7 +496,7 @@ const TransactionDetail = () => {
             <p>
               <strong>
                 $
-                {(currentTransaction.Transaction.Transaction.total_cost * 1.0625).toFixed(
+                {(currentTransaction.Transaction.total_cost * 1.0625).toFixed(
                   2
                 )}
               </strong>
@@ -526,7 +524,7 @@ const TransactionDetail = () => {
               ))}
             </ul>
             <button
-                onClick={handlePaid}
+              onClick={handlePaid}
               style={{
                 backgroundColor: "green",
                 cursor: "pointer",
@@ -569,10 +567,14 @@ const TransactionDetail = () => {
         disabled={!currentTransaction.Transaction.is_paid}
         style={{
           marginRight: "10px",
-          cursor: currentTransaction.Transaction.is_paid ? "pointer" : "not-allowed",
+          cursor: currentTransaction.Transaction.is_paid
+            ? "pointer"
+            : "not-allowed",
           border: "white",
           color: "white",
-          backgroundColor: currentTransaction.Transaction.is_completed ? 'green': 'black',
+          backgroundColor: currentTransaction.Transaction.is_completed
+            ? "green"
+            : "black",
         }}
       >
         Mark Transaction as Complete
