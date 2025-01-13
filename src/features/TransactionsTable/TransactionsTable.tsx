@@ -1,5 +1,5 @@
 import { AgGridReact } from "ag-grid-react"; // React Data Grid Component
-import { useState, useMemo, useRef } from "react"; // React State Hook
+import { useState, useMemo, useRef, useEffect } from "react"; // React State Hook
 import { useQuery } from "@tanstack/react-query";
 import {
   Button,
@@ -21,7 +21,7 @@ import type {
 } from "ag-grid-community";
 import "./TransactionsTable.css"; // CSS Stylesheet
 import NewTransactionForm from "../../components/TransactionPage/BikeForm";
-import { Part, Repair, Transaction, Bike, Customer } from "../../model";
+import { Transaction, Bike, Customer } from "../../model";
 import { useNavigate } from "react-router-dom";
 import DBModel from "../../model";
 
@@ -31,20 +31,18 @@ export interface IRow {
   Transaction: Transaction;
   Customer: Customer;
   Bike?: Bike;
-  Repairs?: Repair[];
-  Parts?: Part[];
-  Submitted: Date;
 }
 
 // Creating new transaction
-interface CreateTransactionDropdownProps {
-  onCreateTransaction: (newTransaction: IRow) => void;
-}
+
+const isDaysLess = (numDays: number, date1: Date, date2: Date): boolean => {
+  const twoDaysInMillis = numDays * 24 * 60 * 60 * 1000; // Two days in milliseconds
+  const diffInMillis = Math.abs(date2.getTime() - date1.getTime());
+  return diffInMillis > twoDaysInMillis;
+};
 
 const options = ["Inpatient", "Outpatient", "Merchandise", "Retrospec"]; // list of actions
-function CreateTransactionDropdown({
-  onCreateTransaction,
-}: CreateTransactionDropdownProps) {
+function CreateTransactionDropdown() {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const [showForm, setShowForm] = useState(false);
@@ -79,8 +77,8 @@ function CreateTransactionDropdown({
     setOpen(false);
   };
 
-  const handleTransactionCreated = (newTransaction: IRow) => {
-    onCreateTransaction(newTransaction);
+  const handleTransactionCreated = (newTransaction: Transaction) => {
+    console.log("Transaction created", newTransaction);
     setShowForm(false);
   };
 
@@ -156,6 +154,7 @@ export function TransactionsTable(): JSX.Element {
   // Row Data: The data to be displayed.
 
   const navigate = useNavigate();
+  const currDate: Date = new Date();
   const [rowData, setRowData] = useState<IRow[]>([]);
   console.log(rowData);
   // const [pageSize, setPageSize] = useState(100);
@@ -169,6 +168,11 @@ export function TransactionsTable(): JSX.Element {
     DBModel.getTransactionsQuery(10000000, true)
   );
 
+  useEffect(() => {
+    if (status === "success") {
+      setRowData(data as IRow[]);
+    }
+  }, [status, data, error]);
   console.log(status, data, error);
 
   // Column Definitions: Defines & controls grid columns.
@@ -180,7 +184,33 @@ export function TransactionsTable(): JSX.Element {
     },
     {
       headerName: "Type",
-      valueGetter: (params) => params.data?.Transaction.transaction_type,
+      cellRenderer: (params: ICellRendererParams) => {
+        // console.log("object params", params);
+        return (
+          <div style={{ pointerEvents: "none" }}>
+            {params.data.Transaction?.transaction_type == "inpatient" ? (
+              <Button tabIndex={-1} color="success" variant="contained">
+                Inpatient
+              </Button>
+            ) : params.data.Transaction?.transaction_type == "outpatient" ? (
+              <Button tabIndex={-1} color="secondary" variant="contained">
+                Outpatient
+              </Button>
+            ) : params.data.Transaction?.transaction_type == "merch" ? (
+              <Button tabIndex={-1} variant="contained" color="info">
+                Merch
+              </Button>
+            ) : (
+              <></>
+            )}
+          </div>
+        );
+      },
+      filter: true,
+      autoHeight: true,
+      // filterParams: {
+      //   filterOptions: ["Inpatient", "Outpatient", "Merchandise", "Rental"],
+      // },
     },
     {
       headerName: "Status",
@@ -227,26 +257,32 @@ export function TransactionsTable(): JSX.Element {
       headerName: "Name",
       valueGetter: (params) =>
         `${params.data?.Customer.first_name} ${params.data?.Customer.last_name}`,
+      filter: true,
     },
     {
-      headerName: "Make",
+      headerName: "Bike",
       valueGetter: (params) => {
-        if (!params.data?.Bike || params.data?.Bike.make === "") {
+        if (
+          !params.data?.Bike ||
+          (params.data?.Bike.make === "" && params.data?.Bike.model === "")
+        ) {
           return "";
         }
-        return params.data?.Bike.make;
+        return params.data?.Bike.make + " " + params.data?.Bike.model;
       },
     },
     {
-      headerName: "Model",
+      headerName: "Created",
       valueGetter: (params) => {
-        if (!params.data?.Bike || params.data?.Bike.model === "") {
+        if (
+          !params.data?.Transaction ||
+          params.data?.Transaction.date_created === ""
+        ) {
           return "";
         }
-        return params.data?.Bike.model;
+        return new Date(params.data?.Transaction.date_created).toDateString();
       },
     },
-    { field: "Submitted" },
   ]);
 
   const defaultColDef: ColDef = {
@@ -262,18 +298,13 @@ export function TransactionsTable(): JSX.Element {
     };
   }, []);
 
-  const addTransaction = (newTransaction: IRow) => {
-    console.log("adding new transaction");
-    setRowData((prevRowData) => [...prevRowData, newTransaction]);
-  };
-
   // Container: Defines the grid's theme & dimensions.
   return (
     <main style={{ width: "100vw", height: "66vh" }}>
       <Button></Button>
       <header>
         <ButtonGroup id="nav-buttons">
-          <CreateTransactionDropdown onCreateTransaction={addTransaction} />
+          <CreateTransactionDropdown />
           <Button>Whiteboard</Button>
           <Button>Price Check</Button>
         </ButtonGroup>
@@ -299,13 +330,32 @@ export function TransactionsTable(): JSX.Element {
             rowSelection={rowSelection}
             onRowClicked={onRowClicked}
             pagination={true}
+            getRowStyle={({ data }) => {
+              if (
+                isDaysLess(
+                  5,
+                  currDate,
+                  new Date(data?.Transaction.date_created)
+                )
+              ) {
+                return { backgroundColor: "lightcoral" };
+              } else if (
+                isDaysLess(
+                  2,
+                  currDate,
+                  new Date(data?.Transaction.date_created)
+                )
+              ) {
+                return { backgroundColor: "lightyellow" };
+              } else return { backgroundColor: "lightgreen" };
+            }}
             // onPaginationChanged={(e) => {
             //   console.log(e);
             //   if (e.newPageSize) {
             //     setPageSize(e.api.paginationGetPageSize());
             //   }
             // }}
-            // paginationPageSize={10}
+            paginationPageSize={20}
             // paginationPageSize={true}
           />
         )}

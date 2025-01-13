@@ -1,9 +1,17 @@
 import React, { useState } from "react";
-import { IRow } from "../../features/TransactionsTable/TransactionsTable";
-import { v4 as uuidv4 } from 'uuid';
+import { Dialog, TextField } from "@mui/material";
+// import { Link } from "react-router-dom";
+import DBModel, {
+  CreateCustomer,
+  CreateTransaction,
+  Customer,
+  Transaction,
+} from "../../model";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../app/main";
 
 interface NewTransactionFormProps {
-  onTransactionCreated: (newTransaction: IRow) => void;
+  onTransactionCreated: (newTransaction: Transaction) => void;
   isOpen: boolean;
   onClose: () => void;
   t_type: string;
@@ -24,164 +32,148 @@ function NewTransactionForm({
     model: "",
     color: "",
   });
-  const [currentStep, setCurrentStep] = useState(1);
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // const [currentStep, setCurrentStep] = useState(1);
+  const handleTextFieldChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const { name, value } = event.target;
     setFormState((prevFormState) => ({ ...prevFormState, [name]: value }));
   };
+
+  const createCustomer = useMutation({
+    mutationFn: (newCustomer: CreateCustomer) => {
+      return DBModel.createCustomer(newCustomer);
+    },
+
+    onSuccess: (data: Customer) => {
+      console.log("Customer created", data);
+      queryClient.invalidateQueries({
+        queryKey: ["customers"],
+      });
+      const submittedTransaction: CreateTransaction = {
+        transaction_type: t_type,
+        customer_id: data.customer_id, // TODO: need to figure this out
+        is_employee: false, // TODO: should be based on if custy is recognized as employee
+      };
+      CreateTransaction.mutate(submittedTransaction);
+    },
+    onError: (error) => {
+      console.error("Error creating customer", error);
+    },
+  });
+  const CreateTransaction = useMutation({
+    mutationFn: (newTransaction: CreateTransaction) => {
+      return DBModel.postTransaction(newTransaction);
+    },
+    onSuccess: (data) => {
+      onTransactionCreated(data);
+      console.log("Transaction created", data);
+      queryClient.invalidateQueries({
+        queryKey: ["transactions"],
+      });
+      onTransactionCreated(data);
+      onClose();
+    },
+    onError: (error) => {
+      console.log("Error creating transaction", error);
+    },
+  });
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     console.log("handle submit");
-    const id = uuidv4();
-    const newTransaction: IRow = {
-      Transaction: {
-        transaction_num: 0, // TODO: need to figure this out
-        transaction_id: id, 
-        date_created: new Date().toDateString(),
-        transaction_type: t_type, 
-        customer_id: "", // TODO: need to figure this out
-        bike_id: "", // TODO: need to figure this out
-        total_cost: 0.0,
-        description: "",
-        is_completed: false,
-        is_paid: false,
-        is_refurb: false,
-        is_urgent: false,
-        is_nuclear: false,
-        is_beer_bike: false,
-        is_employee: false, // TODO: should be based on if custy is recognized as employee
-        is_reserved: false,
-        is_waiting_on_email: false,
-        date_completed: null,
-      },
-      Customer: {
-        first_name: formState.first_name,
-        last_name: formState.last_name,
-        email: formState.email,
-        phone: formState.phone,
-      },
-      Bike: {
-        make: formState.make,
-        model: formState.model,
-        description: formState.color,
-      },
-      Repairs: [],
-      Parts: [],
-      Submitted: new Date(),
+
+    const newCustomer: CreateCustomer = {
+      first_name: formState.first_name,
+      last_name: formState.last_name,
+      email: formState.email,
+      phone: formState.phone,
     };
-    onTransactionCreated(newTransaction);
-    console.log(newTransaction);
-    onClose();
+
+    createCustomer.mutate(newCustomer);
   };
-  const handleNext = () => {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
-      console.log("incrementing step");
-      console.log(currentStep);
-    }
-  };
+  // const handleNext = () => {
+  //   if (currentStep < 3) {
+  //     setCurrentStep(currentStep + 1);
+  //     console.log("incrementing step");
+  //     console.log(currentStep);
+  //   }
+  // };
   if (!isOpen) return null;
   return (
-    <div className="modal-overlay">
-      <div className="modal-container">
+    <Dialog
+      open={isOpen}
+      fullWidth={true}
+      maxWidth="lg"
+      className="modal-overlay"
+      sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+    >
+      <div className="modal-container" style={{ width: "70vw" }}>
         <button className="close-button" onClick={onClose}>
           x
         </button>
-        <form onSubmit={handleSubmit}>
-          {currentStep === 1 && (
-            <div>
-              <h2>Step 1: User Information</h2>
-              <label>
-                First Name:
-                <input
-                  type="text"
-                  name="first_name"
-                  value={formState.first_name}
-                  onChange={handleInputChange}
-                />
-              </label>
-              <br />
-              <label>
-                Last Name:
-                <input
-                  type="text"
-                  name="last_name"
-                  value={formState.last_name}
-                  onChange={handleInputChange}
-                />
-              </label>
-              <br />
-              <label>
-                Email:
-                <input
-                  type="email"
-                  name="email"
-                  value={formState.email}
-                  onChange={handleInputChange}
-                />
-              </label>
-              <br />
-              <label>
-                Phone:
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formState.phone}
-                  onChange={handleInputChange}
-                />
-              </label>
-              <br />
-              <button type="button" onClick={handleNext}>
-                Next
-              </button>
-            </div>
-          )}
-          {currentStep === 2 && (
-            <div>
-              <h2>Step 2: Bike Information</h2>
-              <label>
-                Make:
-                <input
-                  type="text"
-                  name="make"
-                  value={formState.make}
-                  onChange={handleInputChange}
-                />
-              </label>
-              <br />
-              <label>
-                Model:
-                <input
-                  type="text"
-                  name="model"
-                  value={formState.model}
-                  onChange={handleInputChange}
-                />
-              </label>
-              <br />
-              <label>
-                Color:
-                <input
-                  type="text"
-                  name="color"
-                  value={formState.color}
-                  onChange={handleInputChange}
-                />
-              </label>
-              <button type="button" onClick={handleNext}>
-                Next
-              </button>
-            </div>
-          )}
-          {currentStep === 3 && (
-            <div>
-              <h2>Creating transaction...</h2>
-              <button type="submit">Submit</button>
-            </div>
-          )}
+        <form
+          onSubmit={handleSubmit}
+          style={{ width: "100%", alignSelf: "center" }}
+        >
+          <div
+            style={{
+              width: "95%",
+              display: "flex",
+              flexDirection: "column",
+              padding: "2.5%",
+            }}
+          >
+            <h2>Step 1: User Information</h2>
+            <label>
+              <TextField
+                type="email"
+                name="email"
+                placeholder="Email:"
+                value={formState.email}
+                onChange={handleTextFieldChange}
+                fullWidth
+              />
+            </label>
+            <br />
+            <label style={{ minWidth: "95%" }}>
+              <TextField
+                type="text"
+                name="first_name"
+                placeholder="First Name:"
+                value={formState.first_name}
+                onChange={handleTextFieldChange}
+                fullWidth
+              />
+            </label>
+            <br />
+            <label>
+              <TextField
+                type="text"
+                name="last_name"
+                placeholder="Last Name:"
+                value={formState.last_name}
+                onChange={handleTextFieldChange}
+                fullWidth
+              />
+            </label>
+            <br />
+            <label>
+              <TextField
+                type="tel"
+                name="phone"
+                placeholder="Phone:"
+                value={formState.phone}
+                onChange={handleTextFieldChange}
+                fullWidth
+              />
+            </label>
+            <br />
+            <button type="submit">Submit Transaction</button>
+          </div>
         </form>
       </div>
-    </div>
+    </Dialog>
   );
 }
 

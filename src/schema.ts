@@ -1,8 +1,5 @@
 import { JSONSchema } from "json-schema-to-ts";
 
-
-
-
 export const partSchema = {
   $schema: "http://json-schema.org/draft-07/schema",
   title: "Part",
@@ -96,16 +93,33 @@ export const CustomerSchema = {
   title: "Customer",
   type: "object",
   properties: {
-    customer_id: { type: "string", nullable: true },
+    customer_id: { type: "string"},
     first_name: { type: "string" },
     last_name: { type: "string" },
     email: { type: "string" },
     phone: { type: ["string", "null"] },
   },
-  required: ["first_name", "last_name", "email", "phone"],
+  required: ["customer_id", "first_name", "last_name", "email", "phone"],
 
   additionalProperties: false,
 } as const satisfies JSONSchema;
+
+export const CreateCustomerSchema = {
+    $schema: "http://json-schema.org/draft-07/schema",
+    title: "Customer",
+    type: "object",
+    properties: {
+      first_name: { type: "string" },
+      last_name: { type: "string" },
+      email: { type: "string" },
+      phone: { type: ["string", "null"] },
+    },
+    required: ["first_name", "last_name", "email", "phone"],
+  
+    additionalProperties: false,
+
+} as const satisfies JSONSchema;
+
 
 export const BikeSchema = {
   $schema: "http://json-schema.org/draft-07/schema",
@@ -131,7 +145,7 @@ export const TransactionSchema = {
     transaction_id: { type: "string" },
     date_created: { type: "string" },
     transaction_type: { type: "string" },
-    customer_id: { type: "string", nullable: true },
+    customer_id: { type: "string"},
     bike_id: { type: "string", nullable: true },
     total_cost: { type: "number" },
     description: { type: "string", nullable: true },
@@ -160,6 +174,7 @@ export const TransactionSchema = {
     "transaction_num",
     "date_created",
     "transaction_type",
+    "customer_id",
     "total_cost",
     "is_completed",
     "is_paid",
@@ -173,6 +188,26 @@ export const TransactionSchema = {
   ],
   additionalProperties: false,
 } as const satisfies JSONSchema;
+
+export const CreateTransactionSchema = {
+  $id: "CreateTransactionSchema.json",
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "CreateTransactionSchema",
+  type: "object",
+  properties: {
+    transaction_type: { type: "string" },
+    customer_id: { type: "string", format: "uuid" },
+    is_employee: { type: "boolean" },
+
+  },
+  required: [
+    "transaction_type",
+    "customer_id",
+    "is_employee",
+  ],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
 export const TransactionArraySchema = {
   $id: "transactionArray.json",
   type: "array",
@@ -264,17 +299,17 @@ export const TransactionDetailsArraySchema = {
   items: TransactionDetailsSchema,
 } as const satisfies JSONSchema;
 
-export const CreateTransactionSchema = {
-    $id: "CreateTransactionSchema.json",
-    $schema: "http://json-schema.org/draft-07/schema",
-    title: "CreateTransactionSchema",
-    type: "object",
-    properties: {
-        item_id: { type: ["string", "null"]},
-        repair_id: { type: ["string", "null"], format: "uuid" },
-        changed_by: { type: "string", format: "uuid" },
-        quantity: { type: "integer" },
-    },
-    required: ["changed_by", "quantity"],
-    additionalProperties: false,
+export const CreateTransactionDetailsSchema = {
+  $id: "CreateTransactionSchema.json",
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "CreateTransactionSchema",
+  type: "object",
+  properties: {
+    item_id: { type: ["string", "null"] },
+    repair_id: { type: ["string", "null"], format: "uuid" },
+    changed_by: { type: "string", format: "uuid" },
+    quantity: { type: "integer" },
+  },
+  required: ["changed_by", "quantity"],
+  additionalProperties: false,
 } as const satisfies JSONSchema;

@@ -7,13 +7,7 @@ import { Button } from "@mui/material";
 import Notes from "./Notes";
 import { IRow } from "../../features/TransactionsTable/TransactionsTable";
 import { ITooltipParams, RowClickedEvent } from "ag-grid-community";
-import DBModel, {
-  ItemDetails,
-  Part,
-  Repair,
-  RepairDetails,
-  Transaction,
-} from "../../model";
+import DBModel, { ItemDetails, Part, Repair, RepairDetails } from "../../model";
 import { useMutation, useQueries } from "@tanstack/react-query";
 import { queryClient } from "../../app/main";
 import { ToastContainer, toast } from "react-toastify";
@@ -22,12 +16,14 @@ import "./TransactionPage.css";
 
 const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
   let total = 0;
-  repairs.forEach((repair) => {
-    total += repair.Repair.price;
-  });
-  parts.forEach((part) => {
-    total += part.Item.standard_price;
-  });
+  if (repairs)
+    repairs.forEach((repair) => {
+      total += repair.Repair.price;
+    });
+  if (parts)
+    parts.forEach((part) => {
+      total += part.Item.standard_price;
+    });
   return total;
 };
 
@@ -48,8 +44,8 @@ const TransactionDetail = () => {
   // const [showModal2, setShowModal2] = useState(false);
 
   const [user, setUser] = useState("00000000-633a-fa44-a9b8-005aa337288b");
-  const [bike, setBike] = useState(transaction?.Bike);
-  const [customer, setCustomer] = useState(transaction?.Customer);
+  // const [bike, setBike] = useState(transaction?.Bike);
+  // const [customer, setCustomer] = useState(transaction?.Customer);
   const [totalPrice, setTotalPrice] = useState(0);
   // setUser("00000000-633a-fa44-a9b8-005aa337288b");
   const [showCheckout, setShowCheckout] = useState(false);
@@ -60,18 +56,20 @@ const TransactionDetail = () => {
   const [priority, setPriority] = useState(false);
   const [nuclear, setNuclear] = useState(false);
 
-  const [repairSearchQuery, setRepairSearchQuery] = useState("");
-  const [partSearchQuery, setPartSearchQuery] = useState("");
-  const [filteredRepairs, setFilteredRepairs] = useState<Repair[]>([]);
-  const [filteredParts, setFilteredParts] = useState<Part[]>([]);
 
   const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
 
   const [currentTransaction, setCurrentTransaction] = useState({
     ...transaction,
-    Repairs: transaction?.Repairs || [],
-    Parts: transaction?.Parts || [],
-    Notes: transaction?.Notes || "",
+    Transaction: {
+      ...transaction?.Transaction,
+      total_cost: totalPrice,
+      waiting_on_email: waitEmail,
+      waiting_on_part: waitPart,
+      is_urgent: priority,
+      is_nuclear: nuclear,
+      is_complete: showMarkDone,
+    },
   });
 
   const [
@@ -120,10 +118,7 @@ const TransactionDetail = () => {
     error: repairDetailsError,
   } = repairDetailsQuery;
   if (repairDetailsError) toast.error("repairDetails: " + repairDetailsError);
-  // if(repairDetailsError) {
-  //   toast.error(repairDetailsError)
-  //   return <p>error</p>
-  // }
+
   const repairDetails = queriedRepairDetails as RepairDetails[];
   const {
     isFetching: itemDetailsIsFetching,
@@ -322,7 +317,10 @@ const TransactionDetail = () => {
   const handleSaveNotes = (newNotes: string) => {
     setCurrentTransaction((prevTransaction: IRow) => ({
       ...prevTransaction,
-      Notes: newNotes,
+      Transaction: {
+        ...prevTransaction.Transaction,
+        description: newNotes,
+      },
     }));
   };
 
@@ -337,51 +335,6 @@ const TransactionDetail = () => {
     }
   }, [repairDetails, itemDetails]);
 
-  useEffect(() => {
-    if (
-      repairSearchQuery.trim() !== "" &&
-      repairsLoading === false &&
-      repairs
-    ) {
-      const matches = repairs
-        .filter(
-          (repair: Repair) =>
-            repair.name
-              .toLowerCase()
-              .includes(repairSearchQuery.toLowerCase()) &&
-            !repairDetails.some(
-              (r: RepairDetails) => r.Repair.repair_id === repair.repair_id
-            )
-        )
-        .slice(0, 10);
-      setFilteredRepairs(matches);
-    } else {
-      setFilteredRepairs([]);
-    }
-  }, [
-    repairSearchQuery,
-    repairDetails,
-    repairs,
-    currentTransaction.Repairs,
-    repairsLoading,
-  ]);
-
-  useEffect(() => {
-    if (partSearchQuery.trim() !== "" && partsLoading === false && parts) {
-      const matches = parts
-        .filter(
-          (part) =>
-            part.name &&
-            part.name.toLowerCase().includes(partSearchQuery.toLowerCase()) &&
-            !currentTransaction.Parts.some((p: Part) => p.upc === part.upc)
-        )
-        .slice(0, 10);
-      setFilteredParts(matches);
-    } else {
-      setFilteredParts([]);
-    }
-  }, [partSearchQuery, parts, currentTransaction.Parts, partsLoading]);
-
   if (repairsLoading || partsLoading) {
     return <p>Loading data...</p>;
   }
@@ -389,14 +342,6 @@ const TransactionDetail = () => {
   if (!transaction) {
     return <p>No transaction selected!</p>;
   }
-
-  const handleSearchChangeR = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRepairSearchQuery(e.target.value);
-  };
-
-  const handleSearchChangeP = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPartSearchQuery(e.target.value);
-  };
 
   const handleAddRepair = (event: RowClickedEvent) => {
     const repair = event.data as Repair;
@@ -415,8 +360,8 @@ const TransactionDetail = () => {
       },
     });
 
-    setRepairSearchQuery("");
-    setFilteredRepairs([]);
+    // setRepairSearchQuery("");
+    // setFilteredRepairs([]);
   };
 
   const handleRemoveRepair = (repair: RepairDetails) => {
@@ -437,23 +382,24 @@ const TransactionDetail = () => {
     });
   };
 
-  const handleAddPart = (part: Part) => {
+  const handleAddPart = (event: RowClickedEvent) => {
+    const part = event.data as Part;
     addPart.mutate(part);
     const updatedParts = [...currentTransaction.Parts, part];
-    const updatedTotalCost =
-      currentTransaction.Transaction.total_cost + part.standard_price;
+    // const updatedTotalCost =
+    //   currentTransaction.Transaction.total_cost + part.standard_price;
 
     setCurrentTransaction({
       ...currentTransaction,
       Parts: updatedParts,
       Transaction: {
         ...currentTransaction.Transaction,
-        total_cost: updatedTotalCost,
+        // total_cost: updatedTotalCost,
       },
     });
 
-    setRepairSearchQuery("");
-    setFilteredParts([]);
+    // setRepairSearchQuery("");
+    // setFilteredParts([]);
   };
 
   const handleRemovePart = (part: ItemDetails) => {
@@ -533,7 +479,9 @@ const TransactionDetail = () => {
             </p>
           </>
         ) : (
-          <p>No bike information available</p>
+          <Button color="primary" variant="contained">
+            Add Bike
+          </Button>
         )}
 
         <h3>Customer Information</h3>
@@ -551,7 +499,10 @@ const TransactionDetail = () => {
           {currentTransaction.Transaction.Customer.phone}
         </p>
 
-        <Notes notes={currentTransaction.Notes} onSave={handleSaveNotes} />
+        <Notes
+          notes={currentTransaction.Transaction.description}
+          onSave={handleSaveNotes}
+        />
       </header>
       <main id="transaction-details">
         <section>
@@ -587,20 +538,13 @@ const TransactionDetail = () => {
                 },
               },
               { field: "price", headerName: "Price", width: 200 },
-              // {
-              //   field: "description",
-              //   headerName: "Description",
-              //   width: 200,
-              //   wrapText: true,
-              //   autoHeight: true,
-              // },
             ]}
             colDefaults={{
               flex: 1,
             }}
             onRowClick={(row) => handleAddRepair(row)}
           />
-          <h3>Add Repair</h3>
+          {/* <h3>Add Repair</h3>
           <input
             type="text"
             placeholder="Search for a repair"
@@ -619,9 +563,9 @@ const TransactionDetail = () => {
                 </Button>
               </li>
             ))}
-          </ul>
+          </ul> */}
           <h3>Repairs</h3>
-          <ul>
+          <ul style={{ border: "black" }}>
             {!repairDetailsLoading && repairDetails ? (
               repairDetails.map((transactionDetail: RepairDetails) => (
                 // const repair = transactionDetail.Repair;
@@ -672,7 +616,54 @@ const TransactionDetail = () => {
         </section>
 
         <section>
-          <h3>Add Part</h3>
+          <SearchModal
+            searchData={parts == undefined ? [] : parts}
+            columnData={[
+              {
+                field: "name",
+                headerName: "Name",
+                width: 200,
+                autoHeight: true,
+                wrapText: true,
+                filter: true,
+                tooltipField: "description",
+                headerTooltip: "Name of items",
+                cellRenderer: (params: ITooltipParams) => {
+                  return (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        fontSize: "16px",
+                      }}
+                    >
+                      <p>
+                        <b>{params.value}</b>
+                      </p>
+                      <i className="fa-solid fa-circle-info"></i>
+                    </div>
+                  );
+                },
+              },
+              { field: "standard_price", headerName: "Price", width: 200 },
+              // { field: "stock", headerName: "Stock", width: 200 }, //TODO: Verify that this piece is actually true
+              {
+                field: "upc",
+                headerName: "UPC",
+                width: 200,
+                wrapText: true,
+                autoHeight: true,
+                filter: true,
+              },
+            ]}
+            colDefaults={{
+              flex: 1,
+            }}
+            onRowClick={(row) => handleAddPart(row)}
+          />
+          {/* <h3>Add Part</h3>
           <input
             type="text"
             placeholder="Search for a part"
@@ -691,7 +682,7 @@ const TransactionDetail = () => {
                 </Button>
               </li>
             ))}
-          </ul>
+          </ul> */}
           <h3>Parts</h3>
           <ul>
             {!itemDetailsLoading && itemDetails ? (

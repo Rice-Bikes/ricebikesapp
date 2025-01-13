@@ -12,9 +12,9 @@
   justify-content: space-between;
   gap: 1em;
   margin-bottom: 2em;
-  background-color: blue;
+  background-color: #1976d2;
   align-items: center;
-  color: white
+  color: white;
   /* font-size: 4vh; */
 }
 
@@ -66,6 +66,6 @@ img {
   color: white;
 } */
 
-li{
+li {
   list-style-type: none;
 }

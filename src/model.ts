@@ -20,7 +20,9 @@ import {
   TransactionDetailsSchema,
   TransactionDetailsArraySchema,
   RepairDetailsSchema,
-  ItemDetailsSchema
+  ItemDetailsSchema,
+  CreateTransactionSchema,
+  CreateCustomerSchema,
 } from "./schema";
 import Ajv from "ajv";
 
@@ -30,10 +32,12 @@ export type Part = FromSchema<typeof partSchema>;
 export type Repair = FromSchema<typeof repairSchema>;
 export type Transaction = FromSchema<typeof TransactionSchema>;
 export type Customer = FromSchema<typeof CustomerSchema>;
+export type CreateCustomer = FromSchema<typeof CreateCustomerSchema>;
 export type Bike = FromSchema<typeof BikeSchema>;
 export type TransactionDetails = FromSchema<typeof TransactionDetailsSchema>;
 export type RepairDetails = FromSchema<typeof RepairDetailsSchema>;
 export type ItemDetails = FromSchema<typeof ItemDetailsSchema>;
+export type CreateTransaction = FromSchema<typeof CreateTransactionSchema>;
 
 export type PartArray = FromSchema<typeof partArraySchema>;
 export type RepairArray = FromSchema<typeof repairArraySchema>;
@@ -48,7 +52,6 @@ export type ArrayResponse = FromSchema<typeof ArrayResponseSchema>;
 export type ObjectResponse = FromSchema<typeof ObjectResponseSchema>;
 
 type TransactionDetailType = "item" | "repair";
-
 
 // const queryError = (error: Error) => {
 //   console.error("Error in React Query server response: ", error); // More detailed error logging
@@ -104,7 +107,6 @@ class DBModel {
   ) => data is TransactionDetails;
   public static validateRepairDetails: (data: unknown) => data is RepairDetails;
   public static validateItemDetails: (data: unknown) => data is ItemDetails;
-
 
   // ARRAY VERIFICATION METHODS
   static validatePartsArray: (data: unknown) => data is Part[];
@@ -218,30 +220,29 @@ class DBModel {
       });
 
   public static fetchTransaction = async (transaction_id: string) =>
-    fetch(`${hostname}/transactions/${transaction_id}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    ).then((response) => response.json())
-    .then((response) => {
-      if (!DBModel.validateObjectResponse(response)) {
-        throw new Error("Invalid response");
-      }
-      if (!response.success) {
-        throw new Error("Failed to load transaction");
-      }
-      return response.responseObject;
+    fetch(`${hostname}/transactions/${transaction_id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
     })
-    .then((transactionData: unknown) => {
-      console.log("Raw Transaction Data:", transactionData);
-      if (!DBModel.validateTransaction(transactionData)) {
-        throw new Error("Invalid transaction response");
-      }
-      return transactionData;
-    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to load transaction");
+        }
+        return response.responseObject;
+      })
+      .then((transactionData: unknown) => {
+        console.log("Raw Transaction Data:", transactionData);
+        if (!DBModel.validateTransaction(transactionData)) {
+          throw new Error("Invalid transaction response");
+        }
+        return transactionData;
+      });
 
   public static fetchItems = async () =>
     fetch(`${hostname}/items`)
@@ -306,72 +307,110 @@ class DBModel {
         throw new Error("Error loading server data: " + error); // More detailed error logging
       });
 
-  public static fetchTransactionDetails = async (transaction_id: string, type: TransactionDetailType) =>{
+  public static fetchTransactionDetails = async (
+    transaction_id: string,
+    type: TransactionDetailType
+  ) => {
     console.log("fetching transaction id", transaction_id, "of type", type);
-    console.log(`${hostname}/transactionDetails/${transaction_id}?` + new URLSearchParams({ detailType: type }))
-    return fetch(`${hostname}/transactionDetails/${transaction_id}?` + new URLSearchParams({ detailType: type }))
-    .then((response) => {
-      if(!response.ok){
-        throw new Error("Failed to load Transactions Details -- failed to fetch");
-      }
-      if(response.status > 299){
-        throw new Error("Failed to load Transactions Details: request unsuccessful" + response);
-      }
-      return response;
-    })
-    .then((response) => response.json())
-    .then((transactionDetailsData: unknown) => {
-      console.log("Raw Transactions Details Data:", transactionDetailsData);
-      if (!DBModel.validateArrayResponse(transactionDetailsData)) {
-        throw new Error("Invalid Transactions Details response");
-      }
-      if (!transactionDetailsData.success) {
-        throw new Error("Failed to load Transactions Details");
-      }
-      console.log("Transactions Details Array Data:", transactionDetailsData.responseObject);
-      return transactionDetailsData.responseObject;
-    })
-    .then((transactionDetailsArray: unknown[]) => {
-      console.log("Mapped Transactions Details Data:", transactionDetailsArray);
-      switch(type){
-        case "item":
-        transactionDetailsArray.map((part) => {
-          if (!DBModel.validateItemDetails(part)) {
-            console.error("Invalid Item Transaction Details:", part);
-            throw new Error("Invalid Item Transaction Details");
-          }
-          return part;
-        });
-        break;
-        case "repair":
-          transactionDetailsArray.forEach((part) => {
-            if (!DBModel.validateRepairDetails(part)) {
-              console.error("Invalid repair Transaction Details:", part);
-              throw new Error("Invalid repair Transaction Details");
-            }
-          });
-        break;
-        default:
-          transactionDetailsArray.forEach((part) => {
-            if (!DBModel.validateTransactionDetails(part)) {
-              console.error("Invalid Transaction Details:", part);
-              throw new Error("Invalid Transaction Details");
-            }
-          });
-      }
-      
-      if (!DBModel.validateTransactionDetailsArray(transactionDetailsArray)) {
-        throw new Error("Invalid Transactions Details array");
-      }
-      return transactionDetailsArray;
-    })
-    .catch((error) => {
-      throw new Error("Error loading transactions data: " + error); // More detailed error logging
-    });
-  }
-  public static postTransactionDetails = async (transaction_id: string, object_id: string, changed_by: string, quantity: number, type: TransactionDetailType) =>{
+    console.log(
+      `${hostname}/transactionDetails/${transaction_id}?` +
+        new URLSearchParams({ detailType: type })
+    );
+    return fetch(
+      `${hostname}/transactionDetails/${transaction_id}?` +
+        new URLSearchParams({ detailType: type })
+    )
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(
+            "Failed to load Transactions Details -- failed to fetch"
+          );
+        }
+        if (response.status > 299) {
+          throw new Error(
+            "Failed to load Transactions Details: request unsuccessful" +
+              response
+          );
+        }
+        return response;
+      })
+      .then((response) => response.json())
+      .then((transactionDetailsData: unknown) => {
+        console.log("Raw Transactions Details Data:", transactionDetailsData);
+        if (!DBModel.validateArrayResponse(transactionDetailsData)) {
+          throw new Error("Invalid Transactions Details response");
+        }
+        if (!transactionDetailsData.success) {
+          throw new Error("Failed to load Transactions Details");
+        }
+        console.log(
+          "Transactions Details Array Data:",
+          transactionDetailsData.responseObject
+        );
+        return transactionDetailsData.responseObject;
+      })
+      .then((transactionDetailsArray: unknown[]) => {
+        console.log(
+          "Mapped Transactions Details Data:",
+          transactionDetailsArray
+        );
+        switch (type) {
+          case "item":
+            transactionDetailsArray.map((part) => {
+              if (!DBModel.validateItemDetails(part)) {
+                console.error("Invalid Item Transaction Details:", part);
+                throw new Error("Invalid Item Transaction Details");
+              }
+              return part;
+            });
+            break;
+          case "repair":
+            transactionDetailsArray.forEach((part) => {
+              if (!DBModel.validateRepairDetails(part)) {
+                console.error("Invalid repair Transaction Details:", part);
+                throw new Error("Invalid repair Transaction Details");
+              }
+            });
+            break;
+          default:
+            transactionDetailsArray.forEach((part) => {
+              if (!DBModel.validateTransactionDetails(part)) {
+                console.error("Invalid Transaction Details:", part);
+                throw new Error("Invalid Transaction Details");
+              }
+            });
+        }
 
-    const body = type == "item" ? {item_id: object_id, repair_id: null, changed_by: changed_by, quantity: quantity} : {item_id: null, repair_id: object_id, changed_by: changed_by, quantity: quantity}
+        if (!DBModel.validateTransactionDetailsArray(transactionDetailsArray)) {
+          throw new Error("Invalid Transactions Details array");
+        }
+        return transactionDetailsArray;
+      })
+      .catch((error) => {
+        throw new Error("Error loading transactions data: " + error); // More detailed error logging
+      });
+  };
+  public static postTransactionDetails = async (
+    transaction_id: string,
+    object_id: string,
+    changed_by: string,
+    quantity: number,
+    type: TransactionDetailType
+  ) => {
+    const body =
+      type == "item"
+        ? {
+            item_id: object_id.trim(),
+            repair_id: null,
+            changed_by: changed_by,
+            quantity: quantity,
+          }
+        : {
+            item_id: null,
+            repair_id: object_id,
+            changed_by: changed_by,
+            quantity: quantity,
+          };
     console.log("posting transaction details", body);
     return fetch(`${hostname}/transactionDetails/${transaction_id}`, {
       method: "POST",
@@ -393,46 +432,98 @@ class DBModel {
       .catch((error) => {
         throw new Error("Error posting transaction details data: " + error); // More detailed error logging
       });
-    }
+  };
 
-
-    public static updateTransaction = async(Transaction: Transaction) => {
-      return fetch(`${hostname}/transactions/${Transaction.transaction_id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(Transaction),
+  public static createCustomer = async (customer: CreateCustomer) => {
+    return fetch(`${hostname}/customers`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(customer),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post customer");
+        }
+        if (!DBModel.validateCustomer(response.responseObject)) {
+          throw new Error("Invalid customer response");
+        }
+        return response.responseObject;
       })
-        .then((response) => response.json())
-        .then((response) => {
-          if (!DBModel.validateObjectResponse(response)) {
-            throw new Error("Invalid response");
-          }
-          if (!response.success) {
-            throw new Error("Failed to update transaction");
-          }
-        })
-        .catch((error) => {
-          throw new Error("Error posting transaction data: " + error); // More detailed error logging
-        });
+      .catch((error) => {
+        throw new Error("Error posting customer data: " + error); // More detailed error logging
+      });
+  }
 
-    }
-  public static deleteTransactionDetails = async (transaction_detail_id: string) => 
+  public static postTransaction = async (Transaction: CreateTransaction) => 
+    fetch(`${hostname}/transactions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(Transaction),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post transaction");
+        }
+
+        if(!this.validateTransaction(response.responseObject)){
+          throw new Error("Invalid transaction response");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error posting transaction data: " + error); // More detailed error logging
+      });
+
+  public static updateTransaction = async (Transaction: Transaction) => {
+    return fetch(`${hostname}/transactions/${Transaction.transaction_id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(Transaction),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to update transaction");
+        }
+      })
+      .catch((error) => {
+        throw new Error("Error posting transaction data: " + error); // More detailed error logging
+      });
+  };
+  public static deleteTransactionDetails = async (
+    transaction_detail_id: string
+  ) =>
     fetch(`${hostname}/transactionDetails/${transaction_detail_id}`, {
       method: "DELETE",
     })
-    .then((response) => {
-      if (!DBModel.validateObjectResponse(response)) {
-        throw new Error("Invalid response");
-      }
-      if (!response.success) {
-        throw new Error("Failed to delete transaction details");
-      }
-    })
-    .catch((error) => {
-      throw new Error("Error posting transaction details data: " + error); // More detailed error logging
-    });
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to delete transaction details");
+        }
+      })
+      .catch((error) => {
+        throw new Error("Error posting transaction details data: " + error); // More detailed error logging
+      });
 
   public static getTransactionsQuery = (
     page_limit: number,
@@ -446,7 +537,10 @@ class DBModel {
     });
   };
 
-  public static getTransactionQuery = (transaction_id: string, initialData: Transaction) => {
+  public static getTransactionQuery = (
+    transaction_id: string,
+    initialData: Transaction
+  ) => {
     return queryOptions({
       queryKey: ["transaction", transaction_id],
       queryFn: () => this.fetchTransaction(transaction_id),
@@ -454,8 +548,7 @@ class DBModel {
       refetchOnWindowFocus: false,
       staleTime: 600000, // Cache products for 1 minute
     });
-
-  }
+  };
 
   public static getItemsQuery = () => {
     return queryOptions({
@@ -474,7 +567,10 @@ class DBModel {
     });
   };
 
-  public static getTransactionDetailsQuery = (transaction_id: string, type : TransactionDetailType ) => {
+  public static getTransactionDetailsQuery = (
+    transaction_id: string,
+    type: TransactionDetailType
+  ) => {
     return queryOptions({
       queryKey: ["transactionDetails", transaction_id, type],
       queryFn: () => this.fetchTransactionDetails(transaction_id, type),
@@ -487,4 +583,3 @@ class DBModel {
 DBModel.initialize();
 
 export default DBModel;
-

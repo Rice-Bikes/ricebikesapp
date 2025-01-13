@@ -87,10 +87,16 @@ const SearchModal: React.FC<SearchModalProps> = ({
               }}
             >
               <TextField
-                placeholder="Enter search term"
+                placeholder={
+                  "Enter" +
+                  (searchData.length > 0 && "upc" in searchData[0]
+                    ? "part upc"
+                    : "repair name")
+                }
                 value={searchTerm}
                 onChange={handleSearchChange}
                 style={{ width: "50%" }}
+                multiline
               />
               {/* <Switch
                 color="primary"
