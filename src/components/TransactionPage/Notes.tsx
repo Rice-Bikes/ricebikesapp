@@ -15,7 +15,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave }) => {
   };
 
   return (
-    <div>
+    <div style={{ width: "90vw", textAlign: "center", margin: "0 auto" }}>
       <h3>Notes</h3>
       {isEditing ? (
         <div>

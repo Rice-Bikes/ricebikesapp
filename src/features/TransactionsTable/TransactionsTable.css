@@ -20,11 +20,16 @@ header {
   pointer-events: none;
 }
 
-main{
-    padding: 0 5vw;
-    max-width: 90vw;
+main {
+  padding: 0 5vw;
+  max-width: 90vw;
 }
 
+#transactionsContent {
+  width: 100%;
+  border-collapse: collapse;
+  height: 100%;
+}
 
 .lds-dual-ring,
 .lds-dual-ring:after {
@@ -55,9 +60,7 @@ main{
   }
 }
 
-
-
-#transactions-table{
+#transactions-table {
   width: 100%;
   border-collapse: collapse;
   height: 100%;

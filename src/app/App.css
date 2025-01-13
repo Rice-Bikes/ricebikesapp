@@ -12,8 +12,9 @@
   justify-content: space-between;
   gap: 1em;
   margin-bottom: 2em;
-  background-color: gray;
+  background-color: blue;
   align-items: center;
+  color: white
   /* font-size: 4vh; */
 }
 
@@ -61,9 +62,9 @@ img {
   padding: 2em;
 }
 
-.read-the-docs {
-  color: #888;
-}
+/* .read-the-docs {
+  color: white;
+} */
 
 li{
   list-style-type: none;

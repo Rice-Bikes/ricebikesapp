@@ -1,0 +1,97 @@
+main#transaction-details section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  /* border: 10px solid black; */
+  gap: 2%;
+  width: 50vw;
+  height: auto;
+}
+
+header {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 10px;
+  height: auto;
+}
+
+h2 {
+  text-align: center;
+}
+
+main#transaction-details {
+  display: flex;
+  min-width: fit-content;
+  padding: 0 5vw;
+  width: 90vw;
+}
+
+.transaction-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.transaction-page header,
+.transaction-page footer {
+  background-color: #f8f9fa;
+  padding: 20px;
+}
+
+.transaction-page main {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.transaction-page footer {
+  margin-top: auto;
+}
+
+.checkout,
+.markDone {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.checkout-content,
+.markDone-content {
+  background-color: grey;
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.ag-body-viewport-wrapper.ag-layout-normal {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+*/ .ag-body.ag-layout-normal {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+
+.ag-root {
+  &.ag-layout-auto-height,
+  &.ag-layout-normal {
+    flex: 1 1 auto;
+    overflow: scroll;
+    width: 0;
+  }
+}

@@ -1,5 +1,8 @@
 import { JSONSchema } from "json-schema-to-ts";
 
+
+
+
 export const partSchema = {
   $schema: "http://json-schema.org/draft-07/schema",
   title: "Part",
@@ -207,6 +210,8 @@ export const ObjectResponseSchema = {
 export const TransactionDetailsSchema = {
   $id: "transactionDetails.json",
   type: "object",
+  //   oneOf: [
+  // {
   properties: {
     transaction_detail_id: { type: "string" },
     transaction_id: { type: "string" },
@@ -220,13 +225,38 @@ export const TransactionDetailsSchema = {
   required: [
     "transaction_detail_id",
     "transaction_id",
+    "item_id",
     "completed",
     "quantity",
     "date_modified",
   ],
+
+  additionalProperties: true,
+} as const satisfies JSONSchema;
+
+export const RepairDetailsSchema = {
+  $id: "repairDetailsSchema.json",
+  type: "object",
+  properties: {
+    ...TransactionDetailsSchema.properties,
+    repair_id: { type: "string" },
+    Repair: repairSchema,
+  },
+  required: [...TransactionDetailsSchema.required, "Repair"],
   additionalProperties: false,
 } as const satisfies JSONSchema;
 
+export const ItemDetailsSchema = {
+  $id: "itemDetailsSchema.json",
+  type: "object",
+  properties: {
+    ...TransactionDetailsSchema.properties,
+    item_id: { type: "string" },
+    Item: partSchema,
+  },
+  required: [...TransactionDetailsSchema.required, "Item"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
 
 export const TransactionDetailsArraySchema = {
   $id: "transactionDetailsArray.json",
@@ -234,3 +264,17 @@ export const TransactionDetailsArraySchema = {
   items: TransactionDetailsSchema,
 } as const satisfies JSONSchema;
 
+export const CreateTransactionSchema = {
+    $id: "CreateTransactionSchema.json",
+    $schema: "http://json-schema.org/draft-07/schema",
+    title: "CreateTransactionSchema",
+    type: "object",
+    properties: {
+        item_id: { type: ["string", "null"]},
+        repair_id: { type: ["string", "null"], format: "uuid" },
+        changed_by: { type: "string", format: "uuid" },
+        quantity: { type: "integer" },
+    },
+    required: ["changed_by", "quantity"],
+    additionalProperties: false,
+} as const satisfies JSONSchema;

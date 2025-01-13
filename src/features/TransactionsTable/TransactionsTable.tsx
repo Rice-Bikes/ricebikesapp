@@ -21,9 +21,9 @@ import type {
 } from "ag-grid-community";
 import "./TransactionsTable.css"; // CSS Stylesheet
 import NewTransactionForm from "../../components/TransactionPage/BikeForm";
-import { Part, Repair, Transaction, Bike, Customer } from "../../queries";
+import { Part, Repair, Transaction, Bike, Customer } from "../../model";
 import { useNavigate } from "react-router-dom";
-import DBQueries from "../../queries";
+import DBModel from "../../model";
 
 // Row Data Interface
 export interface IRow {
@@ -35,8 +35,6 @@ export interface IRow {
   Parts?: Part[];
   Submitted: Date;
 }
-
-
 
 // Creating new transaction
 interface CreateTransactionDropdownProps {
@@ -168,7 +166,7 @@ export function TransactionsTable(): JSX.Element {
   };
 
   const { status, data, error } = useQuery(
-    DBQueries.getTransactionsQuery(10000000, true)
+    DBModel.getTransactionsQuery(10000000, true)
   );
 
   console.log(status, data, error);
@@ -194,12 +192,24 @@ export function TransactionsTable(): JSX.Element {
 
         return (
           <span>
-            {isWaitEmail && <i className="fas fa-envelope" style={{marginRight: '5px'}}></i>}
-            {isUrgent && <i className="fas fa-exclamation-circle" style={{color: 'red', marginRight: '5px'}}></i>}
-            {isNuclear && <i className="fas fa-radiation" style={{color: 'red', marginRight: '5px'}}></i>}
+            {isWaitEmail && (
+              <i className="fas fa-envelope" style={{ marginRight: "5px" }}></i>
+            )}
+            {isUrgent && (
+              <i
+                className="fas fa-exclamation-circle"
+                style={{ color: "red", marginRight: "5px" }}
+              ></i>
+            )}
+            {isNuclear && (
+              <i
+                className="fas fa-radiation"
+                style={{ color: "red", marginRight: "5px" }}
+              ></i>
+            )}
             {isBeerBike && <i className="bb">Beer Bike</i>}
           </span>
-        )
+        );
         // let iconHtml = '';
         // if(isWaitEmail) {
         //   iconHtml += '<i className="fas fa-envelope"></i>';
@@ -211,7 +221,7 @@ export function TransactionsTable(): JSX.Element {
       },
       cellRenderer: (params: ICellRendererParams) => {
         return params.value;
-      }
+      },
     },
     {
       headerName: "Name",
