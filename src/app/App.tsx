@@ -3,7 +3,7 @@ import { TransactionsTable } from "../features/TransactionsTable/TransactionsTab
 import RiceBikesIcon from "../assets/img/rice-bikes_white.png";
 import "./App.css";
 import { Button } from "@mui/material";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Link } from "react-router-dom";
 import TransactionDetail from "../components/TransactionPage/TransactionPage";
 //import {RepairItemList} from '../components/RepairItem/RepairItem';
 
@@ -11,7 +11,9 @@ function App() {
   return (
     <>
       <header id="taskbar">
-        <img src={RiceBikesIcon} alt="Rice Bikes Icon" />
+        <Link to="/">
+          <img src={RiceBikesIcon} alt="Rice Bikes Icon" />
+        </Link>
         <h2>Rice Bikes App</h2>
         <Button id="logout" variant="contained" disableElevation>
           {" "}
@@ -20,7 +22,10 @@ function App() {
       </header>
       <Routes>
         <Route path="/" element={<TransactionsTable />} />
-        <Route path="/transaction-details" element={<TransactionDetail />} />
+        <Route
+          path="/transaction-details/:transaction_id"
+          element={<TransactionDetail />}
+        />
       </Routes>
     </>
   );

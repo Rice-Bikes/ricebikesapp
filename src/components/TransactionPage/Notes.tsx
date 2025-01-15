@@ -15,14 +15,14 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave }) => {
   };
 
   return (
-    <div style={{ width: "90vw", textAlign: "center", margin: "0 auto" }}>
+    <div style={{ width: "100%", textAlign: "center", margin: "0 auto" }}>
       <h3>Notes</h3>
       {isEditing ? (
         <div>
           <textarea
             value={editedNotes}
             onChange={(e) => setEditedNotes(e.target.value)}
-            style={{ width: "100%", height: "100px" }}
+            style={{ width: "100%", height: "100px", textAlign: "left" }}
           />
           <button
             onClick={handleSave}
@@ -39,7 +39,15 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave }) => {
         </div>
       ) : (
         <div>
-          <pre>{notes || "No notes yet."}</pre>
+          <pre
+            style={{
+              textAlign: "left",
+              border: "1px solid black",
+              padding: "10px",
+            }}
+          >
+            {notes || "No notes yet."}
+          </pre>
           <button
             onClick={() => setIsEditing(true)}
             style={{

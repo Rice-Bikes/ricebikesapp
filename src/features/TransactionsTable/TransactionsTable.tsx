@@ -20,7 +20,7 @@ import type {
   ICellRendererParams,
 } from "ag-grid-community";
 import "./TransactionsTable.css"; // CSS Stylesheet
-import NewTransactionForm from "../../components/TransactionPage/BikeForm";
+import NewTransactionForm from "../../components/TransactionPage/CustomerForm";
 import { Transaction, Bike, Customer } from "../../model";
 import { useNavigate } from "react-router-dom";
 import DBModel from "../../model";
@@ -159,9 +159,7 @@ export function TransactionsTable(): JSX.Element {
   console.log(rowData);
   // const [pageSize, setPageSize] = useState(100);
   const onRowClicked = (e: RowClickedEvent) => {
-    navigate("/transaction-details", {
-      state: { transaction: e.data },
-    });
+    navigate(`/transaction-details/${e.data.Transaction.transaction_id}`);
   };
 
   const { status, data, error } = useQuery(
@@ -347,7 +345,7 @@ export function TransactionsTable(): JSX.Element {
                 )
               ) {
                 return { backgroundColor: "lightyellow" };
-              } else return { backgroundColor: "lightgreen" };
+              } else return { backgroundColor: "white" };
             }}
             // onPaginationChanged={(e) => {
             //   console.log(e);

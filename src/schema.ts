@@ -5,6 +5,7 @@ export const partSchema = {
   title: "Part",
   type: "object",
   properties: {
+    item_id: { type: "string" },
     upc: { type: "string" },
     name: { type: "string" },
     description: { type: ["string", "null"] },
@@ -23,6 +24,7 @@ export const partSchema = {
     features: { type: ["array", "null"] }, // Assuming JSON can be any valid JSON
   },
   required: [
+    "item_id",
     "upc",
     "name",
     "stock",
@@ -93,7 +95,7 @@ export const CustomerSchema = {
   title: "Customer",
   type: "object",
   properties: {
-    customer_id: { type: "string"},
+    customer_id: { type: "string" },
     first_name: { type: "string" },
     last_name: { type: "string" },
     email: { type: "string" },
@@ -105,21 +107,19 @@ export const CustomerSchema = {
 } as const satisfies JSONSchema;
 
 export const CreateCustomerSchema = {
-    $schema: "http://json-schema.org/draft-07/schema",
-    title: "Customer",
-    type: "object",
-    properties: {
-      first_name: { type: "string" },
-      last_name: { type: "string" },
-      email: { type: "string" },
-      phone: { type: ["string", "null"] },
-    },
-    required: ["first_name", "last_name", "email", "phone"],
-  
-    additionalProperties: false,
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "Customer",
+  type: "object",
+  properties: {
+    first_name: { type: "string" },
+    last_name: { type: "string" },
+    email: { type: "string" },
+    phone: { type: ["string", "null"] },
+  },
+  required: ["first_name", "last_name", "email", "phone"],
 
+  additionalProperties: false,
 } as const satisfies JSONSchema;
-
 
 export const BikeSchema = {
   $schema: "http://json-schema.org/draft-07/schema",
@@ -144,8 +144,8 @@ export const TransactionSchema = {
     transaction_num: { type: "number" },
     transaction_id: { type: "string" },
     date_created: { type: "string" },
+    customer_id: { type: "string" },
     transaction_type: { type: "string" },
-    customer_id: { type: "string"},
     bike_id: { type: "string", nullable: true },
     total_cost: { type: "number" },
     description: { type: "string", nullable: true },
@@ -198,13 +198,8 @@ export const CreateTransactionSchema = {
     transaction_type: { type: "string" },
     customer_id: { type: "string", format: "uuid" },
     is_employee: { type: "boolean" },
-
   },
-  required: [
-    "transaction_type",
-    "customer_id",
-    "is_employee",
-  ],
+  required: ["transaction_type", "customer_id", "is_employee"],
   additionalProperties: false,
 } as const satisfies JSONSchema;
 
@@ -311,5 +306,39 @@ export const CreateTransactionDetailsSchema = {
     quantity: { type: "integer" },
   },
   required: ["changed_by", "quantity"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+export const updateTransactionSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "Transaction",
+  type: "object",
+  properties: {
+    transaction_type: { type: "string" },
+    bike_id: { type: "string", nullable: true },
+    total_cost: { type: "number" },
+    description: { type: "string", nullable: true },
+    is_completed: { type: "boolean" },
+    is_paid: { type: "boolean" },
+    is_refurb: { type: "boolean" },
+    is_urgent: { type: "boolean" },
+    is_nuclear: { type: "boolean", nullable: true },
+    is_beer_bike: { type: "boolean" },
+    is_reserved: { type: "boolean" },
+    is_waiting_on_email: { type: "boolean" },
+    date_completed: { type: "string", nullable: true },
+  },
+
+  required: [
+    "transaction_type",
+    "total_cost",
+    "is_completed",
+    "is_paid",
+    "is_refurb",
+    "is_urgent",
+    "is_beer_bike",
+    "is_reserved",
+    "is_waiting_on_email",
+  ],
   additionalProperties: false,
 } as const satisfies JSONSchema;

@@ -1,36 +1,21 @@
 import React, { useState } from "react";
 import { Dialog, TextField } from "@mui/material";
 // import { Link } from "react-router-dom";
-import DBModel, {
-  CreateCustomer,
-  CreateTransaction,
-  Customer,
-  Transaction,
-} from "../../model";
+import DBModel, { Bike } from "../../model";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../app/main";
 
-interface NewTransactionFormProps {
-  onTransactionCreated: (newTransaction: Transaction) => void;
+interface NewBikeFormProps {
+  onBikeCreated: (newBike: Bike) => void;
   isOpen: boolean;
   onClose: () => void;
-  t_type: string;
 }
 
-function NewTransactionForm({
-  onTransactionCreated,
-  isOpen,
-  onClose,
-  t_type,
-}: NewTransactionFormProps) {
+function NewBikeForm({ onBikeCreated, isOpen, onClose }: NewBikeFormProps) {
   const [formState, setFormState] = useState({
-    first_name: "",
-    last_name: "",
-    email: "",
-    phone: "",
     make: "",
     model: "",
-    color: "",
+    description: "",
   });
   // const [currentStep, setCurrentStep] = useState(1);
   const handleTextFieldChange = (
@@ -40,42 +25,20 @@ function NewTransactionForm({
     setFormState((prevFormState) => ({ ...prevFormState, [name]: value }));
   };
 
-  const createCustomer = useMutation({
-    mutationFn: (newCustomer: CreateCustomer) => {
-      return DBModel.createCustomer(newCustomer);
+  const createBike = useMutation({
+    mutationFn: (newBike: Bike) => {
+      return DBModel.createBike(newBike);
     },
 
-    onSuccess: (data: Customer) => {
-      console.log("Customer created", data);
+    onSuccess: (data: Bike) => {
+      console.log("Bike created", data);
       queryClient.invalidateQueries({
-        queryKey: ["customers"],
+        queryKey: ["bikes"],
       });
-      const submittedTransaction: CreateTransaction = {
-        transaction_type: t_type,
-        customer_id: data.customer_id, // TODO: need to figure this out
-        is_employee: false, // TODO: should be based on if custy is recognized as employee
-      };
-      CreateTransaction.mutate(submittedTransaction);
+      onBikeCreated(data);
     },
     onError: (error) => {
-      console.error("Error creating customer", error);
-    },
-  });
-  const CreateTransaction = useMutation({
-    mutationFn: (newTransaction: CreateTransaction) => {
-      return DBModel.postTransaction(newTransaction);
-    },
-    onSuccess: (data) => {
-      onTransactionCreated(data);
-      console.log("Transaction created", data);
-      queryClient.invalidateQueries({
-        queryKey: ["transactions"],
-      });
-      onTransactionCreated(data);
-      onClose();
-    },
-    onError: (error) => {
-      console.log("Error creating transaction", error);
+      console.error("Error creating bike", error);
     },
   });
 
@@ -83,14 +46,13 @@ function NewTransactionForm({
     event.preventDefault();
     console.log("handle submit");
 
-    const newCustomer: CreateCustomer = {
-      first_name: formState.first_name,
-      last_name: formState.last_name,
-      email: formState.email,
-      phone: formState.phone,
+    const newCustomer: Bike = {
+      make: formState.make,
+      model: formState.model,
+      description: formState.description,
     };
 
-    createCustomer.mutate(newCustomer);
+    createBike.mutate(newCustomer);
   };
   // const handleNext = () => {
   //   if (currentStep < 3) {
@@ -106,9 +68,16 @@ function NewTransactionForm({
       fullWidth={true}
       maxWidth="lg"
       className="modal-overlay"
-      sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
     >
-      <div className="modal-container" style={{ width: "70vw" }}>
+      <div
+        className="modal-container"
+        style={{ width: "70vw", padding: "10px" }}
+      >
         <button className="close-button" onClick={onClose}>
           x
         </button>
@@ -124,13 +93,13 @@ function NewTransactionForm({
               padding: "2.5%",
             }}
           >
-            <h2>Step 1: User Information</h2>
+            <h2> Bike Information</h2>
             <label>
               <TextField
-                type="email"
-                name="email"
-                placeholder="Email:"
-                value={formState.email}
+                type="text"
+                name="make"
+                placeholder="Make:"
+                value={formState.make}
                 onChange={handleTextFieldChange}
                 fullWidth
               />
@@ -139,9 +108,9 @@ function NewTransactionForm({
             <label style={{ minWidth: "95%" }}>
               <TextField
                 type="text"
-                name="first_name"
-                placeholder="First Name:"
-                value={formState.first_name}
+                name="model"
+                placeholder="Model:"
+                value={formState.model}
                 onChange={handleTextFieldChange}
                 fullWidth
               />
@@ -150,26 +119,15 @@ function NewTransactionForm({
             <label>
               <TextField
                 type="text"
-                name="last_name"
-                placeholder="Last Name:"
-                value={formState.last_name}
+                name="description"
+                placeholder="Description:"
+                value={formState.description}
                 onChange={handleTextFieldChange}
                 fullWidth
               />
             </label>
             <br />
-            <label>
-              <TextField
-                type="tel"
-                name="phone"
-                placeholder="Phone:"
-                value={formState.phone}
-                onChange={handleTextFieldChange}
-                fullWidth
-              />
-            </label>
-            <br />
-            <button type="submit">Submit Transaction</button>
+            <button type="submit">Submit Bike</button>
           </div>
         </form>
       </div>
@@ -177,4 +135,4 @@ function NewTransactionForm({
   );
 }
 
-export default NewTransactionForm;
+export default NewBikeForm;

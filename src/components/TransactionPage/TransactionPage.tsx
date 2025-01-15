@@ -1,18 +1,26 @@
-import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 // import { Repair, useRepairs } from "../RepairItem/RepairItem";
 // import { Part, useParts } from "../PartItem/PartItem";
 import { Button } from "@mui/material";
 
 import Notes from "./Notes";
-import { IRow } from "../../features/TransactionsTable/TransactionsTable";
 import { ITooltipParams, RowClickedEvent } from "ag-grid-community";
-import DBModel, { ItemDetails, Part, Repair, RepairDetails } from "../../model";
+import DBModel, {
+  ItemDetails,
+  Part,
+  Repair,
+  RepairDetails,
+  Transaction,
+  UpdateTransaction,
+  Bike,
+} from "../../model";
 import { useMutation, useQueries } from "@tanstack/react-query";
 import { queryClient } from "../../app/main";
 import { ToastContainer, toast } from "react-toastify";
-import SearchModal from "./searchModal";
+import SearchModal from "./SearchModal";
 import "./TransactionPage.css";
+import NewBikeForm from "./BikeForm";
 
 const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
   let total = 0;
@@ -28,49 +36,21 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
 };
 
 const TransactionDetail = () => {
-  // const { repairs, loading: repairsLoading } = useRepairs();
-  // const { parts, loading: partsLoading } = useParts();
+  const { transaction_id } = useParams();
+  // const nav = useNavigate();
 
-  const location = useLocation();
-  const [currLocation, setCurrLocation] = useState(location);
-  useEffect(() => {
-    if (location !== currLocation) {
-      setCurrLocation(location);
-    }
-  }, [location, currLocation]);
-  const transaction = location.state?.transaction;
+  if (!transaction_id) {
+    throw new Error("Transaction ID not provided");
+  }
 
-  // const [, setShowModal] = useState(false);
-  // const [showModal2, setShowModal2] = useState(false);
-
-  const [user, setUser] = useState("00000000-633a-fa44-a9b8-005aa337288b");
-  // const [bike, setBike] = useState(transaction?.Bike);
-  // const [customer, setCustomer] = useState(transaction?.Customer);
-  const [totalPrice, setTotalPrice] = useState(0);
-  // setUser("00000000-633a-fa44-a9b8-005aa337288b");
-  const [showCheckout, setShowCheckout] = useState(false);
-  const [showMarkDone, setShowMarkDone] = useState(false);
-
-  const [waitEmail, setWaitEmail] = useState(false);
-  const [waitPart, setWaitPart] = useState(false);
-  const [priority, setPriority] = useState(false);
-  const [nuclear, setNuclear] = useState(false);
-
-
-  const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
-
-  const [currentTransaction, setCurrentTransaction] = useState({
-    ...transaction,
-    Transaction: {
-      ...transaction?.Transaction,
-      total_cost: totalPrice,
-      waiting_on_email: waitEmail,
-      waiting_on_part: waitPart,
-      is_urgent: priority,
-      is_nuclear: nuclear,
-      is_complete: showMarkDone,
-    },
-  });
+  // const location = useLocation();
+  // const [currLocation, setCurrLocation] = useState(location);
+  // useEffect(() => {
+  //   if (location !== currLocation) {
+  //     setCurrLocation(location);
+  //   }
+  // }, [location, currLocation]);
+  // const transaction = location.state?.transaction;
 
   const [
     itemsQuery,
@@ -82,18 +62,9 @@ const TransactionDetail = () => {
     queries: [
       DBModel.getItemsQuery(),
       DBModel.getRepairsQuery(),
-      DBModel.getTransactionDetailsQuery(
-        currentTransaction.Transaction.transaction_id,
-        "repair"
-      ),
-      DBModel.getTransactionDetailsQuery(
-        currentTransaction.Transaction.transaction_id,
-        "item"
-      ),
-      DBModel.getTransactionQuery(
-        currentTransaction.Transaction.transaction_id,
-        currentTransaction.Transaction
-      ),
+      DBModel.getTransactionDetailsQuery(transaction_id, "repair"),
+      DBModel.getTransactionDetailsQuery(transaction_id, "item"),
+      DBModel.getTransactionQuery(transaction_id),
     ],
   });
 
@@ -124,35 +95,113 @@ const TransactionDetail = () => {
     isFetching: itemDetailsIsFetching,
     isLoading: itemDetailsLoading,
     // status: itemDetailsStatus,
-    data: itemDetails,
+    data: queriedItemDetails,
     error: itemDetailsError,
   } = itemDetailsQuery;
   if (itemDetailsError) toast.error("itemDetails: " + itemDetailsError);
-
+  const itemDetails = queriedItemDetails as ItemDetails[];
   const {
-    // isLoading: transactionLoading,
+    isLoading: transactionLoading,
     isFetching: transactionIsFetching,
     data: transactionData,
     error: transactionError,
   } = transactionQuery;
   if (transactionError) toast.error("transaction: " + transactionError);
-  // console.log("itemDetails: ", itemDetails);
-  useEffect(() => {
-    if (
-      currentTransaction.Transaction != transactionData &&
-      !transactionIsFetching
-    ) {
-      setCurrentTransaction({
-        ...currentTransaction,
-        Transaction: transactionData,
+
+  const [user] = useState("00000000-633a-fa44-a9b8-005aa337288b"); // TODO: get user from auth
+  const [bike, setBike] = useState<Bike>();
+  // const [customer, setCustomer] = useState(transaction?.Customer);
+  const [transactionType] = useState<string>(""); // TODO: create transaction type dropdown
+  const [totalPrice, setTotalPrice] = useState<number>(0);
+  const [showCheckout, setShowCheckout] = useState<boolean>(false);
+  const [showMarkDone, setShowMarkDone] = useState<boolean>(false);
+  const [showBikeForm, setShowBikeForm] = useState<boolean>(false);
+
+  const [refurb] = useState<boolean>(false); // TODO: create refurb button
+  const [reserved] = useState<boolean>(false); // TODO: create retrospec stuff
+  const [waitEmail, setWaitEmail] = useState<boolean>(false);
+  const [waitPart, setWaitPart] = useState<boolean>(false);
+  const [priority, setPriority] = useState<boolean>(false);
+  const [nuclear, setNuclear] = useState<boolean>(false);
+  const [beerBike] = useState<boolean>(false); // TODO: create beer bike button
+  const [description, setDescription] = useState<string>("");
+  const [isPaid, setPaid] = useState<boolean>(
+    transactionData?.is_paid ?? false
+  );
+  const [isCompleted, setIsCompleted] = useState<boolean>(
+    transactionData?.is_completed ?? false
+  );
+
+  // const [transactionHasChanged, setTransactionHasChanged] =
+  //   useState<boolean>(false);
+
+  const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
+
+  const updateTransaction = useMutation({
+    mutationFn: (input: {
+      transaction_id: string;
+      transaction: UpdateTransaction;
+    }) => {
+      return DBModel.updateTransaction(input.transaction_id, input.transaction);
+    },
+    onSuccess: (data: Transaction) => {
+      queryClient.invalidateQueries({
+        queryKey: ["transaction", transaction_id],
       });
+      console.log("transaction updated", data);
+    },
+  });
+
+  useEffect(() => {
+    if (!transactionIsFetching) {
+      const updatedTransaction = {
+        description: description,
+        transaction_type: transactionType,
+        total_cost: totalPrice,
+        is_waiting_on_email: waitEmail,
+        // waiting_on_part: waitPart,
+        is_urgent: priority,
+        is_nuclear: nuclear,
+        is_completed: showMarkDone,
+        is_paid: showCheckout,
+        is_beer_bike: beerBike,
+        is_refurb: refurb,
+        is_reserved: reserved,
+        bike_id: bike?.bike_id,
+        date_completed:
+          transactionData?.date_completed === null && showMarkDone
+            ? new Date().toISOString()
+            : transactionData?.date_completed,
+      } as UpdateTransaction;
+      updateTransaction.mutate({
+        transaction_id: transaction_id,
+        transaction: updatedTransaction,
+      });
+      // setCurrentTransaction({
+      //   ...transactionData,
+      //   Transaction: transactionData,
+      // });
     }
-  }, [currentTransaction, transactionData, transactionIsFetching]);
+  }, [
+    isPaid,
+    transactionData,
+    description,
+    totalPrice,
+    waitEmail,
+    priority,
+    nuclear,
+    showMarkDone,
+    showCheckout,
+    bike,
+    beerBike,
+    refurb,
+    reserved,
+  ]);
 
   const addRepair = useMutation({
     mutationFn: (repair: Repair) => {
       return DBModel.postTransactionDetails(
-        currentTransaction.Transaction.transaction_id,
+        transaction_id,
         repair.repair_id,
         user,
         1,
@@ -161,11 +210,7 @@ const TransactionDetail = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [
-          "transactionDetails",
-          currentTransaction.Transaction.transaction_id,
-          "repair",
-        ],
+        queryKey: ["transactionDetails", transaction_id, "repair"],
       });
       console.log("repair added");
     },
@@ -179,20 +224,16 @@ const TransactionDetail = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [
-          "transactionDetails",
-          currentTransaction.Transaction.transaction_id,
-          "repair",
-        ],
+        queryKey: ["transactionDetails", transaction_id, "repair"],
       });
-      console.log("repair added");
+      console.log("repair deleted");
     },
   });
 
   const addPart = useMutation({
     mutationFn: (part: Part) => {
       return DBModel.postTransactionDetails(
-        currentTransaction.Transaction.transaction_id,
+        transaction_id,
         part.upc,
         user,
         1,
@@ -202,11 +243,7 @@ const TransactionDetail = () => {
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [
-          "transactionDetails",
-          currentTransaction.Transaction.transaction_id,
-          "item",
-        ],
+        queryKey: ["transactionDetails", transaction_id, "item"],
       });
       console.log("repair added");
     },
@@ -220,86 +257,41 @@ const TransactionDetail = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [
-          "transactionDetails",
-          currentTransaction.Transaction.transaction_id,
-          "item",
-        ],
+        queryKey: ["transactionDetails", transaction_id, "item"],
       });
-      console.log("repair added");
+      console.log("part deleted");
     },
   });
 
   const handlePaid = () => {
-    setCurrentTransaction({
-      ...currentTransaction,
-      Transaction: {
-        ...currentTransaction.Transaction,
-        is_paid: true,
-      },
-    });
+    setPaid(true);
   };
 
   // const updateTransaction = useMutation({});
 
   const handleCompleteT = () => {
     // TODO: need to close transaction and go back to home page
-    setCurrentTransaction({
-      ...currentTransaction,
-      Transaction: {
-        ...currentTransaction.Transaction,
-        is_completed: true,
-      },
-    });
+    setIsCompleted(!isCompleted);
   };
 
   const handleWaitEmail = () => {
     setWaitEmail(!waitEmail);
-    setCurrentTransaction({
-      ...currentTransaction,
-      Transaction: {
-        ...currentTransaction.Transaction,
-        is_wait_email: waitEmail,
-      },
-    });
   };
 
   const handleWaitPart = () => {
     setWaitPart(!waitPart);
-    // setCurrentTransaction({
-    //     ...currentTransaction,
-    //     Transaction: {
-    //         ...currentTransaction.Transaction,
-    //         is_wait_email: waitEmail,
-    //     },
-    // });
-    // TODO: there is no boolean?
   };
 
   const handlePriority = () => {
     setPriority(!priority);
-    setCurrentTransaction({
-      ...currentTransaction,
-      Transaction: {
-        ...currentTransaction.Transaction,
-        is_urgent: priority,
-      },
-    });
   };
 
   const handleNuclear = () => {
     setNuclear(!nuclear);
-    setCurrentTransaction({
-      ...currentTransaction,
-      Transaction: {
-        ...currentTransaction.Transaction,
-        is_nuclear: nuclear,
-      },
-    });
   };
 
   const handleMarkDone = () => {
-    setShowMarkDone(true);
+    setShowMarkDone(!showMarkDone);
   };
 
   const handleMarkDoneClose = () => {
@@ -315,17 +307,15 @@ const TransactionDetail = () => {
   };
 
   const handleSaveNotes = (newNotes: string) => {
-    setCurrentTransaction((prevTransaction: IRow) => ({
-      ...prevTransaction,
-      Transaction: {
-        ...prevTransaction.Transaction,
-        description: newNotes,
-      },
-    }));
+    setDescription(newNotes);
   };
 
   useEffect(() => {
-    if (!repairDetailsIsFetching && !itemDetailsIsFetching) {
+    if (
+      !repairDetailsIsFetching &&
+      !itemDetailsIsFetching &&
+      (repairDetails || itemDetails)
+    ) {
       setTotalPrice(
         calculateTotalCost(
           repairDetails as RepairDetails[],
@@ -333,94 +323,47 @@ const TransactionDetail = () => {
         )
       );
     }
-  }, [repairDetails, itemDetails]);
+  }, [
+    repairDetails,
+    repairDetailsIsFetching,
+    itemDetails,
+    itemDetailsIsFetching,
+  ]);
 
-  if (repairsLoading || partsLoading) {
+  if (repairsLoading || partsLoading || transactionLoading) {
     return <p>Loading data...</p>;
   }
 
-  if (!transaction) {
-    return <p>No transaction selected!</p>;
+  if (repairError || partsError || transactionError) {
+    return <p>Error loading data</p>;
   }
 
   const handleAddRepair = (event: RowClickedEvent) => {
     const repair = event.data as Repair;
     console.log("handle add repair");
     addRepair.mutate(repair);
-    const updatedRepairs = [...currentTransaction.Repairs, repair];
-    const updatedTotalCost =
-      currentTransaction.Transaction.total_cost + repair.price;
-
-    setCurrentTransaction({
-      ...currentTransaction,
-      Repairs: updatedRepairs,
-      Transaction: {
-        ...currentTransaction.Transaction,
-        total_cost: updatedTotalCost,
-      },
-    });
-
-    // setRepairSearchQuery("");
-    // setFilteredRepairs([]);
   };
 
   const handleRemoveRepair = (repair: RepairDetails) => {
-    // const updatedRepairs = currentTransaction.Repairs.filter(
+    // const updatedRepairs = transactionData.Repairs.filter(
     //   (r: Repair) => r._id !== repair.repair_id
     // );
     deleteRepair.mutate(repair);
-    const updatedTotalCost =
-      currentTransaction.Transaction.total_cost - repair.Repair.price;
-
-    setCurrentTransaction({
-      ...currentTransaction,
-      // Repairs: updatedRepairs,
-      Transaction: {
-        ...currentTransaction.Transaction,
-        total_cost: updatedTotalCost,
-      },
-    });
   };
 
   const handleAddPart = (event: RowClickedEvent) => {
     const part = event.data as Part;
     addPart.mutate(part);
-    const updatedParts = [...currentTransaction.Parts, part];
-    // const updatedTotalCost =
-    //   currentTransaction.Transaction.total_cost + part.standard_price;
-
-    setCurrentTransaction({
-      ...currentTransaction,
-      Parts: updatedParts,
-      Transaction: {
-        ...currentTransaction.Transaction,
-        // total_cost: updatedTotalCost,
-      },
-    });
-
-    // setRepairSearchQuery("");
-    // setFilteredParts([]);
   };
 
   const handleRemovePart = (part: ItemDetails) => {
-    // const updatedParts = currentTransaction.Parts.filter(
+    // const updatedParts = transactionData.Parts.filter(
     //   (p: Part) => p._id !== part.upc
     // );
     // console.log("updated parts: ", updatedParts);
     deletePart.mutate(part);
-    const updatedTotalCost =
-      currentTransaction.Transaction.total_cost - part.Item.standard_price;
-
-    setCurrentTransaction({
-      ...currentTransaction,
-      // Parts: updatedParts,
-      Transaction: {
-        ...currentTransaction.Transaction,
-        total_cost: updatedTotalCost,
-      },
-    });
   };
-  console.log("current transaction: ", currentTransaction);
+  console.log("current transaction: ", transactionData);
   const toggleDoneRepair = (repairId: string) => {
     setDoneRepairs((prevState) => ({
       ...prevState,
@@ -429,28 +372,28 @@ const TransactionDetail = () => {
   };
 
   const allRepairsDone = () => {
-    return currentTransaction.Repairs.every(
-      (repair: Repair) => doneRepairs[repair.repair_id]
-    );
+    if (!repairDetails) return false;
+    return repairDetails.every((repair: RepairDetails) => repair.completed);
   };
 
-  // if(!repairDetailsLoading && repairDetails && !itemDetailsLoading && itemDetails) {
-  //   let total = 0;
-  //   (repairDetails as RepairDetails[]).forEach((repairDetail) => {
-  //     total += repairDetail.Repair.price;
-  //   });
-  // }
+  if (transactionData === undefined || transactionData.Customer === undefined) {
+    return <p>Loading...</p>;
+  }
 
-  console.log(
-    "current transaction cost ",
-    currentTransaction.Transaction.total_cost
-  );
+  if (transactionData.Customer === null) {
+    return <p>Customer not found</p>;
+  }
+
+  console.log("current transaction cost ", transactionData?.total_cost);
   return (
     <div
       style={{
-        padding: "20px",
+        padding: "2.5%",
+        marginBottom: "20px",
         display: "flex",
         flexDirection: "column",
+        height: "100%",
+        width: "90%%",
       }}
     >
       <header
@@ -459,27 +402,33 @@ const TransactionDetail = () => {
           display: "flex",
           flexDirection: "column",
           justifyContent: "flex-start",
+          // borderBottom: "1px solid black",
+          paddingBottom: "20px",
         }}
       >
         <h2>Transaction Details</h2>
         <h3>Bike Information</h3>
-        {currentTransaction.Transaction.Bike ? (
+        {transactionData.Bike ? (
           <>
             <p>
               <strong>Make: </strong>
-              {currentTransaction.Transaction.Bike.make}
+              {transactionData.Bike.make}
             </p>
             <p>
               <strong>Model: </strong>
-              {currentTransaction.Transaction.Bike.model}
+              {transactionData.Bike.model}
             </p>
             <p>
               <strong>Color: </strong>
-              {currentTransaction.Transaction.Bike.description}
+              {transactionData.Bike.description}
             </p>
           </>
         ) : (
-          <Button color="primary" variant="contained">
+          <Button
+            color="primary"
+            variant="contained"
+            onClick={() => setShowBikeForm(true)}
+          >
             Add Bike
           </Button>
         )}
@@ -487,25 +436,32 @@ const TransactionDetail = () => {
         <h3>Customer Information</h3>
         <p>
           <strong>Name: </strong>
-          {currentTransaction.Transaction.Customer.first_name}{" "}
-          {currentTransaction.Transaction.Customer.last_name}
+          {transactionData.Customer.first_name}{" "}
+          {transactionData.Customer.last_name}
         </p>
         <p>
           <strong>Email: </strong>
-          {currentTransaction.Transaction.Customer.email}
+          {transactionData.Customer.email}
         </p>
         <p>
           <strong>Phone: </strong>
-          {currentTransaction.Transaction.Customer.phone}
+          {transactionData.Customer.phone}
         </p>
 
-        <Notes
-          notes={currentTransaction.Transaction.description}
-          onSave={handleSaveNotes}
+        <NewBikeForm
+          isOpen={showBikeForm}
+          onClose={() => setShowBikeForm(false)}
+          onBikeCreated={(bike: Bike) => {
+            setBike(bike);
+            setShowBikeForm(false);
+          }}
         />
+
+        <Notes notes={description || ""} onSave={handleSaveNotes} />
       </header>
+      <hr />
       <main id="transaction-details">
-        <section>
+        <header id="search">
           <SearchModal
             searchData={repairs == undefined ? [] : repairs}
             columnData={[
@@ -544,78 +500,7 @@ const TransactionDetail = () => {
             }}
             onRowClick={(row) => handleAddRepair(row)}
           />
-          {/* <h3>Add Repair</h3>
-          <input
-            type="text"
-            placeholder="Search for a repair"
-            value={repairSearchQuery}
-            onChange={handleSearchChangeR}
-          />
-          <ul>
-            {filteredRepairs.map((repair) => (
-              <li
-                key={repair.repair_id}
-                // onClick={() => handleAddRepair(repair)}
-                style={{ cursor: "pointer" }}
-              >
-                <Button>
-                  {repair.name} - ${repair.price.toFixed(2)}
-                </Button>
-              </li>
-            ))}
-          </ul> */}
-          <h3>Repairs</h3>
-          <ul style={{ border: "black" }}>
-            {!repairDetailsLoading && repairDetails ? (
-              repairDetails.map((transactionDetail: RepairDetails) => (
-                // const repair = transactionDetail.Repair;
-                <li key={transactionDetail.transaction_detail_id}>
-                  <>
-                    {transactionDetail.Repair.name} - $
-                    {transactionDetail.Repair.price.toFixed(2)}
-                    <button
-                      onClick={() =>
-                        toggleDoneRepair(
-                          transactionDetail.transaction_detail_id
-                        )
-                      }
-                      style={{
-                        border: "2px solid white",
-                        marginLeft: "10px",
-                        cursor: "pointer",
-                        backgroundColor: doneRepairs[
-                          transactionDetail.transaction_detail_id
-                        ]
-                          ? "green"
-                          : "initial",
-                        color: "white",
-                      }}
-                    >
-                      {doneRepairs[transactionDetail.transaction_detail_id]
-                        ? "Done"
-                        : "Mark as Done"}
-                    </button>
-                    <button
-                      onClick={() => handleRemoveRepair(transactionDetail)}
-                      style={{
-                        marginLeft: "10px",
-                        cursor: "pointer",
-                        border: "white",
-                        backgroundColor: "red",
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </>
-                </li>
-              ))
-            ) : (
-              <p> loading..</p>
-            )}
-          </ul>
-        </section>
 
-        <section>
           <SearchModal
             searchData={parts == undefined ? [] : parts}
             columnData={[
@@ -663,51 +548,87 @@ const TransactionDetail = () => {
             }}
             onRowClick={(row) => handleAddPart(row)}
           />
-          {/* <h3>Add Part</h3>
-          <input
-            type="text"
-            placeholder="Search for a part"
-            value={partSearchQuery}
-            onChange={handleSearchChangeP}
-          />
-          <ul>
-            {filteredParts.map((part) => (
-              <li>
-                <Button
-                  key={part.upc.trim()}
-                  onClick={() => handleAddPart(part)}
-                  style={{ cursor: "pointer" }}
-                >
-                  {part.name} - ${part.standard_price.toFixed(2)}
-                </Button>
-              </li>
-            ))}
-          </ul> */}
-          <h3>Parts</h3>
-          <ul>
-            {!itemDetailsLoading && itemDetails ? (
-              (itemDetails as ItemDetails[]).map((part: ItemDetails) => (
-                <li key={part.Item.upc}>
-                  {part.Item.name} - ${part.Item.standard_price.toFixed(2)}
-                  <button
-                    onClick={() => {
-                      handleRemovePart(part);
-                    }}
-                    style={{
-                      marginLeft: "10px",
-                      cursor: "pointer",
-                      border: "white",
-                      backgroundColor: "red",
-                    }}
-                  >
-                    Delete
-                  </button>
-                </li>
-              ))
-            ) : (
-              <p> loading...</p>
-            )}
-          </ul>
+        </header>
+        <section id="detailsList">
+          <section id="repairsList">
+            <h3>Repairs</h3>
+            <ul style={{ border: "black" }}>
+              {!repairDetailsLoading && repairDetails ? (
+                repairDetails.map((transactionDetail: RepairDetails) => (
+                  // const repair = transactionDetail.Repair;
+                  <li key={transactionDetail.transaction_detail_id}>
+                    <>
+                      {transactionDetail.Repair.name} - $
+                      {transactionDetail.Repair.price.toFixed(2)}
+                      <button
+                        onClick={() =>
+                          toggleDoneRepair(
+                            transactionDetail.transaction_detail_id
+                          )
+                        }
+                        style={{
+                          border: "2px solid black",
+                          marginLeft: "10px",
+                          cursor: "pointer",
+                          backgroundColor: doneRepairs[
+                            transactionDetail.transaction_detail_id
+                          ]
+                            ? "green"
+                            : "initial",
+                          color: "black",
+                        }}
+                      >
+                        {doneRepairs[transactionDetail.transaction_detail_id]
+                          ? "Done"
+                          : "Mark as Done"}
+                      </button>
+                      <button
+                        onClick={() => handleRemoveRepair(transactionDetail)}
+                        style={{
+                          marginLeft: "10px",
+                          cursor: "pointer",
+                          border: "white",
+                          backgroundColor: "red",
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  </li>
+                ))
+              ) : (
+                <p> loading..</p>
+              )}
+            </ul>
+          </section>
+
+          <section id="partsList">
+            <h3>Parts</h3>
+            <ul>
+              {!itemDetailsLoading && itemDetails ? (
+                (itemDetails as ItemDetails[]).map((part: ItemDetails) => (
+                  <li key={part.transaction_detail_id}>
+                    {part.Item.name} - ${part.Item.standard_price.toFixed(2)}
+                    <button
+                      onClick={() => {
+                        handleRemovePart(part);
+                      }}
+                      style={{
+                        marginLeft: "10px",
+                        cursor: "pointer",
+                        border: "white",
+                        backgroundColor: "red",
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </li>
+                ))
+              ) : (
+                <p> loading...</p>
+              )}
+            </ul>
+          </section>
         </section>
       </main>
       <footer>
@@ -753,7 +674,7 @@ const TransactionDetail = () => {
 
         <button
           onClick={handleCheckout}
-          disabled={!allRepairsDone() || currentTransaction.Transaction.is_paid}
+          disabled={!allRepairsDone() || transactionData.is_paid}
           style={{
             backgroundColor: "green",
             border: "white",
@@ -769,10 +690,7 @@ const TransactionDetail = () => {
             <div className="checkout-content">
               <p>
                 <strong>
-                  $
-                  {(currentTransaction.Transaction.total_cost * 1.0625).toFixed(
-                    2
-                  )}
+                  ${(transactionData.total_cost * 1.0625).toFixed(2)}
                 </strong>
               </p>
 
@@ -780,9 +698,9 @@ const TransactionDetail = () => {
                 <strong>Repairs:</strong>
               </p>
               <ul>
-                {currentTransaction.Repairs.map((repair: Repair) => (
-                  <li key={repair.repair_id}>
-                    {repair.name} - ${repair.price.toFixed(2)}
+                {repairDetails.map((repair: RepairDetails) => (
+                  <li key={repair.transaction_detail_id}>
+                    {repair.Repair.name} - ${repair.Repair.price.toFixed(2)}
                   </li>
                 ))}
               </ul>
@@ -791,11 +709,15 @@ const TransactionDetail = () => {
                 <strong>Parts</strong>
               </p>
               <ul>
-                {currentTransaction.Parts.map((part: Part) => (
-                  <li key={part.upc}>
-                    {part.name} - ${part.standard_price.toFixed(2)}
-                  </li>
-                ))}
+                {itemDetails === undefined ? (
+                  <></>
+                ) : (
+                  itemDetails.map((part: ItemDetails) => (
+                    <li key={part.transaction_detail_id}>
+                      {part.Item.name} - ${part.Item.standard_price.toFixed(2)}
+                    </li>
+                  ))
+                )}
               </ul>
               <button
                 onClick={handlePaid}
@@ -838,17 +760,13 @@ const TransactionDetail = () => {
         </style>
         <button
           onClick={handleMarkDone}
-          disabled={!currentTransaction.Transaction.is_paid}
+          disabled={!transactionData.is_paid}
           style={{
             marginRight: "10px",
-            cursor: currentTransaction.Transaction.is_paid
-              ? "pointer"
-              : "not-allowed",
+            cursor: transactionData.is_paid ? "pointer" : "not-allowed",
             border: "white",
             color: "white",
-            backgroundColor: currentTransaction.Transaction.is_completed
-              ? "green"
-              : "black",
+            backgroundColor: transactionData.is_completed ? "green" : "black",
           }}
         >
           Mark Transaction as Complete

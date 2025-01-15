@@ -28,10 +28,11 @@ const SearchModal: React.FC<SearchModalProps> = ({
   //     console.log("Search Term:", searchTerm);
   //     setVisible(false);
   //   };
-  console.log("search data", searchData);
+  // console.log("search data", searchData);
 
   const handleCancel = () => {
     setVisible(false);
+    setSearchTerm("");
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,7 +41,11 @@ const SearchModal: React.FC<SearchModalProps> = ({
 
   return (
     <>
-      <Button variant="outlined" onClick={showModal}>
+      <Button
+        variant="outlined"
+        onClick={showModal}
+        style={{ margin: "1%", width: "100%" }}
+      >
         Search for{" "}
         {searchData.length > 0 && "upc" in searchData[0] ? "Parts" : "Repairs"}
       </Button>
@@ -49,6 +54,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
           height: "100%",
           width: "100%",
           alignSelf: "center",
+          display: "none",
         }}
       >
         <Dialog
@@ -90,8 +96,8 @@ const SearchModal: React.FC<SearchModalProps> = ({
                 placeholder={
                   "Enter" +
                   (searchData.length > 0 && "upc" in searchData[0]
-                    ? "part upc"
-                    : "repair name")
+                    ? " part upc or part name"
+                    : " repair name")
                 }
                 value={searchTerm}
                 onChange={handleSearchChange}
@@ -119,6 +125,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
                 pagination={true}
                 onRowClicked={(event) => {
                   setVisible(false);
+                  setSearchTerm("");
                   return onRowClick(event);
                 }}
                 paginationPageSizeSelector={false}

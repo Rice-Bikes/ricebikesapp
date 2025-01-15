@@ -23,6 +23,7 @@ import {
   ItemDetailsSchema,
   CreateTransactionSchema,
   CreateCustomerSchema,
+  updateTransactionSchema,
 } from "./schema";
 import Ajv from "ajv";
 
@@ -38,6 +39,7 @@ export type TransactionDetails = FromSchema<typeof TransactionDetailsSchema>;
 export type RepairDetails = FromSchema<typeof RepairDetailsSchema>;
 export type ItemDetails = FromSchema<typeof ItemDetailsSchema>;
 export type CreateTransaction = FromSchema<typeof CreateTransactionSchema>;
+export type UpdateTransaction = FromSchema<typeof updateTransactionSchema>;
 
 export type PartArray = FromSchema<typeof partArraySchema>;
 export type RepairArray = FromSchema<typeof repairArraySchema>;
@@ -460,6 +462,32 @@ class DBModel {
       });
   }
 
+  public static createBike = async (bike: Bike) => 
+    fetch(`${hostname}/bikes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(bike),
+    })
+    .then((response) => response.json())
+    .then((response) => {
+      if (!DBModel.validateObjectResponse(response)) {
+        throw new Error("Invalid response");
+      }
+      if (!response.success) {
+        throw new Error("Failed to post bike");
+      }
+
+      if(!this.validateBike(response.responseObject)){
+        throw new Error("Invalid bike response");
+      }
+      return response.responseObject;
+    })
+    .catch((error) => {
+      throw new Error("Error posting bike data: " + error); // More detailed error logging
+    });
+
   public static postTransaction = async (Transaction: CreateTransaction) => 
     fetch(`${hostname}/transactions`, {
       method: "POST",
@@ -486,8 +514,8 @@ class DBModel {
         throw new Error("Error posting transaction data: " + error); // More detailed error logging
       });
 
-  public static updateTransaction = async (Transaction: Transaction) => {
-    return fetch(`${hostname}/transactions/${Transaction.transaction_id}`, {
+  public static updateTransaction = async (transaction_id: string, Transaction: UpdateTransaction) => {
+    return fetch(`${hostname}/transactions/${transaction_id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -502,6 +530,10 @@ class DBModel {
         if (!response.success) {
           throw new Error("Failed to update transaction");
         }
+        if (!DBModel.validateTransaction(response.responseObject)) {
+          throw new Error("Invalid transaction response");
+        }
+        return response.responseObject;
       })
       .catch((error) => {
         throw new Error("Error posting transaction data: " + error); // More detailed error logging
@@ -513,7 +545,9 @@ class DBModel {
     fetch(`${hostname}/transactionDetails/${transaction_detail_id}`, {
       method: "DELETE",
     })
+    .then((response) => response.json())
       .then((response) => {
+        console.log(response);
         if (!DBModel.validateObjectResponse(response)) {
           throw new Error("Invalid response");
         }
@@ -522,6 +556,7 @@ class DBModel {
         }
       })
       .catch((error) => {
+        console.error("Error deleting transaction details data: ", error);
         throw new Error("Error posting transaction details data: " + error); // More detailed error logging
       });
 
@@ -539,12 +574,14 @@ class DBModel {
 
   public static getTransactionQuery = (
     transaction_id: string,
-    initialData: Transaction
+    // onTransactionSuccess: (t: Transaction) => void
+    // initialData: Transaction
   ) => {
     return queryOptions({
       queryKey: ["transaction", transaction_id],
       queryFn: () => this.fetchTransaction(transaction_id),
-      initialData: initialData,
+      // onFetch: onTransactionSuccess,
+      // initialData: initialData,
       refetchOnWindowFocus: false,
       staleTime: 600000, // Cache products for 1 minute
     });
