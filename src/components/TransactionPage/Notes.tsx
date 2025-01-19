@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { User } from "../../model";
+import { TextField } from "@mui/material";
 
 interface NotesProps {
   notes: string;
@@ -8,15 +9,22 @@ interface NotesProps {
 }
 
 const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
+  console.log("initial data passed to Notes", notes);
   const [isEditing, setIsEditing] = useState(false);
   const [editedNotes, setEditedNotes] = useState(notes);
 
   const handleSave = () => {
-    onSave(editedNotes);
     setEditedNotes(
-      editedNotes + "-" + user.firstname + " " + user.lastname + "\n"
+      editedNotes + " - " + user.firstname + " " + user.lastname + "\n"
     );
+    console.log("edited notes in Notes component", editedNotes);
+    onSave(editedNotes + " - " + user.firstname + " " + user.lastname + "\n");
     setIsEditing(false);
+  };
+
+  const handleOpenToEdit = () => {
+    setEditedNotes(editedNotes === "" ? "" : editedNotes + "\n");
+    setIsEditing(true);
   };
 
   return (
@@ -24,10 +32,11 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
       <h3>Notes</h3>
       {isEditing ? (
         <div>
-          <textarea
+          <TextField
             value={editedNotes}
             onChange={(e) => setEditedNotes(e.target.value)}
-            style={{ width: "100%", height: "100px", textAlign: "left" }}
+            style={{ width: "100%", textAlign: "left" }}
+            multiline
           />
           <button
             onClick={handleSave}
@@ -43,18 +52,20 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
           </button>
         </div>
       ) : (
-        <div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <pre
             style={{
               textAlign: "left",
               border: "1px solid black",
               padding: "10px",
+              textWrap: "wrap",
+              height: "fit-content",
             }}
           >
-            {notes || "No notes yet."}
+            {editedNotes || "No notes yet."}
           </pre>
           <button
-            onClick={() => setIsEditing(true)}
+            onClick={() => handleOpenToEdit()}
             style={{
               marginTop: "10px",
               padding: "5px 10px",

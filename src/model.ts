@@ -348,20 +348,22 @@ class DBModel {
     fetch(`${hostname}/users/${netid}`)
       .then((response) => response.json())
       .then((itemsData: unknown) => {
-        console.log("Raw users Data:", itemsData);
+        // console.log("Raw users Data:", itemsData);
         if (!DBModel.validateObjectResponse(itemsData)) {
           throw new Error("Invalid user response");
         }
+
         if (!itemsData.success) {
           throw new Error("Failed to load users");
         }
-        console.log("users object Data:", itemsData.responseObject);
+        // console.log("users object Data:", itemsData.responseObject);
         return itemsData.responseObject;
       })
       .then((usersData: unknown) => {
         if(!DBModel.validateUser(usersData)){
           throw new Error("Invalid user data");
         }
+        
         return usersData;
       })
       .catch((error) => {
@@ -568,6 +570,27 @@ class DBModel {
           throw new Error("Invalid transaction response");
         }
         return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error posting transaction data: " + error); // More detailed error logging
+      });
+
+  public static deleteTransaction = async (transaction_id: string) => 
+    fetch(`${hostname}/transactions/${transaction_id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post transaction");
+        }
+
       })
       .catch((error) => {
         throw new Error("Error posting transaction data: " + error); // More detailed error logging

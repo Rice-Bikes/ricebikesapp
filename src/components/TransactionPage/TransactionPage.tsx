@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { Button } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
+import { Button, Stack, List, ListItem, Grid2 } from "@mui/material";
 import { User } from "../../model";
-
+import { useNavigate } from "react-router-dom";
+import Item from "./HeaderItem";
 import Notes from "./Notes";
 import { ITooltipParams, RowClickedEvent } from "ag-grid-community";
 import DBModel, {
@@ -20,6 +21,7 @@ import { ToastContainer, toast } from "react-toastify";
 import SearchModal from "./SearchModal";
 import "./TransactionPage.css";
 import NewBikeForm from "./BikeForm";
+import TransactionOptionDropdown from "./TransactionOptionDropdown";
 
 const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
   let total = 0;
@@ -40,20 +42,12 @@ interface TransactionDetailProps {
 
 const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const { transaction_id } = useParams();
-  // const nav = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const nav = useNavigate();
 
   if (!transaction_id) {
     throw new Error("Transaction ID not provided");
   }
-
-  // const location = useLocation();
-  // const [currLocation, setCurrLocation] = useState(location);
-  // useEffect(() => {
-  //   if (location !== currLocation) {
-  //     setCurrLocation(location);
-  //   }
-  // }, [location, currLocation]);
-  // const transaction = location.state?.transaction;
 
   const [
     itemsQuery,
@@ -116,7 +110,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const [bike, setBike] = useState<Bike>();
   const user: User = propUser; //queriedUser ?? { user_id: "1" };
   // const [customer, setCustomer] = useState(transaction?.Customer);
-  const [transactionType] = useState<string>(""); // TODO: create transaction type dropdown
+  const [transactionType, setTransactionType] = useState<string>(
+    searchParams.get("type") ?? ""
+  ); // TODO: create transaction type dropdown
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const [showCheckout, setShowCheckout] = useState<boolean>(false);
   const [showMarkDone, setShowMarkDone] = useState<boolean>(false);
@@ -128,15 +124,18 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const [waitPart, setWaitPart] = useState<boolean>(false);
   const [priority, setPriority] = useState<boolean>(false);
   const [nuclear, setNuclear] = useState<boolean>(false);
-  const [beerBike] = useState<boolean>(false); // TODO: create beer bike button
-  const [description, setDescription] = useState<string>("");
+  const [description, setDescription] = useState<string>(
+    transactionData?.description ?? ""
+  );
   const [isPaid, setPaid] = useState<boolean>(
     transactionData?.is_paid ?? false
   );
   const [isCompleted, setIsCompleted] = useState<boolean>(
     transactionData?.is_completed ?? false
   );
-
+  const [beerBike, setBeerBike] = useState<boolean>(
+    transactionData?.is_beer_bike ?? false
+  );
   // const [transactionHasChanged, setTransactionHasChanged] =
   //   useState<boolean>(false);
 
@@ -157,8 +156,26 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     },
   });
 
+  // useEffect(() => {
+  //   console.log("transactionData: ", transactionData?.description);
+  //   if (transactionData && transactionIsFetching === false) {
+  //     setTransactionType(transactionData.transaction_type || "");
+  //     setTotalPrice(transactionData.total_cost || 0);
+  //     setShowCheckout(transactionData.is_paid || false);
+  //     setShowMarkDone(transactionData.is_completed || false);
+  //     setRefurb(transactionData.is_refurb || false);
+  //     // setReserved(transactionData.is_reserved || false);
+  //     setWaitEmail(transactionData.is_waiting_on_email || false);
+  //     // setWaitPart(transactionData.waiting_on_part || false);
+  //     setPriority(transactionData.is_urgent || false);
+  //     setNuclear(transactionData.is_nuclear || false);
+  //     setBeerBike(transactionData.is_beer_bike || false);
+  //   }
+  // }, [transactionData]);
+
   useEffect(() => {
-    if (!transactionIsFetching) {
+    if (!transactionIsFetching && description !== "" && description !== null) {
+      console.log("description before update: ", description);
       const updatedTransaction = {
         description: description,
         transaction_type: transactionType,
@@ -178,6 +195,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             ? new Date().toISOString()
             : transactionData?.date_completed,
       } as UpdateTransaction;
+
+      console.log("description after update", updatedTransaction.description);
       updateTransaction.mutate({
         transaction_id: transaction_id,
         transaction: updatedTransaction,
@@ -268,8 +287,32 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     },
   });
 
+  const deleteTransaction = useMutation({
+    mutationFn: (transaction: Transaction) => {
+      return DBModel.deleteTransaction(transaction.transaction_id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["transaction", transaction_id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["transactions"],
+      });
+      console.log("transaction deleted");
+      nav("/");
+    },
+  });
+
   const handlePaid = () => {
     setPaid(true);
+  };
+
+  const handleTransactionTypeChange = (newTransactionType: string) => {
+    setSearchParams((params) => {
+      params.set("type", newTransactionType);
+      return params;
+    });
+    setTransactionType(newTransactionType);
   };
 
   // const updateTransaction = useMutation({});
@@ -312,6 +355,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   };
 
   const handleSaveNotes = (newNotes: string) => {
+    console.log("new notes: ", newNotes);
     setDescription(newNotes);
   };
 
@@ -350,9 +394,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   };
 
   const handleRemoveRepair = (repair: RepairDetails) => {
-    // const updatedRepairs = transactionData.Repairs.filter(
-    //   (r: Repair) => r._id !== repair.repair_id
-    // );
     deleteRepair.mutate(repair);
   };
 
@@ -362,10 +403,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   };
 
   const handleRemovePart = (part: ItemDetails) => {
-    // const updatedParts = transactionData.Parts.filter(
-    //   (p: Part) => p._id !== part.upc
-    // );
-    // console.log("updated parts: ", updatedParts);
     deletePart.mutate(part);
   };
   console.log("current transaction: ", transactionData);
@@ -389,11 +426,15 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     return <p>Customer not found</p>;
   }
 
+  if (description === undefined) {
+    return <p>Loading...</p>;
+  }
+
   console.log("current transaction cost ", transactionData?.total_cost);
   return (
     <div
       style={{
-        padding: "2.5%",
+        padding: "0 10vw",
         marginBottom: "20px",
         display: "flex",
         flexDirection: "column",
@@ -401,7 +442,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         width: "90%%",
       }}
     >
-      <header
+      <Stack
         style={{
           marginBottom: "20px",
           display: "flex",
@@ -411,47 +452,93 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           paddingBottom: "20px",
         }}
       >
-        <h2>Transaction Details</h2>
-        <h3>Bike Information</h3>
-        {transactionData.Bike ? (
-          <>
-            <p>
-              <strong>Make: </strong>
-              {transactionData.Bike.make}
-            </p>
-            <p>
-              <strong>Model: </strong>
-              {transactionData.Bike.model}
-            </p>
-            <p>
-              <strong>Color: </strong>
-              {transactionData.Bike.description}
-            </p>
-          </>
-        ) : (
-          <Button
-            color="primary"
-            variant="contained"
-            onClick={() => setShowBikeForm(true)}
+        {/* <h2>Transaction Details</h2> */}
+        <Grid2 container>
+          <Grid2
+            size={6}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+            }}
           >
-            Add Bike
-          </Button>
-        )}
+            <h2
+              style={{
+                marginRight: "10px",
+                paddingTop: "5px",
+              }}
+            >
+              {transactionData.transaction_num + ": "}
+              {/* <strong>Name: </strong> */}
+              {"  " + transactionData.Customer.first_name}{" "}
+              {transactionData.Customer.last_name}
+            </h2>
+            <TransactionOptionDropdown
+              options={["Inpatient", "Outpatient", "Merch"]}
+              setTransactionType={handleTransactionTypeChange}
+              initialOption={["inpatient", "outpatient", "merch"].indexOf(
+                transactionType.toLowerCase()
+              )}
+            />
+          </Grid2>
+          <Grid2
+            size={6}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+            }}
+          >
+            <Button
+              variant="contained"
+              sx={{ backgroundColor: "red", alignSelf: "center" }}
+              onClick={() =>
+                deleteTransaction.mutate(transactionData as Transaction)
+              }
+            >
+              Delete
+            </Button>
+          </Grid2>
+        </Grid2>
+        <Item
+          style={{
+            display: "flex",
+            gap: "10px",
+            justifyContent: "space-between",
+          }}
+        >
+          <h3>
+            <strong>📧: </strong>
+            {transactionData.Customer.email}
+          </h3>
+          <h3>
+            <strong>#: </strong>
+            {transactionData.Customer.phone}
+          </h3>
+        </Item>
 
-        <h3>Customer Information</h3>
-        <p>
-          <strong>Name: </strong>
-          {transactionData.Customer.first_name}{" "}
-          {transactionData.Customer.last_name}
-        </p>
-        <p>
-          <strong>Email: </strong>
-          {transactionData.Customer.email}
-        </p>
-        <p>
-          <strong>Phone: </strong>
-          {transactionData.Customer.phone}
-        </p>
+        <Notes notes={transactionData.description ?? ""} onSave={handleSaveNotes} user={user} />
+
+        <h3>Bike Information</h3>
+        <Item>
+          {" "}
+          {transactionData.Bike ? (
+            <>
+              <h2>
+                {transactionData.Bike.make + " " + transactionData.Bike.model}
+              </h2>
+              <h2>{transactionData.Bike.description}</h2>
+            </>
+          ) : (
+            <Button
+              color="primary"
+              variant="contained"
+              onClick={() => setShowBikeForm(true)}
+            >
+              Add Bike
+            </Button>
+          )}
+        </Item>
 
         <NewBikeForm
           isOpen={showBikeForm}
@@ -461,12 +548,11 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             setShowBikeForm(false);
           }}
         />
-
-        <Notes notes={description || ""} onSave={handleSaveNotes} user = {user} />
-      </header>
+      </Stack>
       <hr />
-      <main id="transaction-details">
-        <header id="search">
+      <Grid2 container id="transaction-details" spacing={2}>
+        {/* <Grid2 id="search" size = {12}> */}
+        <Grid2 size={6}>
           <SearchModal
             searchData={repairs == undefined ? [] : repairs}
             columnData={[
@@ -505,7 +591,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             }}
             onRowClick={(row) => handleAddRepair(row)}
           />
-
+        </Grid2>
+        <Grid2 size={6}>
           <SearchModal
             searchData={parts == undefined ? [] : parts}
             columnData={[
@@ -553,115 +640,111 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             }}
             onRowClick={(row) => handleAddPart(row)}
           />
-        </header>
-        <section id="detailsList">
-          <section id="repairsList">
-            <h3>Repairs</h3>
-            <ul style={{ border: "black" }}>
-              {!repairDetailsLoading && repairDetails ? (
-                repairDetails.map((transactionDetail: RepairDetails) => (
-                  // const repair = transactionDetail.Repair;
-                  <li
-                    key={transactionDetail.transaction_detail_id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "10px",
-                      width: "100%",
-                    }}
-                  >
-                    <>
-                      <span>
-                        {transactionDetail.Repair.name} - $
-                        {transactionDetail.Repair.price.toFixed(2)}
-                      </span>
-                      <section
-                        style={{ display: "flex", flexDirection: "row" }}
-                      >
-                        <button
-                          onClick={() =>
-                            toggleDoneRepair(
-                              transactionDetail.transaction_detail_id
-                            )
-                          }
-                          style={{
-                            border: "2px solid black",
-                            marginLeft: "10px",
-                            cursor: "pointer",
-                            backgroundColor: doneRepairs[
-                              transactionDetail.transaction_detail_id
-                            ]
-                              ? "green"
-                              : "initial",
-                            color: "black",
-                          }}
-                        >
-                          {doneRepairs[transactionDetail.transaction_detail_id]
-                            ? "Done"
-                            : "Mark as Done"}
-                        </button>
-                        <button
-                          onClick={() => handleRemoveRepair(transactionDetail)}
-                          style={{
-                            marginLeft: "10px",
-                            cursor: "pointer",
-                            border: "white",
-                            backgroundColor: "red",
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </section>
-                    </>
-                  </li>
-                ))
-              ) : (
-                <p> loading..</p>
-              )}
-            </ul>
-          </section>
-
-          <section id="partsList">
-            <h3>Parts</h3>
-            <ul>
-              {!itemDetailsLoading && itemDetails ? (
-                (itemDetails as ItemDetails[]).map((part: ItemDetails) => (
-                  <li
-                    key={part.transaction_detail_id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "10px",
-                      width: "100%",
-                    }}
-                  >
+        </Grid2>
+        <Grid2 size={6} sx={{ textAlign: "center" }}>
+          <h3>Repairs</h3>
+          <List sx={{ width: "100%", bgcolor: "background.paper" }}>
+            {!repairDetailsLoading && repairDetails ? (
+              repairDetails.map((transactionDetail: RepairDetails) => (
+                // const repair = transactionDetail.Repair;
+                <ListItem
+                  key={transactionDetail.transaction_detail_id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "10px",
+                    width: "100%",
+                  }}
+                >
+                  <>
                     <span>
-                      {part.Item.name} - ${part.Item.standard_price.toFixed(2)}
+                      {transactionDetail.Repair.name} - $
+                      {transactionDetail.Repair.price.toFixed(2)}
                     </span>
-                    <button
-                      onClick={() => {
-                        handleRemovePart(part);
-                      }}
-                      style={{
-                        marginLeft: "10px",
-                        cursor: "pointer",
-                        border: "white",
-                        backgroundColor: "red",
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </li>
-                ))
-              ) : (
-                <p> loading...</p>
-              )}
-            </ul>
-          </section>
-        </section>
-      </main>
+                    <section style={{ display: "flex", flexDirection: "row" }}>
+                      <button
+                        onClick={() =>
+                          toggleDoneRepair(
+                            transactionDetail.transaction_detail_id
+                          )
+                        }
+                        style={{
+                          border: "2px solid black",
+                          marginLeft: "10px",
+                          cursor: "pointer",
+                          backgroundColor: doneRepairs[
+                            transactionDetail.transaction_detail_id
+                          ]
+                            ? "green"
+                            : "initial",
+                          color: "black",
+                        }}
+                      >
+                        {doneRepairs[transactionDetail.transaction_detail_id]
+                          ? "Done"
+                          : "Mark as Done"}
+                      </button>
+                      <button
+                        onClick={() => handleRemoveRepair(transactionDetail)}
+                        style={{
+                          marginLeft: "10px",
+                          cursor: "pointer",
+                          border: "white",
+                          backgroundColor: "red",
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </section>
+                  </>
+                </ListItem>
+              ))
+            ) : (
+              <p> loading..</p>
+            )}
+          </List>
+        </Grid2>
+
+        <Grid2 size={6} sx={{ textAlign: "center" }}>
+          <h3>Parts</h3>
+          <List sx={{ width: "100%", bgcolor: "background.paper" }}>
+            {!itemDetailsLoading && itemDetails ? (
+              (itemDetails as ItemDetails[]).map((part: ItemDetails) => (
+                <ListItem
+                  key={part.transaction_detail_id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "10px",
+                    width: "100%",
+                  }}
+                >
+                  <span>
+                    {part.Item.name} - ${part.Item.standard_price.toFixed(2)}
+                  </span>
+                  <button
+                    onClick={() => {
+                      handleRemovePart(part);
+                    }}
+                    style={{
+                      marginLeft: "10px",
+                      cursor: "pointer",
+                      border: "white",
+                      backgroundColor: "red",
+                    }}
+                  >
+                    Delete
+                  </button>
+                </ListItem>
+              ))
+            ) : (
+              <p> loading...</p>
+            )}
+          </List>
+        </Grid2>
+      </Grid2>
       <footer>
         <h3>Total</h3>
         <p>
@@ -730,9 +813,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               </p>
               <ul>
                 {repairDetails.map((repair: RepairDetails) => (
-                  <li key={repair.transaction_detail_id}>
+                  <ListItem key={repair.transaction_detail_id}>
                     {repair.Repair.name} - ${repair.Repair.price.toFixed(2)}
-                  </li>
+                  </ListItem>
                 ))}
               </ul>
 
@@ -744,9 +827,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                   <></>
                 ) : (
                   itemDetails.map((part: ItemDetails) => (
-                    <li key={part.transaction_detail_id}>
+                    <ListItem key={part.transaction_detail_id}>
                       {part.Item.name} - ${part.Item.standard_price.toFixed(2)}
-                    </li>
+                    </ListItem>
                   ))
                 )}
               </ul>
@@ -760,6 +843,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 Finish
               </button>
               <button onClick={closeCheckout}>Back</button>
+              <button onClick={() => setBeerBike(!beerBike)}> Beer Bike</button>
             </div>
           </div>
         )}

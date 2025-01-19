@@ -42,13 +42,16 @@ section#detailsList section {
   display: flex;
   flex-direction: column;
   max-width: 50%;
-  width: 50%;
+  /* width: 50%; */
   align-items: center;
+  padding-right: 10%;
+  justify-content: space-evenly;
 }
 
 #repairsList,
 #partsList {
   text-align: center;
+  margin-right: 1.25em;
 }
 
 h2 {
@@ -59,9 +62,14 @@ span {
   width: fit-content;
 }
 
-li {
-  margin-left: -15%;
+ul {
   justify-content: space-between;
+  padding-right: 15%;
+}
+
+li {
+  justify-content: space-between;
+  min-width: fit-content;
 }
 main#transaction-details {
   display: flex;

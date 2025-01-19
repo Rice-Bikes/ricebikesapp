@@ -46,16 +46,25 @@ const AuthPrompt = ({
     return () => clearInterval(interval);
   }, []);
 
-  const { error, data } = useQuery({
+  const { error, data, status } = useQuery({
     queryKey: ["user"],
     queryFn: () => {
+      // setNetId("");
+      if (netId.trim() === "") throw new Error("No netid");
+      const newNetId = netId;
       setNetId("");
-      setOpen(false);
-      return DBModel.fetchUser(netId);
+      return DBModel.fetchUser(newNetId);
     },
-
+    retry: false,
     enabled: netId !== "" && open,
   });
+
+  useEffect(() => {
+    console.log(data);
+    if (!error && status !== "pending" && data) {
+      setOpen(false);
+    }
+  }, [netId, open, data, status, error]);
 
   const handleSubmit = () => {
     setNetId(currentNetId);
@@ -93,10 +102,10 @@ const AuthPrompt = ({
           <p
             style={{
               color: "red",
-              display: error ? "none" : "grid",
+              display: error ? "grid" : "none",
             }}
           >
-            {error ? "Failed to find netid" : ""}
+            {error ? "Invalid netId" : ""}
           </p>
         </DialogContent>
         <DialogActions>

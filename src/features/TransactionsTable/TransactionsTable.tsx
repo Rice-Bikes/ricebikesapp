@@ -41,14 +41,36 @@ const isDaysLess = (numDays: number, date1: Date, date2: Date): boolean => {
   return diffInMillis > twoDaysInMillis;
 };
 
+function timeAgo(input: Date) {
+  const date = input;
+  const formatter = new Intl.RelativeTimeFormat("en");
+  const ranges = [
+    ["years", 3600 * 24 * 365],
+    ["months", 3600 * 24 * 30],
+    ["weeks", 3600 * 24 * 7],
+    ["days", 3600 * 24],
+    ["hours", 3600],
+    ["minutes", 60],
+    ["seconds", 1],
+  ] as const;
+  const secondsElapsed = (date.getTime() - Date.now()) / 1000;
+
+  for (const [rangeType, rangeVal] of ranges) {
+    if (rangeVal < Math.abs(secondsElapsed)) {
+      const delta = secondsElapsed / rangeVal;
+      return formatter.format(Math.round(delta), rangeType);
+    }
+  }
+}
 
 interface TransactionDropdownProps {
-  alertAuth: () => void
-
+  alertAuth: () => void;
 }
 
 const options = ["inpatient", "outpatient", "merchandise", "retrospec"]; // list of actions
-function CreateTransactionDropdown({alertAuth}: TransactionDropdownProps): JSX.Element {
+function CreateTransactionDropdown({
+  alertAuth,
+}: TransactionDropdownProps): JSX.Element {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const [showForm, setShowForm] = useState(false);
@@ -166,7 +188,9 @@ interface TransactionTableProps {
   alertAuth: () => void;
 }
 
-export function TransactionsTable({alertAuth}: TransactionTableProps): JSX.Element {
+export function TransactionsTable({
+  alertAuth,
+}: TransactionTableProps): JSX.Element {
   // const model = new TransactionTableModel();
   // Row Data: The data to be displayed.
 
@@ -177,7 +201,9 @@ export function TransactionsTable({alertAuth}: TransactionTableProps): JSX.Eleme
   console.log(rowData);
   // const [pageSize, setPageSize] = useState(100);
   const onRowClicked = (e: RowClickedEvent) => {
-    navigate(`/transaction-details/${e.data.Transaction.transaction_id}`);
+    navigate(
+      `/transaction-details/${e.data.Transaction.transaction_id}?type=${e.data.Transaction.transaction_type}`
+    );
   };
 
   const { status, data, error } = useQuery(
@@ -210,36 +236,36 @@ export function TransactionsTable({alertAuth}: TransactionTableProps): JSX.Eleme
       valueGetter: (params) => params.data?.Transaction.transaction_num,
       filter: true,
     },
-    {
-      headerName: "Type",
-      cellRenderer: (params: ICellRendererParams) => {
-        // console.log("object params", params);
-        return (
-          <div style={{ pointerEvents: "none" }}>
-            {params.data.Transaction?.transaction_type == "inpatient" ? (
-              <Button tabIndex={-1} color="success" variant="contained">
-                Inpatient
-              </Button>
-            ) : params.data.Transaction?.transaction_type === "outpatient" ? (
-              <Button tabIndex={-1} color="secondary" variant="contained">
-                Outpatient
-              </Button>
-            ) : params.data.Transaction?.transaction_type == "merch" ? (
-              <Button tabIndex={-1} variant="contained" color="info">
-                Merch
-              </Button>
-            ) : (
-              <></>
-            )}
-          </div>
-        );
-      },
-      filter: true,
-      autoHeight: true,
-      // filterParams: {
-      //   filterOptions: ["Inpatient", "Outpatient", "Merchandise", "Rental"],
-      // },
-    },
+    // {
+    //   headerName: "Type",
+    //   cellRenderer: (params: ICellRendererParams) => {
+    //     // console.log("object params", params);
+    //     return (
+    //       <div style={{ pointerEvents: "none" }}>
+    //         {params.data.Transaction?.transaction_type == "inpatient" ? (
+    //           <Button tabIndex={-1} color="success" variant="contained">
+    //             Inpatient
+    //           </Button>
+    //         ) : params.data.Transaction?.transaction_type === "outpatient" ? (
+    //           <Button tabIndex={-1} color="secondary" variant="contained">
+    //             Outpatient
+    //           </Button>
+    //         ) : params.data.Transaction?.transaction_type == "merch" ? (
+    //           <Button tabIndex={-1} variant="contained" color="info">
+    //             Merch
+    //           </Button>
+    //         ) : (
+    //           <></>
+    //         )}
+    //       </div>
+    //     );
+    //   },
+    //   filter: true,
+    //   autoHeight: true,
+    //   // filterParams: {
+    //   //   filterOptions: ["Inpatient", "Outpatient", "Merchandise", "Rental"],
+    //   // },
+    // },
     {
       headerName: "Status",
       valueGetter: (params) => {
@@ -300,7 +326,7 @@ export function TransactionsTable({alertAuth}: TransactionTableProps): JSX.Eleme
       },
     },
     {
-      headerName: "Created",
+      headerName: "Submitted",
       valueGetter: (params) => {
         if (
           !params.data?.Transaction ||
@@ -308,7 +334,7 @@ export function TransactionsTable({alertAuth}: TransactionTableProps): JSX.Eleme
         ) {
           return "";
         }
-        return new Date(params.data?.Transaction.date_created).toDateString();
+        return timeAgo(new Date(params.data?.Transaction.date_created));
       },
     },
   ]);
@@ -332,7 +358,7 @@ export function TransactionsTable({alertAuth}: TransactionTableProps): JSX.Eleme
       <Button></Button>
       <header>
         <ButtonGroup id="nav-buttons">
-          <CreateTransactionDropdown alertAuth = {alertAuth} />
+          <CreateTransactionDropdown alertAuth={alertAuth} />
           <Button>Whiteboard</Button>
           <Button>Price Check</Button>
         </ButtonGroup>
