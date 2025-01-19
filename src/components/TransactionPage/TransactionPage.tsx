@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-// import { Repair, useRepairs } from "../RepairItem/RepairItem";
-// import { Part, useParts } from "../PartItem/PartItem";
 import { Button } from "@mui/material";
+import { User } from "../../model";
 
 import Notes from "./Notes";
 import { ITooltipParams, RowClickedEvent } from "ag-grid-community";
@@ -35,7 +34,11 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
   return total;
 };
 
-const TransactionDetail = () => {
+interface TransactionDetailProps {
+  propUser: User;
+}
+
+const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const { transaction_id } = useParams();
   // const nav = useNavigate();
 
@@ -108,8 +111,10 @@ const TransactionDetail = () => {
   } = transactionQuery;
   if (transactionError) toast.error("transaction: " + transactionError);
 
-  const [user] = useState("00000000-633a-fa44-a9b8-005aa337288b"); // TODO: get user from auth
+  // const queriedUser: User | undefined = queryClient.getQueryData(["user"]);
+
   const [bike, setBike] = useState<Bike>();
+  const user: User = propUser; //queriedUser ?? { user_id: "1" };
   // const [customer, setCustomer] = useState(transaction?.Customer);
   const [transactionType] = useState<string>(""); // TODO: create transaction type dropdown
   const [totalPrice, setTotalPrice] = useState<number>(0);
@@ -203,7 +208,7 @@ const TransactionDetail = () => {
       return DBModel.postTransactionDetails(
         transaction_id,
         repair.repair_id,
-        user,
+        user.user_id,
         1,
         "repair"
       );
@@ -234,8 +239,8 @@ const TransactionDetail = () => {
     mutationFn: (part: Part) => {
       return DBModel.postTransactionDetails(
         transaction_id,
-        part.upc,
-        user,
+        part.item_id,
+        user.user_id,
         1,
         "item"
       );
@@ -457,7 +462,7 @@ const TransactionDetail = () => {
           }}
         />
 
-        <Notes notes={description || ""} onSave={handleSaveNotes} />
+        <Notes notes={description || ""} onSave={handleSaveNotes} user = {user} />
       </header>
       <hr />
       <main id="transaction-details">
@@ -556,43 +561,58 @@ const TransactionDetail = () => {
               {!repairDetailsLoading && repairDetails ? (
                 repairDetails.map((transactionDetail: RepairDetails) => (
                   // const repair = transactionDetail.Repair;
-                  <li key={transactionDetail.transaction_detail_id}>
+                  <li
+                    key={transactionDetail.transaction_detail_id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "10px",
+                      width: "100%",
+                    }}
+                  >
                     <>
-                      {transactionDetail.Repair.name} - $
-                      {transactionDetail.Repair.price.toFixed(2)}
-                      <button
-                        onClick={() =>
-                          toggleDoneRepair(
-                            transactionDetail.transaction_detail_id
-                          )
-                        }
-                        style={{
-                          border: "2px solid black",
-                          marginLeft: "10px",
-                          cursor: "pointer",
-                          backgroundColor: doneRepairs[
-                            transactionDetail.transaction_detail_id
-                          ]
-                            ? "green"
-                            : "initial",
-                          color: "black",
-                        }}
+                      <span>
+                        {transactionDetail.Repair.name} - $
+                        {transactionDetail.Repair.price.toFixed(2)}
+                      </span>
+                      <section
+                        style={{ display: "flex", flexDirection: "row" }}
                       >
-                        {doneRepairs[transactionDetail.transaction_detail_id]
-                          ? "Done"
-                          : "Mark as Done"}
-                      </button>
-                      <button
-                        onClick={() => handleRemoveRepair(transactionDetail)}
-                        style={{
-                          marginLeft: "10px",
-                          cursor: "pointer",
-                          border: "white",
-                          backgroundColor: "red",
-                        }}
-                      >
-                        Delete
-                      </button>
+                        <button
+                          onClick={() =>
+                            toggleDoneRepair(
+                              transactionDetail.transaction_detail_id
+                            )
+                          }
+                          style={{
+                            border: "2px solid black",
+                            marginLeft: "10px",
+                            cursor: "pointer",
+                            backgroundColor: doneRepairs[
+                              transactionDetail.transaction_detail_id
+                            ]
+                              ? "green"
+                              : "initial",
+                            color: "black",
+                          }}
+                        >
+                          {doneRepairs[transactionDetail.transaction_detail_id]
+                            ? "Done"
+                            : "Mark as Done"}
+                        </button>
+                        <button
+                          onClick={() => handleRemoveRepair(transactionDetail)}
+                          style={{
+                            marginLeft: "10px",
+                            cursor: "pointer",
+                            border: "white",
+                            backgroundColor: "red",
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </section>
                     </>
                   </li>
                 ))
@@ -607,8 +627,19 @@ const TransactionDetail = () => {
             <ul>
               {!itemDetailsLoading && itemDetails ? (
                 (itemDetails as ItemDetails[]).map((part: ItemDetails) => (
-                  <li key={part.transaction_detail_id}>
-                    {part.Item.name} - ${part.Item.standard_price.toFixed(2)}
+                  <li
+                    key={part.transaction_detail_id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "10px",
+                      width: "100%",
+                    }}
+                  >
+                    <span>
+                      {part.Item.name} - ${part.Item.standard_price.toFixed(2)}
+                    </span>
                     <button
                       onClick={() => {
                         handleRemovePart(part);

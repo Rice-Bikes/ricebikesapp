@@ -16,8 +16,11 @@ header {
   background-color: bisque;
 }
 
-#indicators {
+#indicators button {
   pointer-events: none;
+  color: white;
+  text-decoration: white;
+  margin-left: 5px;
 }
 
 main {
@@ -35,6 +38,7 @@ main {
 .lds-dual-ring:after {
   box-sizing: border-box;
 }
+
 .lds-dual-ring {
   display: inline-block;
   width: 80px;

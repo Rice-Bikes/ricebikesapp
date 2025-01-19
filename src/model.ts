@@ -24,6 +24,8 @@ import {
   CreateTransactionSchema,
   CreateCustomerSchema,
   updateTransactionSchema,
+  TransactionSummarySchema,
+  UserSchema,
 } from "./schema";
 import Ajv from "ajv";
 
@@ -32,6 +34,7 @@ const hostname = import.meta.env.VITE_API_URL;
 export type Part = FromSchema<typeof partSchema>;
 export type Repair = FromSchema<typeof repairSchema>;
 export type Transaction = FromSchema<typeof TransactionSchema>;
+export type TransactionSummary = FromSchema<typeof TransactionSummarySchema>;
 export type Customer = FromSchema<typeof CustomerSchema>;
 export type CreateCustomer = FromSchema<typeof CreateCustomerSchema>;
 export type Bike = FromSchema<typeof BikeSchema>;
@@ -40,6 +43,7 @@ export type RepairDetails = FromSchema<typeof RepairDetailsSchema>;
 export type ItemDetails = FromSchema<typeof ItemDetailsSchema>;
 export type CreateTransaction = FromSchema<typeof CreateTransactionSchema>;
 export type UpdateTransaction = FromSchema<typeof updateTransactionSchema>;
+export type User = FromSchema<typeof UserSchema>;
 
 export type PartArray = FromSchema<typeof partArraySchema>;
 export type RepairArray = FromSchema<typeof repairArraySchema>;
@@ -109,6 +113,7 @@ class DBModel {
   ) => data is TransactionDetails;
   public static validateRepairDetails: (data: unknown) => data is RepairDetails;
   public static validateItemDetails: (data: unknown) => data is ItemDetails;
+  public static validateUser: (data: unknown) => data is User;
 
   // ARRAY VERIFICATION METHODS
   static validatePartsArray: (data: unknown) => data is Part[];
@@ -123,6 +128,8 @@ class DBModel {
   static validatePartsResponse: (data: unknown) => data is PartResponse;
   static validateObjectResponse: (data: unknown) => data is ObjectResponse;
   static validateArrayResponse: (data: unknown) => data is ArrayResponse;
+  static validateTransactionSummary: (data: unknown) => data is TransactionSummary;
+
 
   static initialize() {
     const ajv = new Ajv();
@@ -131,6 +138,7 @@ class DBModel {
 
     // OBJECT VERIFICATION METHODS
     DBModel.validateTransaction = compile(TransactionSchema);
+    DBModel.validateTransactionSummary = compile(TransactionSummarySchema);
     DBModel.validateCustomer = compile(CustomerSchema);
     DBModel.validateBike = compile(BikeSchema);
     DBModel.validatePart = compile(partSchema);
@@ -138,6 +146,7 @@ class DBModel {
     DBModel.validateTransactionDetails = compile(TransactionDetailsSchema);
     DBModel.validateItemDetails = compile(ItemDetailsSchema);
     DBModel.validateRepairDetails = compile(RepairDetailsSchema);
+    DBModel.validateUser = compile(UserSchema);
 
     // ARRAY VERIFICATION METHODS
     DBModel.validateTransactionsArray = compile(TransactionArraySchema);
@@ -244,7 +253,33 @@ class DBModel {
           throw new Error("Invalid transaction response");
         }
         return transactionData;
-      });
+      })
+
+  public static fetchTransactionSummary = async () =>
+    fetch(`${hostname}/summary/transactions`)
+  .then((response) => response.json())
+  .then((summaryResponse: unknown) => {
+    console.log("Raw Summary Response:", summaryResponse);
+    if (!DBModel.validateObjectResponse(summaryResponse)) {
+      throw new Error("Invalid part response");
+    }
+    if (!summaryResponse.success) {
+      throw new Error("Failed to load parts");
+    }
+    console.log(" Summary Data:", summaryResponse.responseObject);
+    return summaryResponse.responseObject;
+  })
+  .then((summaryData: unknown) => {
+    console.log("Mapped summary Data:", summaryData);
+
+    if (!DBModel.validateTransactionSummary(summaryData)) {
+      throw new Error("Invalid summary");
+    }
+    return summaryData;
+  })
+  .catch((error) => {
+    throw Error("Error loading or parsing summary data: " + error);
+  });
 
   public static fetchItems = async () =>
     fetch(`${hostname}/items`)
@@ -304,6 +339,30 @@ class DBModel {
           throw new Error("Invalid part array");
         }
         return repairsData;
+      })
+      .catch((error) => {
+        throw new Error("Error loading server data: " + error); // More detailed error logging
+      });
+
+  public static fetchUser = async (netid: string) =>
+    fetch(`${hostname}/users/${netid}`)
+      .then((response) => response.json())
+      .then((itemsData: unknown) => {
+        console.log("Raw users Data:", itemsData);
+        if (!DBModel.validateObjectResponse(itemsData)) {
+          throw new Error("Invalid user response");
+        }
+        if (!itemsData.success) {
+          throw new Error("Failed to load users");
+        }
+        console.log("users object Data:", itemsData.responseObject);
+        return itemsData.responseObject;
+      })
+      .then((usersData: unknown) => {
+        if(!DBModel.validateUser(usersData)){
+          throw new Error("Invalid user data");
+        }
+        return usersData;
       })
       .catch((error) => {
         throw new Error("Error loading server data: " + error); // More detailed error logging

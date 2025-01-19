@@ -1,16 +1,21 @@
 import { useState } from "react";
+import { User } from "../../model";
 
 interface NotesProps {
   notes: string;
   onSave: (newNotes: string) => void;
+  user: User;
 }
 
-const Notes: React.FC<NotesProps> = ({ notes, onSave }) => {
+const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedNotes, setEditedNotes] = useState(notes);
 
   const handleSave = () => {
     onSave(editedNotes);
+    setEditedNotes(
+      editedNotes + "-" + user.firstname + " " + user.lastname + "\n"
+    );
     setIsEditing(false);
   };
 

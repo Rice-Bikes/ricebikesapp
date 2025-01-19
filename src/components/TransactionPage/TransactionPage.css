@@ -31,18 +31,38 @@ header#search {
 main#transaction-details section#detailsList {
   display: flex;
   flex-direction: row;
-  align-items: center;
-  justify-content: space-around;
+  align-items: flex-start;
   margin-top: 20px;
   gap: 2%;
   height: auto;
   width: 100%;
 }
 
+section#detailsList section {
+  display: flex;
+  flex-direction: column;
+  max-width: 50%;
+  width: 50%;
+  align-items: center;
+}
+
+#repairsList,
+#partsList {
+  text-align: center;
+}
+
 h2 {
   text-align: center;
 }
 
+span {
+  width: fit-content;
+}
+
+li {
+  margin-left: -15%;
+  justify-content: space-between;
+}
 main#transaction-details {
   display: flex;
   flex-direction: column;

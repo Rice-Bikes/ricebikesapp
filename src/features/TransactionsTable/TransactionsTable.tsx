@@ -20,8 +20,8 @@ import type {
   ICellRendererParams,
 } from "ag-grid-community";
 import "./TransactionsTable.css"; // CSS Stylesheet
-import NewTransactionForm from "../../components/TransactionPage/CustomerForm";
-import { Transaction, Bike, Customer } from "../../model";
+import NewTransactionForm from "./CustomerForm";
+import { Transaction, Bike, Customer, TransactionSummary } from "../../model";
 import { useNavigate } from "react-router-dom";
 import DBModel from "../../model";
 
@@ -41,12 +41,20 @@ const isDaysLess = (numDays: number, date1: Date, date2: Date): boolean => {
   return diffInMillis > twoDaysInMillis;
 };
 
-const options = ["Inpatient", "Outpatient", "Merchandise", "Retrospec"]; // list of actions
-function CreateTransactionDropdown() {
+
+interface TransactionDropdownProps {
+  alertAuth: () => void
+
+}
+
+const options = ["inpatient", "outpatient", "merchandise", "retrospec"]; // list of actions
+function CreateTransactionDropdown({alertAuth}: TransactionDropdownProps): JSX.Element {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const [showForm, setShowForm] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(1);
+
+  const nav = useNavigate();
 
   // const handleClick = () => {
   //   console.info(`You clicked ${options[selectedIndex]}`);
@@ -59,6 +67,7 @@ function CreateTransactionDropdown() {
     console.info(`You clicked ${options[index]} with ${event}`);
     setSelectedIndex(index);
     setOpen(false);
+    alertAuth();
     setShowForm(true);
   };
 
@@ -80,6 +89,10 @@ function CreateTransactionDropdown() {
   const handleTransactionCreated = (newTransaction: Transaction) => {
     console.log("Transaction created", newTransaction);
     setShowForm(false);
+    nav(
+      `/transaction-details/${newTransaction.transaction_id}?` +
+        new URLSearchParams({ type: options[selectedIndex] })
+    );
   };
 
   return (
@@ -121,7 +134,7 @@ function CreateTransactionDropdown() {
                   <MenuItem disabled={true}>Choose a transaction type</MenuItem>
                   {options.map((option, index) => (
                     <MenuItem
-                      key={option}
+                      key={option.toUpperCase()}
                       // disabled={index === 2}
                       selected={index === selectedIndex}
                       onClick={(event) => handleMenuItemClick(event, index)}
@@ -149,13 +162,18 @@ function CreateTransactionDropdown() {
   );
 }
 
-export function TransactionsTable(): JSX.Element {
+interface TransactionTableProps {
+  alertAuth: () => void;
+}
+
+export function TransactionsTable({alertAuth}: TransactionTableProps): JSX.Element {
   // const model = new TransactionTableModel();
   // Row Data: The data to be displayed.
 
   const navigate = useNavigate();
   const currDate: Date = new Date();
   const [rowData, setRowData] = useState<IRow[]>([]);
+  const [summaryData, setSummaryData] = useState<TransactionSummary>();
   console.log(rowData);
   // const [pageSize, setPageSize] = useState(100);
   const onRowClicked = (e: RowClickedEvent) => {
@@ -166,11 +184,23 @@ export function TransactionsTable(): JSX.Element {
     DBModel.getTransactionsQuery(10000000, true)
   );
 
+  const {
+    status: summaryStatus,
+    data: summaryQueryData,
+    error: summaryError,
+  } = useQuery({
+    queryKey: ["transactionSummary"],
+    queryFn: () => DBModel.fetchTransactionSummary(),
+  });
+
   useEffect(() => {
     if (status === "success") {
       setRowData(data as IRow[]);
     }
-  }, [status, data, error]);
+    if (summaryStatus === "success") {
+      setSummaryData(summaryQueryData as TransactionSummary);
+    }
+  }, [status, data, error, summaryStatus, summaryQueryData, summaryError]);
   console.log(status, data, error);
 
   // Column Definitions: Defines & controls grid columns.
@@ -190,7 +220,7 @@ export function TransactionsTable(): JSX.Element {
               <Button tabIndex={-1} color="success" variant="contained">
                 Inpatient
               </Button>
-            ) : params.data.Transaction?.transaction_type == "outpatient" ? (
+            ) : params.data.Transaction?.transaction_type === "outpatient" ? (
               <Button tabIndex={-1} color="secondary" variant="contained">
                 Outpatient
               </Button>
@@ -302,14 +332,21 @@ export function TransactionsTable(): JSX.Element {
       <Button></Button>
       <header>
         <ButtonGroup id="nav-buttons">
-          <CreateTransactionDropdown />
+          <CreateTransactionDropdown alertAuth = {alertAuth} />
           <Button>Whiteboard</Button>
           <Button>Price Check</Button>
         </ButtonGroup>
         <article id="indicators">
-          <button># Incomplete Bikes</button>
-          <button># Bike Awaiting Pickup</button>
-          <button># Bike Awaiting Safety Check</button>
+          <Button style={{ backgroundColor: "blue" }}>
+            {summaryData?.quantity_incomplete} Incomplete Bikes
+          </Button>
+          <Button style={{ backgroundColor: "green" }}>
+            {summaryData?.quantity_waiting_on_pickup} Bikes Awaiting Pickup
+          </Button>
+          <Button style={{ backgroundColor: "orange" }}>
+            {summaryData?.quantity_waiting_on_safety_check} Bikes Awaiting
+            Safety Check
+          </Button>
         </article>
       </header>
       <section

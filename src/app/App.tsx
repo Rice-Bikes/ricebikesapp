@@ -5,9 +5,57 @@ import "./App.css";
 import { Button } from "@mui/material";
 import { Routes, Route, Link } from "react-router-dom";
 import TransactionDetail from "../components/TransactionPage/TransactionPage";
+import { useState } from "react";
+import AuthPrompt from "../components/AuthPrompt/AuthPrompt";
+import { User } from "../model";
 //import {RepairItemList} from '../components/RepairItem/RepairItem';
 
 function App() {
+  // const loggedInUser = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<User>();
+  // const [user, setUser] = useState(null);
+  const [expediteAuth, setExpediteAuth] = useState(false);
+  // setUser(null);
+  // const nav = useNavigate();
+
+  if (!user) {
+    return (
+      <>
+        <header id="taskbar">
+          <Link to="/">
+            <img src={RiceBikesIcon} alt="Rice Bikes Icon" />
+          </Link>
+          <h2>Rice Bikes App</h2>
+          <Button
+            id="logout"
+            variant="contained"
+            style={{ backgroundColor: "black" }}
+            onClick={() => {
+              setIsLoggedIn(!isLoggedIn);
+            }}
+          >
+            {" "}
+            <h2>
+              {isLoggedIn ? (
+                <Link to="https://idp.rice.edu/idp/profile/cas/login?service=https://ricebikesapp.rice.edu/auth">
+                  {"Login"}
+                </Link>
+              ) : (
+                "Logout"
+              )}
+            </h2>{" "}
+          </Button>
+        </header>
+        <AuthPrompt
+          expediteAuth={true}
+          setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
+          setUser={(user: User) => setUser(user)}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <header id="taskbar">
@@ -15,16 +63,41 @@ function App() {
           <img src={RiceBikesIcon} alt="Rice Bikes Icon" />
         </Link>
         <h2>Rice Bikes App</h2>
-        <Button id="logout" variant="contained" disableElevation>
+        <Button
+          id="logout"
+          variant="contained"
+          style={{ backgroundColor: "black" }}
+          onClick={() => {
+            setIsLoggedIn(!isLoggedIn);
+          }}
+        >
           {" "}
-          <h2>Logout</h2>{" "}
+          <h2>
+            {isLoggedIn ? (
+              <Link to="https://idp.rice.edu/idp/profile/cas/login?service=https://ricebikesapp.rice.edu/auth">
+                {"Login"}
+              </Link>
+            ) : (
+              "Logout"
+            )}
+          </h2>{" "}
         </Button>
       </header>
+      <AuthPrompt
+        expediteAuth={expediteAuth}
+        setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
+        setUser={(user: User) => setUser(user)}
+      />
       <Routes>
-        <Route path="/" element={<TransactionsTable />} />
+        <Route
+          path="/"
+          element={
+            <TransactionsTable alertAuth={() => setExpediteAuth(true)} />
+          }
+        />
         <Route
           path="/transaction-details/:transaction_id"
-          element={<TransactionDetail />}
+          element={<TransactionDetail propUser={user} />}
         />
       </Routes>
     </>

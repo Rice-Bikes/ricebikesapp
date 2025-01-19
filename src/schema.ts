@@ -342,3 +342,36 @@ export const updateTransactionSchema = {
   ],
   additionalProperties: false,
 } as const satisfies JSONSchema;
+
+
+export const TransactionSummarySchema = {
+  $id: "transactionSummary.json",
+  type: "object",
+  properties: {
+    quantity_incomplete: { type: "number" },
+    quantity_waiting_on_pickup: { type: "number" },
+    quantity_waiting_on_safety_check: { type: "number" },
+    additionalProperties: false,
+  },
+  required: [
+    "quantity_incomplete",
+    "quantity_waiting_on_pickup",
+    "quantity_waiting_on_safety_check",
+  ],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+export const UserSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "User",
+  type: "object",
+  properties: {
+    user_id: { type: "string" },
+    username: { type: "string" },
+    firstname: { type: "string" },
+    lastname: { type: "string" },
+    active: { type: "boolean" },
+  },
+  required: ["user_id", "username", "firstname", "lastname", "active"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
