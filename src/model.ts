@@ -128,8 +128,9 @@ class DBModel {
   static validatePartsResponse: (data: unknown) => data is PartResponse;
   static validateObjectResponse: (data: unknown) => data is ObjectResponse;
   static validateArrayResponse: (data: unknown) => data is ArrayResponse;
-  static validateTransactionSummary: (data: unknown) => data is TransactionSummary;
-
+  static validateTransactionSummary: (
+    data: unknown
+  ) => data is TransactionSummary;
 
   static initialize() {
     const ajv = new Ajv();
@@ -253,33 +254,113 @@ class DBModel {
           throw new Error("Invalid transaction response");
         }
         return transactionData;
+      });
+
+  public static deleteTransaction = async (transaction_id: string) =>
+    fetch(`${hostname}/transactions/${transaction_id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post transaction");
+        }
       })
+      .catch((error) => {
+        throw new Error("Error posting transaction data: " + error); // More detailed error logging
+      });
+
+  public static updateTransaction = async (
+    transaction_id: string,
+    Transaction: UpdateTransaction
+  ) => {
+    console.log("updating transaction", Transaction);
+    return fetch(`${hostname}/transactions/${transaction_id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(Transaction),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        console.log(
+          "successfully recieved update transaction response",
+          response
+        );
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to update transaction");
+        }
+        if (!DBModel.validateTransaction(response.responseObject)) {
+          throw new Error("Invalid transaction response");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error posting transaction data: " + error); // More detailed error logging
+      });
+  };
+
+  public static postTransaction = async (Transaction: CreateTransaction) =>
+    fetch(`${hostname}/transactions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(Transaction),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post transaction");
+        }
+
+        if (!this.validateTransaction(response.responseObject)) {
+          throw new Error("Invalid transaction response");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error posting transaction data: " + error); // More detailed error logging
+      });
 
   public static fetchTransactionSummary = async () =>
     fetch(`${hostname}/summary/transactions`)
-  .then((response) => response.json())
-  .then((summaryResponse: unknown) => {
-    console.log("Raw Summary Response:", summaryResponse);
-    if (!DBModel.validateObjectResponse(summaryResponse)) {
-      throw new Error("Invalid part response");
-    }
-    if (!summaryResponse.success) {
-      throw new Error("Failed to load parts");
-    }
-    console.log(" Summary Data:", summaryResponse.responseObject);
-    return summaryResponse.responseObject;
-  })
-  .then((summaryData: unknown) => {
-    console.log("Mapped summary Data:", summaryData);
+      .then((response) => response.json())
+      .then((summaryResponse: unknown) => {
+        console.log("Raw Summary Response:", summaryResponse);
+        if (!DBModel.validateObjectResponse(summaryResponse)) {
+          throw new Error("Invalid part response");
+        }
+        if (!summaryResponse.success) {
+          throw new Error("Failed to load parts");
+        }
+        console.log(" Summary Data:", summaryResponse.responseObject);
+        return summaryResponse.responseObject;
+      })
+      .then((summaryData: unknown) => {
+        console.log("Mapped summary Data:", summaryData);
 
-    if (!DBModel.validateTransactionSummary(summaryData)) {
-      throw new Error("Invalid summary");
-    }
-    return summaryData;
-  })
-  .catch((error) => {
-    throw Error("Error loading or parsing summary data: " + error);
-  });
+        if (!DBModel.validateTransactionSummary(summaryData)) {
+          throw new Error("Invalid summary");
+        }
+        return summaryData;
+      })
+      .catch((error) => {
+        throw Error("Error loading or parsing summary data: " + error);
+      });
 
   public static fetchItems = async () =>
     fetch(`${hostname}/items`)
@@ -360,10 +441,10 @@ class DBModel {
         return itemsData.responseObject;
       })
       .then((usersData: unknown) => {
-        if(!DBModel.validateUser(usersData)){
+        if (!DBModel.validateUser(usersData)) {
           throw new Error("Invalid user data");
         }
-        
+
         return usersData;
       })
       .catch((error) => {
@@ -521,9 +602,9 @@ class DBModel {
       .catch((error) => {
         throw new Error("Error posting customer data: " + error); // More detailed error logging
       });
-  }
+  };
 
-  public static createBike = async (bike: Bike) => 
+  public static createBike = async (bike: Bike) =>
     fetch(`${hostname}/bikes`, {
       method: "POST",
       headers: {
@@ -531,105 +612,31 @@ class DBModel {
       },
       body: JSON.stringify(bike),
     })
-    .then((response) => response.json())
-    .then((response) => {
-      if (!DBModel.validateObjectResponse(response)) {
-        throw new Error("Invalid response");
-      }
-      if (!response.success) {
-        throw new Error("Failed to post bike");
-      }
-
-      if(!this.validateBike(response.responseObject)){
-        throw new Error("Invalid bike response");
-      }
-      return response.responseObject;
-    })
-    .catch((error) => {
-      throw new Error("Error posting bike data: " + error); // More detailed error logging
-    });
-
-  public static postTransaction = async (Transaction: CreateTransaction) => 
-    fetch(`${hostname}/transactions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(Transaction),
-    })
       .then((response) => response.json())
       .then((response) => {
         if (!DBModel.validateObjectResponse(response)) {
           throw new Error("Invalid response");
         }
         if (!response.success) {
-          throw new Error("Failed to post transaction");
+          throw new Error("Failed to post bike");
         }
 
-        if(!this.validateTransaction(response.responseObject)){
-          throw new Error("Invalid transaction response");
+        if (!this.validateBike(response.responseObject)) {
+          throw new Error("Invalid bike response");
         }
         return response.responseObject;
       })
       .catch((error) => {
-        throw new Error("Error posting transaction data: " + error); // More detailed error logging
+        throw new Error("Error posting bike data: " + error); // More detailed error logging
       });
 
-  public static deleteTransaction = async (transaction_id: string) => 
-    fetch(`${hostname}/transactions/${transaction_id}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        if (!DBModel.validateObjectResponse(response)) {
-          throw new Error("Invalid response");
-        }
-        if (!response.success) {
-          throw new Error("Failed to post transaction");
-        }
-
-      })
-      .catch((error) => {
-        throw new Error("Error posting transaction data: " + error); // More detailed error logging
-      });
-
-  public static updateTransaction = async (transaction_id: string, Transaction: UpdateTransaction) => {
-    console.log("updating transaction", Transaction);
-    return fetch(`${hostname}/transactions/${transaction_id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(Transaction),
-    })
-      .then((response) => response.json())
-      .then((response) => {
-        console.log("successfully recieved update transaction response", response);
-        if (!DBModel.validateObjectResponse(response)) {
-          throw new Error("Invalid response");
-        }
-        if (!response.success) {
-          throw new Error("Failed to update transaction");
-        }
-        if (!DBModel.validateTransaction(response.responseObject)) {
-          throw new Error("Invalid transaction response");
-        }
-        return response.responseObject;
-      })
-      .catch((error) => {
-        throw new Error("Error posting transaction data: " + error); // More detailed error logging
-      });
-  };
   public static deleteTransactionDetails = async (
     transaction_detail_id: string
   ) =>
     fetch(`${hostname}/transactionDetails/${transaction_detail_id}`, {
       method: "DELETE",
     })
-    .then((response) => response.json())
+      .then((response) => response.json())
       .then((response) => {
         console.log(response);
         if (!DBModel.validateObjectResponse(response)) {
@@ -642,6 +649,44 @@ class DBModel {
       .catch((error) => {
         console.error("Error deleting transaction details data: ", error);
         throw new Error("Error posting transaction details data: " + error); // More detailed error logging
+      });
+
+  public static postOrderRequest = async () =>
+    fetch(`${hostname}/orderRequests`,{
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        console.log(response);
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post order request");
+        }
+      })
+      .catch((error) => {
+        console.error("Error posting order request data: ", error);
+        throw new Error("Error posting order request data: " + error); // More detailed error logging
+      });
+
+  public static getOrderRequests = async (transaction_id: string) =>
+    fetch(`${hostname}/orderRequests/${transaction_id}`)
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateArrayResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to load order requests");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error loading order requests data: " + error); // More detailed error logging
       });
 
   public static getTransactionsQuery = (
@@ -657,7 +702,7 @@ class DBModel {
   };
 
   public static getTransactionQuery = (
-    transaction_id: string,
+    transaction_id: string
     // onTransactionSuccess: (t: Transaction) => void
     // initialData: Transaction
   ) => {

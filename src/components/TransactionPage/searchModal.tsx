@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { Button, Dialog, Box, Typography, TextField } from "@mui/material";
+import {
+  Button,
+  Dialog,
+  Box,
+  Typography,
+  TextField,
+  Stack,
+} from "@mui/material";
 import { AgGridReact } from "ag-grid-react";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
 import { Part, Repair } from "../../model";
@@ -47,7 +54,9 @@ const SearchModal: React.FC<SearchModalProps> = ({
         style={{ margin: "1%", width: "100%" }}
       >
         Search for{" "}
-        {searchData.length > 0 && "upc" in searchData[0] ? "Parts" : "Repairs"}
+        {searchData.length > 0 && "item_id" in searchData[0]
+          ? "Parts"
+          : "Repairs"}
       </Button>
       <main
         style={{
@@ -65,10 +74,10 @@ const SearchModal: React.FC<SearchModalProps> = ({
         >
           <Box
             sx={{
-              width: "80vw",
-              height: "85vh",
+              height: "100%",
               alignContent: "center",
               padding: "2%",
+              margin: "5% 2.5%",
             }}
           >
             <Typography
@@ -77,7 +86,10 @@ const SearchModal: React.FC<SearchModalProps> = ({
               component="h2"
               align="center"
             >
-              Search for Repairs
+              Search for{" "}
+              {searchData.length > 0 && "item_id" in searchData[0]
+                ? "Parts"
+                : "Repairs"}
             </Typography>
             {/* <Typography
               id="modal-modal-description"
@@ -90,20 +102,29 @@ const SearchModal: React.FC<SearchModalProps> = ({
                 display: "flex",
                 justifyContent: "flex-start",
                 marginTop: "1%",
+                width: "100%",
               }}
             >
-              <TextField
-                placeholder={
-                  "Enter" +
-                  (searchData.length > 0 && "upc" in searchData[0]
-                    ? " part upc or part name"
-                    : " repair name")
-                }
-                value={searchTerm}
-                onChange={handleSearchChange}
-                style={{ width: "50%" }}
-                multiline
-              />
+              <Stack
+                direction="row"
+                spacing={2}
+                style={{ paddingTop: "1%", width: "100%" }}
+              >
+                <TextField
+                  label="Search Term"
+                  placeholder={
+                    "Enter" +
+                    (searchData.length > 0 && "upc" in searchData[0]
+                      ? " part upc or part name"
+                      : " repair name")
+                  }
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  // style={{ width: "50%" }}
+                  multiline
+                  variant="outlined"
+                />
+              </Stack>
               {/* <Switch
                 color="primary"
                 inputProps={{ "aria-label": "primary checkbox" }}
@@ -122,15 +143,11 @@ const SearchModal: React.FC<SearchModalProps> = ({
                 rowData={searchData}
                 columnDefs={columnData}
                 defaultColDef={colDefaults}
-                pagination={true}
                 onRowClicked={(event) => {
                   setVisible(false);
                   setSearchTerm("");
                   return onRowClick(event);
                 }}
-                paginationPageSizeSelector={false}
-                // paginationPageSize={10}
-                paginationAutoPageSize={true}
                 quickFilterText={searchTerm}
               />
             </section>

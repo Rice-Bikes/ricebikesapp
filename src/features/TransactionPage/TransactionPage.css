@@ -102,6 +102,10 @@ main#transaction-details {
   margin-top: auto;
 }
 
+button {
+  color: white;
+}
+
 .checkout,
 .markDone {
   position: fixed;

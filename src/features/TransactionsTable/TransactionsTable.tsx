@@ -9,6 +9,8 @@ import {
   Chip,
   Stack,
 } from "@mui/material";
+import { ErrorSharp } from "@mui/icons-material";
+import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import type {
   ColDef,
   RowClickedEvent,
@@ -188,10 +190,8 @@ export function TransactionsTable({
               />
             )}
             {isUrgent && (
-              <i
-                className="fas fa-exclamation-circle"
-                style={{ color: "red", marginRight: "5px" }}
-              ></i>
+              <ErrorSharp style={{ color: "red", marginRight: "5px" }} />
+
             )}
             {isNuclear && (
               <i
@@ -199,9 +199,7 @@ export function TransactionsTable({
                 style={{ color: "red", marginRight: "5px" }}
               ></i>
             )}
-            {isWaitEmail && (
-              <i className="fas fa-envelope" style={{ marginRight: "5px" }}></i>
-            )}
+            {isWaitEmail && <EmailOutlinedIcon style={{ color: "red" }} />}
           </Stack>
         );
       },

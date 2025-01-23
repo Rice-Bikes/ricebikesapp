@@ -375,3 +375,66 @@ export const UserSchema = {
   required: ["user_id", "username", "firstname", "lastname", "active"],
   additionalProperties: false,
 } as const satisfies JSONSchema;
+
+
+
+// Order Request Schema
+export const OrderRequestSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "OrderRequest",
+  type: "object",
+  properties: {
+    order_request_id: { type: "string", format: "uuid" },
+    created_by: { type: "string", format: "uuid" },
+    transaction_id: { type: "string", format: "uuid" },
+    item_id: { type: "string", format: "uuid" },
+    date_created: { type: "string", format: "date-time" },
+    quantity: { type: "integer" },
+    notes: { type: ["string", "null"] },
+  },
+  required: [
+    "order_request_id",
+    "created_by",
+    "transaction_id",
+    "item_id",
+    "date_created",
+    "quantity",
+  ],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+export const GetOrderRequestsSchema = {
+  $id: "GetOrderRequestsSchema.json",
+  type: "object",
+  properties: {
+    params: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+    },
+  },
+  required: ["params"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+export const CreateOrderRequestsSchema = {
+  $id: "CreateOrderRequestsSchema.json",
+  type: "object",
+  properties: {
+    body: {
+      type: "object",
+      properties: {
+        created_by: { type: "string", format: "uuid" },
+        transaction_id: { type: "string", format: "uuid" },
+        item_id: { type: "string", format: "uuid" },
+        quantity: { type: "integer" },
+        notes: { type: ["string", "null"] },
+      },
+      required: ["created_by", "transaction_id", "item_id", "quantity"],
+    },
+  },
+  required: ["body"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
