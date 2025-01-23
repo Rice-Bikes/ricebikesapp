@@ -4,7 +4,7 @@ import RiceBikesIcon from "../assets/img/rice-bikes_white.png";
 import "./App.css";
 import { Button } from "@mui/material";
 import { Routes, Route, Link } from "react-router-dom";
-import TransactionDetail from "../components/TransactionPage/TransactionPage";
+import TransactionDetail from "../features/TransactionPage/TransactionPage";
 import { useState } from "react";
 import AuthPrompt from "../components/AuthPrompt/AuthPrompt";
 import { User } from "../model";

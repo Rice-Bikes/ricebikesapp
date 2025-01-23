@@ -4,23 +4,20 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Button,
   ButtonGroup,
-  ClickAwayListener,
-  Grow,
-  Paper,
-  Popper,
-  MenuItem,
-  MenuList,
-  Modal,
-  Box,
+  ToggleButtonGroup,
+  ToggleButton,
+  Chip,
+  Stack,
 } from "@mui/material";
 import type {
   ColDef,
   RowClickedEvent,
   RowSelectionOptions,
   ICellRendererParams,
+  IRowNode,
 } from "ag-grid-community";
+import CreateTransactionDropdown from "./TransactionTypeDropdown"; // Create Transaction Dropdown Component
 import "./TransactionsTable.css"; // CSS Stylesheet
-import NewTransactionForm from "./CustomerForm";
 import { Transaction, Bike, Customer, TransactionSummary } from "../../model";
 import { useNavigate } from "react-router-dom";
 import DBModel from "../../model";
@@ -63,127 +60,6 @@ function timeAgo(input: Date) {
   }
 }
 
-interface TransactionDropdownProps {
-  alertAuth: () => void;
-}
-
-const options = ["inpatient", "outpatient", "merchandise", "retrospec"]; // list of actions
-function CreateTransactionDropdown({
-  alertAuth,
-}: TransactionDropdownProps): JSX.Element {
-  const [open, setOpen] = useState(false);
-  const anchorRef = useRef<HTMLDivElement>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(1);
-
-  const nav = useNavigate();
-
-  // const handleClick = () => {
-  //   console.info(`You clicked ${options[selectedIndex]}`);
-  // };
-
-  const handleMenuItemClick = (
-    event: React.MouseEvent<HTMLLIElement, MouseEvent>,
-    index: number
-  ) => {
-    console.info(`You clicked ${options[index]} with ${event}`);
-    setSelectedIndex(index);
-    setOpen(false);
-    alertAuth();
-    setShowForm(true);
-  };
-
-  const handleToggle = () => {
-    setOpen((prevOpen) => !prevOpen);
-  };
-
-  const handleClose = (event: Event) => {
-    if (
-      anchorRef.current &&
-      anchorRef.current.contains(event.target as HTMLElement)
-    ) {
-      return;
-    }
-
-    setOpen(false);
-  };
-
-  const handleTransactionCreated = (newTransaction: Transaction) => {
-    console.log("Transaction created", newTransaction);
-    setShowForm(false);
-    nav(
-      `/transaction-details/${newTransaction.transaction_id}?` +
-        new URLSearchParams({ type: options[selectedIndex] })
-    );
-  };
-
-  return (
-    <>
-      <ButtonGroup
-        variant="contained"
-        ref={anchorRef}
-        aria-label="Button group with a nested menu"
-      >
-        <Button
-          aria-controls={open ? "split-button-menu" : undefined}
-          aria-expanded={open ? "true" : undefined}
-          aria-label="select merge strategy"
-          aria-haspopup="menu"
-          onClick={handleToggle}
-        >
-          New Transaction
-        </Button>
-      </ButtonGroup>
-      <Popper
-        sx={{ zIndex: 100 }}
-        open={open}
-        anchorEl={anchorRef.current}
-        role={undefined}
-        transition
-        disablePortal
-      >
-        {({ TransitionProps, placement }) => (
-          <Grow
-            {...TransitionProps}
-            style={{
-              transformOrigin:
-                placement === "bottom" ? "center top" : "center bottom",
-            }}
-          >
-            <Paper>
-              <ClickAwayListener onClickAway={handleClose}>
-                <MenuList id="split-button-menu" autoFocusItem>
-                  <MenuItem disabled={true}>Choose a transaction type</MenuItem>
-                  {options.map((option, index) => (
-                    <MenuItem
-                      key={option.toUpperCase()}
-                      // disabled={index === 2}
-                      selected={index === selectedIndex}
-                      onClick={(event) => handleMenuItemClick(event, index)}
-                    >
-                      {option}
-                    </MenuItem>
-                  ))}
-                </MenuList>
-              </ClickAwayListener>
-            </Paper>
-          </Grow>
-        )}
-      </Popper>
-      <Modal open={showForm} onClose={() => setShowForm(false)}>
-        <Box>
-          <NewTransactionForm
-            onTransactionCreated={handleTransactionCreated}
-            isOpen={showForm}
-            onClose={() => setShowForm(false)}
-            t_type={options[selectedIndex]}
-          />
-        </Box>
-      </Modal>
-    </>
-  );
-}
-
 interface TransactionTableProps {
   alertAuth: () => void;
 }
@@ -196,9 +72,11 @@ export function TransactionsTable({
 
   const navigate = useNavigate();
   const currDate: Date = new Date();
-  const [rowData, setRowData] = useState<IRow[]>([]);
+  const [viewType, setViewType] = useState("main");
+  const gridApiRef = useRef<AgGridReact>(null); // <= defined useRef for gridApi
+  const [, setRowData] = useState<IRow[]>([]);
   const [summaryData, setSummaryData] = useState<TransactionSummary>();
-  console.log(rowData);
+  // console.log(rowData);
   // const [pageSize, setPageSize] = useState(100);
   const onRowClicked = (e: RowClickedEvent) => {
     navigate(
@@ -236,48 +114,78 @@ export function TransactionsTable({
       valueGetter: (params) => params.data?.Transaction.transaction_num,
       filter: true,
     },
-    // {
-    //   headerName: "Type",
-    //   cellRenderer: (params: ICellRendererParams) => {
-    //     // console.log("object params", params);
-    //     return (
-    //       <div style={{ pointerEvents: "none" }}>
-    //         {params.data.Transaction?.transaction_type == "inpatient" ? (
-    //           <Button tabIndex={-1} color="success" variant="contained">
-    //             Inpatient
-    //           </Button>
-    //         ) : params.data.Transaction?.transaction_type === "outpatient" ? (
-    //           <Button tabIndex={-1} color="secondary" variant="contained">
-    //             Outpatient
-    //           </Button>
-    //         ) : params.data.Transaction?.transaction_type == "merch" ? (
-    //           <Button tabIndex={-1} variant="contained" color="info">
-    //             Merch
-    //           </Button>
-    //         ) : (
-    //           <></>
-    //         )}
-    //       </div>
-    //     );
-    //   },
-    //   filter: true,
-    //   autoHeight: true,
-    //   // filterParams: {
-    //   //   filterOptions: ["Inpatient", "Outpatient", "Merchandise", "Rental"],
-    //   // },
-    // },
     {
       headerName: "Status",
+      flex: 2,
       valueGetter: (params) => {
         const isWaitEmail = params.data?.Transaction.is_waiting_on_email;
         const isUrgent = params.data?.Transaction.is_urgent;
         const isNuclear = params.data?.Transaction.is_nuclear;
         const isBeerBike = params.data?.Transaction.is_beer_bike;
+        const transaction_type = params.data?.Transaction.transaction_type;
 
         return (
-          <span>
-            {isWaitEmail && (
-              <i className="fas fa-envelope" style={{ marginRight: "5px" }}></i>
+          <Stack
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              padding: "5px",
+            }}
+            direction={"row"}
+          >
+            {transaction_type?.toLowerCase() === "inpatient" && (
+              <Chip
+                label="Inpatient"
+                sx={{
+                  margin: "0 0.5vw",
+                  backgroundColor: "green",
+                  color: "white",
+                }}
+              />
+            )}
+
+            {transaction_type?.toLowerCase() === "outpatient" && (
+              <Chip
+                label="Outpatient"
+                sx={{
+                  margin: "0 0.5vw",
+                  backgroundColor: "blue",
+                  color: "white",
+                }}
+              />
+            )}
+
+            {transaction_type?.toLowerCase() === "merch" && (
+              <Chip
+                label="Merch"
+                sx={{
+                  margin: "0 0.5vw",
+                  backgroundColor: "gray",
+                  color: "white",
+                }}
+              />
+            )}
+
+            {transaction_type?.toLowerCase() === "retrospec" && (
+              <Chip
+                label="Retrospec"
+                sx={{
+                  margin: "0 0.5vw",
+                  backgroundColor: "orange",
+                  color: "white",
+                }}
+              />
+            )}
+            {isBeerBike && (
+              <Chip
+                label="Beer Bike"
+                sx={{
+                  margin: "0 0.5vw",
+                  backgroundColor: "turquoise",
+                  color: "black",
+                }}
+              />
             )}
             {isUrgent && (
               <i
@@ -291,17 +199,11 @@ export function TransactionsTable({
                 style={{ color: "red", marginRight: "5px" }}
               ></i>
             )}
-            {isBeerBike && <i className="bb">Beer Bike</i>}
-          </span>
+            {isWaitEmail && (
+              <i className="fas fa-envelope" style={{ marginRight: "5px" }}></i>
+            )}
+          </Stack>
         );
-        // let iconHtml = '';
-        // if(isWaitEmail) {
-        //   iconHtml += '<i className="fas fa-envelope"></i>';
-        // }
-        // if(isUrgent) {
-        //   iconHtml += '<i className="fas fa-exclamation" style="color: red;"></i>';
-        // }
-        // return iconHtml;
       },
       cellRenderer: (params: ICellRendererParams) => {
         return params.value;
@@ -352,9 +254,57 @@ export function TransactionsTable({
     };
   }, []);
 
+  // const gridOptions = useMemo(() => {
+  //   return {
+  //     rowSelection: 'single',
+  //     isExternalFilterPresent: isExternalFilterPresent,
+  //     doesExternalFilterPass: doesExternalFilterPass,
+  //   };
+  // }, [viewType]);
+
+  const handleViewType = (
+    _: React.MouseEvent<HTMLElement>,
+    newAlignment: string
+  ) => {
+    setViewType(newAlignment);
+    // gridApiRef.current?.onFilterChanged();
+  };
+
+  function isExternalFilterPresent() {
+    return true;
+  }
+
+  function doesExternalFilterPass(node: IRowNode) {
+    // console.log(node);
+    const transaction = node.data.Transaction as Transaction;
+    return (
+      (viewType === "retrospec" &&
+        transaction.transaction_type === "retrospec" &&
+        transaction.is_paid === false) ||
+      (viewType === "pickup" &&
+        transaction.is_paid === false &&
+        transaction.is_completed === true) ||
+      (viewType === "paid" && transaction.is_paid === true) ||
+      (viewType === "main" &&
+        transaction.is_completed === false &&
+        transaction.transaction_type !== "retrospec" &&
+        transaction.is_employee === false &&
+        transaction.is_refurb === false) ||
+      (viewType === "employee" &&
+        transaction.is_employee === true &&
+        transaction.is_completed === false) ||
+      viewType === ""
+    );
+  }
+
+  //   const onGridReady = (params) => {
+  //     params.api.resetRowHeights();
+  //     gridApiRef.current = params.api // <= assigned gridApi value on Grid ready
+  // }
+
   // Container: Defines the grid's theme & dimensions.
   return (
-    <main style={{ width: "100vw", height: "66vh" }}>
+    <main style={{ width: "100vw" }}>
       <Button></Button>
       <header>
         <ButtonGroup id="nav-buttons">
@@ -384,41 +334,52 @@ export function TransactionsTable({
         ) : status === "error" ? (
           "Error loading data"
         ) : (
-          <AgGridReact
-            rowData={data}
-            columnDefs={colDefs}
-            defaultColDef={defaultColDef}
-            rowSelection={rowSelection}
-            onRowClicked={onRowClicked}
-            pagination={true}
-            getRowStyle={({ data }) => {
-              if (
-                isDaysLess(
-                  5,
-                  currDate,
-                  new Date(data?.Transaction.date_created)
-                )
-              ) {
-                return { backgroundColor: "lightcoral" };
-              } else if (
-                isDaysLess(
-                  2,
-                  currDate,
-                  new Date(data?.Transaction.date_created)
-                )
-              ) {
-                return { backgroundColor: "lightyellow" };
-              } else return { backgroundColor: "white" };
-            }}
-            // onPaginationChanged={(e) => {
-            //   console.log(e);
-            //   if (e.newPageSize) {
-            //     setPageSize(e.api.paginationGetPageSize());
-            //   }
-            // }}
-            paginationPageSize={20}
-            // paginationPageSize={true}
-          />
+          <>
+            <ToggleButtonGroup
+              value={viewType}
+              exclusive
+              onChange={handleViewType}
+              aria-label="text alignment"
+            >
+              <ToggleButton value="main">Main Transactions</ToggleButton>
+              <ToggleButton value="pickup">Waiting on Pickup</ToggleButton>
+              <ToggleButton value="retrospec">Retrospec</ToggleButton>
+              <ToggleButton value="paid">Paid</ToggleButton>
+              <ToggleButton value="employee"> Employee </ToggleButton>
+            </ToggleButtonGroup>
+            <AgGridReact
+              ref={gridApiRef}
+              rowData={data}
+              columnDefs={colDefs}
+              defaultColDef={defaultColDef}
+              rowSelection={rowSelection}
+              onRowClicked={onRowClicked}
+              getRowStyle={({ data }) => {
+                if (
+                  isDaysLess(
+                    5,
+                    currDate,
+                    new Date(data?.Transaction.date_created)
+                  )
+                ) {
+                  return { backgroundColor: "lightcoral" };
+                } else if (
+                  isDaysLess(
+                    2,
+                    currDate,
+                    new Date(data?.Transaction.date_created)
+                  )
+                ) {
+                  return { backgroundColor: "lightyellow" };
+                } else return { backgroundColor: "white" };
+              }}
+              isExternalFilterPresent={isExternalFilterPresent}
+              doesExternalFilterPass={doesExternalFilterPass}
+              domLayout="autoHeight"
+              pagination={viewType === "paid"}
+              // paginationPageSize={true}
+            />
+          </>
         )}
       </section>
     </main>

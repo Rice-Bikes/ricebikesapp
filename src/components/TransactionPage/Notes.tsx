@@ -9,16 +9,14 @@ interface NotesProps {
 }
 
 const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
-  console.log("initial data passed to Notes", notes);
+  // console.log("initial data passed to Notes", notes);
   const [isEditing, setIsEditing] = useState(false);
   const [editedNotes, setEditedNotes] = useState(notes);
 
   const handleSave = () => {
-    setEditedNotes(
-      editedNotes + " - " + user.firstname + " " + user.lastname + "\n"
-    );
-    console.log("edited notes in Notes component", editedNotes);
-    onSave(editedNotes + " - " + user.firstname + " " + user.lastname + "\n");
+    setEditedNotes(editedNotes + " - " + user.firstname + " " + user.lastname);
+    // console.log("edited notes in Notes component", editedNotes);
+    onSave(editedNotes + " - " + user.firstname + " " + user.lastname);
     setIsEditing(false);
   };
 
@@ -36,7 +34,17 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
             value={editedNotes}
             onChange={(e) => setEditedNotes(e.target.value)}
             style={{ width: "100%", textAlign: "left" }}
+            onFocus={(e) =>
+              (e.target as HTMLTextAreaElement).setSelectionRange(
+                (e.target as HTMLTextAreaElement).value.length,
+                (e.target as HTMLTextAreaElement).value.length
+              )
+            }
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) handleSave();
+            }}
             multiline
+            autoFocus
           />
           <button
             onClick={handleSave}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import  { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -62,9 +62,10 @@ const AuthPrompt = ({
   useEffect(() => {
     console.log(data);
     if (!error && status !== "pending" && data) {
+      console.log("current user is submitted, closing dialog");
       setOpen(false);
     }
-  }, [netId, open, data, status, error]);
+  }, [netId, data, status, error]);
 
   const handleSubmit = () => {
     setNetId(currentNetId);
@@ -80,7 +81,18 @@ const AuthPrompt = ({
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>
+      <Button
+        onClick={() => {
+          setOpen(true);
+          queryClient.invalidateQueries({
+            queryKey: ["user"],
+          });
+        }}
+        variant="contained"
+        sx={{
+          marginLeft: "70vw",
+        }}
+      >
         {"Current User: " +
           (data ? data.firstname + " " + data.lastname : "None")}
       </Button>

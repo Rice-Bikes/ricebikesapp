@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { Button, Stack, List, ListItem, Grid2 } from "@mui/material";
 import { User } from "../../model";
 import { useNavigate } from "react-router-dom";
-import Item from "./HeaderItem";
-import Notes from "./Notes";
+import Item from "../../components/TransactionPage/HeaderItem";
+import Notes from "../../components/TransactionPage/Notes";
 import { ITooltipParams, RowClickedEvent } from "ag-grid-community";
 import DBModel, {
   ItemDetails,
@@ -18,10 +18,10 @@ import DBModel, {
 import { useMutation, useQueries } from "@tanstack/react-query";
 import { queryClient } from "../../app/main";
 import { ToastContainer, toast } from "react-toastify";
-import SearchModal from "./SearchModal";
+import SearchModal from "../../components/TransactionPage/SearchModal";
 import "./TransactionPage.css";
-import NewBikeForm from "./BikeForm";
-import TransactionOptionDropdown from "./TransactionOptionDropdown";
+import NewBikeForm from "../../components/TransactionPage/BikeForm";
+import TransactionOptionDropdown from "../../components/TransactionPage/TransactionOptionDropdown";
 
 const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
   let total = 0;
@@ -98,8 +98,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   if (itemDetailsError) toast.error("itemDetails: " + itemDetailsError);
   const itemDetails = queriedItemDetails as ItemDetails[];
   const {
+    status: transactionStatus,
     isLoading: transactionLoading,
-    isFetching: transactionIsFetching,
     data: transactionData,
     error: transactionError,
   } = transactionQuery;
@@ -112,32 +112,25 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   // const [customer, setCustomer] = useState(transaction?.Customer);
   const [transactionType, setTransactionType] = useState<string>(
     searchParams.get("type") ?? ""
-  ); // TODO: create transaction type dropdown
+  );
+  // TODO: make a state that checks to see if you're the first person to
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const [showCheckout, setShowCheckout] = useState<boolean>(false);
   const [showMarkDone, setShowMarkDone] = useState<boolean>(false);
   const [showBikeForm, setShowBikeForm] = useState<boolean>(false);
 
-  const [refurb] = useState<boolean>(false); // TODO: create refurb button
-  const [reserved] = useState<boolean>(false); // TODO: create retrospec stuff
-  const [waitEmail, setWaitEmail] = useState<boolean>(false);
+  const [refurb] = useState<boolean>(transactionData?.is_refurb ?? false); // TODO: create refurb button
+  const [reserved] = useState<boolean>(transactionData?.is_reserved ?? false); // TODO: create retrospec stuff
+  const [waitEmail, setWaitEmail] = useState<boolean>(
+    transactionData?.is_waiting_on_email ?? false
+  );
   const [waitPart, setWaitPart] = useState<boolean>(false);
-  const [priority, setPriority] = useState<boolean>(false);
-  const [nuclear, setNuclear] = useState<boolean>(false);
-  const [description, setDescription] = useState<string>(
-    transactionData?.description ?? ""
-  );
-  const [isPaid, setPaid] = useState<boolean>(
-    transactionData?.is_paid ?? false
-  );
-  const [isCompleted, setIsCompleted] = useState<boolean>(
-    transactionData?.is_completed ?? false
-  );
-  const [beerBike, setBeerBike] = useState<boolean>(
-    transactionData?.is_beer_bike ?? false
-  );
-  // const [transactionHasChanged, setTransactionHasChanged] =
-  //   useState<boolean>(false);
+  const [priority, setPriority] = useState<boolean>();
+  const [nuclear, setNuclear] = useState<boolean>();
+  const [description, setDescription] = useState<string>();
+  const [isPaid, setPaid] = useState<boolean>();
+  const [isCompleted, setIsCompleted] = useState<boolean>();
+  const [beerBike, setBeerBike] = useState<boolean>();
 
   const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
 
@@ -146,6 +139,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       transaction_id: string;
       transaction: UpdateTransaction;
     }) => {
+      console.log("calling update transaction on dbmodel");
       return DBModel.updateTransaction(input.transaction_id, input.transaction);
     },
     onSuccess: (data: Transaction) => {
@@ -154,39 +148,35 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       });
       console.log("transaction updated", data);
     },
+    onError: (error) => {
+      toast.error("error updating transaction" + error);
+    },
   });
-
-  // useEffect(() => {
-  //   console.log("transactionData: ", transactionData?.description);
-  //   if (transactionData && transactionIsFetching === false) {
-  //     setTransactionType(transactionData.transaction_type || "");
-  //     setTotalPrice(transactionData.total_cost || 0);
-  //     setShowCheckout(transactionData.is_paid || false);
-  //     setShowMarkDone(transactionData.is_completed || false);
-  //     setRefurb(transactionData.is_refurb || false);
-  //     // setReserved(transactionData.is_reserved || false);
-  //     setWaitEmail(transactionData.is_waiting_on_email || false);
-  //     // setWaitPart(transactionData.waiting_on_part || false);
-  //     setPriority(transactionData.is_urgent || false);
-  //     setNuclear(transactionData.is_nuclear || false);
-  //     setBeerBike(transactionData.is_beer_bike || false);
-  //   }
-  // }, [transactionData]);
-
   useEffect(() => {
-    if (!transactionIsFetching && description !== "" && description !== null) {
-      console.log("description before update: ", description);
+    console.log(
+      "waiting on data",
+      transactionStatus,
+      description === "",
+      description === null
+    );
+    if (
+      transactionStatus !== "pending" &&
+      transactionStatus !== "error" &&
+      description !== "" &&
+      description !== null
+    ) {
+      // console.log("description before update: ", description);
       const updatedTransaction = {
-        description: description,
+        description: description ?? "",
         transaction_type: transactionType,
         total_cost: totalPrice,
         is_waiting_on_email: waitEmail,
         // waiting_on_part: waitPart,
-        is_urgent: priority,
-        is_nuclear: nuclear,
+        is_urgent: priority ?? false,
+        is_nuclear: nuclear ?? false,
         is_completed: showMarkDone,
         is_paid: showCheckout,
-        is_beer_bike: beerBike,
+        is_beer_bike: beerBike ?? false,
         is_refurb: refurb,
         is_reserved: reserved,
         bike_id: bike?.bike_id,
@@ -196,11 +186,12 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             : transactionData?.date_completed,
       } as UpdateTransaction;
 
-      console.log("description after update", updatedTransaction.description);
+      // console.log("description after update", updatedTransaction.description);
       updateTransaction.mutate({
         transaction_id: transaction_id,
         transaction: updatedTransaction,
       });
+      console.log("submitted update");
       // setCurrentTransaction({
       //   ...transactionData,
       //   Transaction: transactionData,
@@ -220,7 +211,31 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     beerBike,
     refurb,
     reserved,
+    transactionStatus,
   ]);
+
+  useEffect(() => {
+    if (transactionData) {
+      // if (transactionData.is_refurb !== refurb) setRefurb(transactionData.is_refurb);
+      // if (transactionData.is_reserved !== reserved) setReserved(transactionData.is_reserved);
+      if (transactionData.is_waiting_on_email !== waitEmail)
+        setWaitEmail(transactionData.is_waiting_on_email);
+      if (transactionData.is_urgent && transactionData.is_urgent !== priority)
+        setPriority(transactionData.is_urgent);
+      if (transactionData.is_nuclear && transactionData.is_nuclear !== nuclear)
+        setNuclear(transactionData.is_nuclear);
+      if (
+        transactionData.description &&
+        transactionData.description !== description
+      )
+        setDescription(transactionData.description);
+      if (transactionData.is_paid !== isPaid) setPaid(transactionData.is_paid);
+      if (transactionData.is_completed !== isCompleted)
+        setIsCompleted(transactionData.is_completed);
+      if (transactionData.is_beer_bike !== beerBike)
+        setBeerBike(transactionData.is_beer_bike);
+    }
+  }, [transactionData]);
 
   const addRepair = useMutation({
     mutationFn: (repair: Repair) => {
@@ -331,10 +346,12 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   };
 
   const handlePriority = () => {
+    console.log("priority: ", priority);
     setPriority(!priority);
   };
 
   const handleNuclear = () => {
+    console.log("nuclear: ", nuclear);
     setNuclear(!nuclear);
   };
 
@@ -405,7 +422,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const handleRemovePart = (part: ItemDetails) => {
     deletePart.mutate(part);
   };
-  console.log("current transaction: ", transactionData);
+
   const toggleDoneRepair = (repairId: string) => {
     setDoneRepairs((prevState) => ({
       ...prevState,
@@ -426,11 +443,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     return <p>Customer not found</p>;
   }
 
-  if (description === undefined) {
-    return <p>Loading...</p>;
-  }
-
-  console.log("current transaction cost ", transactionData?.total_cost);
+  // console.log("current transaction cost ", transactionData?.total_cost);
   return (
     <div
       style={{
@@ -517,7 +530,11 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           </h3>
         </Item>
 
-        <Notes notes={transactionData.description ?? ""} onSave={handleSaveNotes} user={user} />
+        <Notes
+          notes={transactionData.description ?? ""}
+          onSave={handleSaveNotes}
+          user={user}
+        />
 
         <h3>Bike Information</h3>
         <Item>
@@ -784,6 +801,15 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           >
             Mark as Nuclear
           </button>
+          <button
+            onClick={() => setBeerBike(!beerBike)}
+            style={{
+              backgroundColor: beerBike ? "red" : "grey",
+            }}
+          >
+            {" "}
+            Mark as Beer Bike
+          </button>
         </div>
 
         <button
@@ -843,7 +869,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 Finish
               </button>
               <button onClick={closeCheckout}>Back</button>
-              <button onClick={() => setBeerBike(!beerBike)}> Beer Bike</button>
             </div>
           </div>
         )}

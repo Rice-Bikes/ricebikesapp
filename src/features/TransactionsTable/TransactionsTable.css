@@ -24,8 +24,8 @@ header {
 }
 
 main {
-  padding: 0 5vw;
-  max-width: 90vw;
+  padding: 0 10vw;
+  max-width: 80vw;
 }
 
 #transactionsContent {

@@ -292,7 +292,7 @@ class DBModel {
         if (!itemsData.success) {
           throw new Error("Failed to load parts");
         }
-        console.log(" Parts Array Data:", itemsData.responseObject);
+        // console.log(" Parts Array Data:", itemsData.responseObject);
         return itemsData.responseObject;
       })
       .then((partsData: unknown[]) => {
@@ -324,7 +324,7 @@ class DBModel {
         if (!itemsData.success) {
           throw new Error("Failed to load repairs");
         }
-        console.log("repairs Array Data:", itemsData.responseObject);
+        // console.log("repairs Array Data:", itemsData.responseObject);
         return itemsData.responseObject;
       })
       .then((repairsData: unknown[]) => {
@@ -597,6 +597,7 @@ class DBModel {
       });
 
   public static updateTransaction = async (transaction_id: string, Transaction: UpdateTransaction) => {
+    console.log("updating transaction", Transaction);
     return fetch(`${hostname}/transactions/${transaction_id}`, {
       method: "PUT",
       headers: {
@@ -606,6 +607,7 @@ class DBModel {
     })
       .then((response) => response.json())
       .then((response) => {
+        console.log("successfully recieved update transaction response", response);
         if (!DBModel.validateObjectResponse(response)) {
           throw new Error("Invalid response");
         }
