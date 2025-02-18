@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import {
     Dialog,
-    DialogActions,
+    // DialogActions,
     DialogContent,
     DialogTitle,
-    Button,
-    Grid2,
+    // Button,
+    // Grid2,
     TextField,
     //   CircularProgress,
 } from "@mui/material";
@@ -88,43 +88,20 @@ const PriceCheckModal = ({
             <DialogTitle>Enter UPC</DialogTitle>
             <DialogContent>
                 <div style={{ height: 400, minHeight: 400, width: "100%" }}>
+                    <TextField
+                        label="Search Term"
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                        onKeyDown={(e) => {
 
+                            if (e.key === "Enter") {
+                                handleSearch();
+                            }
+                        }}
+                        variant="outlined"
+                    />
                 </div>
             </DialogContent>
-            <DialogActions>
-                <Grid2 container spacing={2} sx={{ width: "100%" }}>
-                    <Grid2
-                        size={12}
-                        container
-                        spacing={2}
-                        sx={{
-                            display: "flex",
-                            flexDirection: "row",
-                            justifyContent: "flex-end",
-                        }}
-                    >
-                        <Grid2 size={3}>
-                            <TextField
-                                label="Search Term"
-                                value={searchTerm}
-                                onChange={handleSearchChange}
-                                onKeyDown={(e) => {
-
-                                    if (e.key === "Enter") {
-                                        handleSearch();
-                                    }
-                                }}
-                                variant="outlined"
-                            />
-                        </Grid2>
-                        <Grid2>
-                            <Button onClick={handleCancel} color="secondary">
-                                Close
-                            </Button>
-                        </Grid2>
-                    </Grid2>
-                </Grid2>
-            </DialogActions>
         </Dialog>
     );
 };

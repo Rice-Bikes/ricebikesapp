@@ -19,7 +19,7 @@ interface TransactionDropdownProps {
   alertAuth: () => void;
 }
 
-const options = ["inpatient", "outpatient", "merchandise", "retrospec"]; // list of actions
+const options = ["Inpatient", "Outpatient", "Merchandise", "Retrospec"]; // list of actions
 export default function CreateTransactionDropdown({
   alertAuth,
 }: TransactionDropdownProps): JSX.Element {
