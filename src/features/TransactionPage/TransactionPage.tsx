@@ -23,6 +23,7 @@ import "./TransactionPage.css";
 import NewBikeForm from "../../components/TransactionPage/BikeForm";
 import TransactionOptionDropdown from "../../components/TransactionPage/TransactionOptionDropdown";
 import WhiteboardEntryModal from "../../components/WhiteboardEntryModal";
+import ErrorSharp from "@mui/icons-material/ErrorSharp";
 
 const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
   let total = 0;
@@ -134,7 +135,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const [isCompleted, setIsCompleted] = useState<boolean>();
   const [beerBike, setBeerBike] = useState<boolean>();
 
-  const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
+  // const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
 
   const updateTransaction = useMutation({
     mutationFn: (input: {
@@ -152,6 +153,26 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     },
     onError: (error) => {
       toast.error("error updating transaction" + error);
+    },
+  });
+
+
+  const completeRepair = useMutation({
+    mutationFn: (input: {
+      transaction_detail_id: string;
+      status: boolean;
+    }) => {
+      console.log("calling update transaction on dbmodel", input.status);
+      return DBModel.updateTransactionDetails(input.transaction_detail_id, input.status);
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ["transactionDetails", transaction_id, "repair"],
+      });
+      console.log("repair updated", data);
+    },
+    onError: (error) => {
+      toast.error("error updating repair" + error);
     },
   });
   useEffect(() => {
@@ -426,11 +447,11 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     deletePart.mutate(part);
   };
 
-  const toggleDoneRepair = (repairId: string) => {
-    setDoneRepairs((prevState) => ({
-      ...prevState,
-      [repairId]: !prevState[repairId],
-    }));
+  const toggleDoneRepair = (repairDetail: RepairDetails) => {
+    const newStatus: boolean = !repairDetail.completed;
+    const repairId: string = repairDetail.transaction_detail_id;
+    completeRepair.mutate({ transaction_detail_id: repairId, status: newStatus });
+
   };
 
   const allRepairsDone = () => {
@@ -624,7 +645,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               flex: 1,
             }}
             onRowClick={(row) => handleAddRepair(row)}
-          />
+          >
+            Add Repair
+          </SearchModal>
         </Grid2>
         <Grid2 size={6}>
           <SearchModal
@@ -674,7 +697,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               flex: 1,
             }}
             onRowClick={(row) => handleAddPart(row)}
-          />
+          >
+            Add Part
+          </SearchModal>
         </Grid2>
         <Grid2 size={6} sx={{ textAlign: "center" }}>
           <h3>Repairs</h3>
@@ -706,23 +731,21 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                       <Button
                         onClick={() =>
                           toggleDoneRepair(
-                            transactionDetail.transaction_detail_id
+                            transactionDetail
                           )
                         }
                         style={{
                           border: "2px solid black",
                           marginLeft: "10px",
                           cursor: "pointer",
-                          backgroundColor: doneRepairs[
-                            transactionDetail.transaction_detail_id
-                          ]
+                          backgroundColor: transactionDetail.completed
                             ? "green"
                             : "initial",
                           color: "black",
                         }}
                         size="medium"
                       >
-                        {doneRepairs[transactionDetail.transaction_detail_id]
+                        {transactionDetail.completed
                           ? "Done"
                           : "Mark as Done"}
                       </Button>
@@ -810,11 +833,13 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             open={showWaitingParts}
             onClose={() => setShowWaitingParts(false)}
             parts={parts as Part[]}
+            transaction_id={transaction_id}
+            user_id={user.user_id}
           />
           <Grid2
             style={{ marginBottom: "20px", color: "white", gap: "2px" }}
             size={12}
-            // gap={2}
+          // gap={2}
           >
             <Button
               onClick={handleWaitPart}
@@ -822,6 +847,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 backgroundColor: waitPart ? "red" : "grey",
                 color: "white",
               }}
+              variant="contained"
             >
               Wait on Part
             </Button>
@@ -831,39 +857,48 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 backgroundColor: waitEmail ? "red" : "grey",
                 color: "white",
               }}
+              variant="contained"
             >
               Wait on Email
             </Button>
             <Button
               onClick={handlePriority}
               style={{
-                backgroundColor: priority ? "red" : "grey",
-                color: "white",
+                backgroundColor: "black",
               }}
+              disableElevation={!priority}
+              variant="contained"
             >
-              Mark as Priority
+              <ErrorSharp
+                style={{
+                  color: priority ? "red" : "white",
+                  marginRight: "5px",
+                }}
+              />
             </Button>
             <Button
               onClick={handleNuclear}
               style={{
-                backgroundColor: nuclear ? "red" : "grey",
+                backgroundColor: nuclear ? "white" : "grey",
                 color: "white",
               }}
+              variant="contained"
             >
               Mark as Nuclear
             </Button>
             <Button
               onClick={() => setBeerBike(!beerBike)}
               style={{
-                backgroundColor: beerBike ? "red" : "grey",
-                color: "white",
+                backgroundColor: beerBike ? "white" : "turquoise",
+                color: "black",
               }}
+              variant="contained"
             >
               {" "}
               Mark as Beer Bike
             </Button>
           </Grid2>
-          <Grid2 spacing={2} size={6}>
+          <Grid2 size={6}>
             <Button
               onClick={handleCheckout}
               disabled={!allRepairsDone() || transactionData.is_paid}

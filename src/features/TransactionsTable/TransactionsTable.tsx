@@ -17,12 +17,15 @@ import type {
   RowSelectionOptions,
   ICellRendererParams,
   IRowNode,
+  // ITooltipParams
 } from "ag-grid-community";
 import CreateTransactionDropdown from "./TransactionTypeDropdown"; // Create Transaction Dropdown Component
 import "./TransactionsTable.css"; // CSS Stylesheet
 import { Transaction, Bike, Customer, TransactionSummary } from "../../model";
 import { useNavigate } from "react-router-dom";
 import DBModel from "../../model";
+import PriceCheckModal from "../../components/PriceCheckModal";
+// import SearchModal from "../../components/TransactionPage/SearchModal";
 
 // Row Data Interface
 export interface IRow {
@@ -72,12 +75,19 @@ export function TransactionsTable({
   // const model = new TransactionTableModel();
   // Row Data: The data to be displayed.
 
+  // const itemsQuery = useQuery(
+  //   DBModel.getItemsQuery(),
+  // );
+
+  // if (partsError) toast.error("parts: " + partsError);
+
   const navigate = useNavigate();
   const currDate: Date = new Date();
   const [viewType, setViewType] = useState("main");
   const gridApiRef = useRef<AgGridReact>(null); // <= defined useRef for gridApi
   const [, setRowData] = useState<IRow[]>([]);
   const [summaryData, setSummaryData] = useState<TransactionSummary>();
+  const [showPriceCheckModal, setShowPriceCheckModal] = useState(false);
   // console.log(rowData);
   // const [pageSize, setPageSize] = useState(100);
   const onRowClicked = (e: RowClickedEvent) => {
@@ -308,7 +318,8 @@ export function TransactionsTable({
         <ButtonGroup id="nav-buttons">
           <CreateTransactionDropdown alertAuth={alertAuth} />
           <Button>Whiteboard</Button>
-          <Button>Price Check</Button>
+          <Button onClick={() => setShowPriceCheckModal(!showPriceCheckModal)}>Price Check</Button>
+          <PriceCheckModal open={showPriceCheckModal} onClose={() => { setShowPriceCheckModal(false) }} />
         </ButtonGroup>
         <article id="indicators">
           <Button style={{ backgroundColor: "blue" }}>
@@ -375,7 +386,7 @@ export function TransactionsTable({
               doesExternalFilterPass={doesExternalFilterPass}
               domLayout="autoHeight"
               pagination={viewType === "paid"}
-              // paginationPageSize={true}
+            // paginationPageSize={true}
             />
           </>
         )}

@@ -26,24 +26,28 @@ import {
   updateTransactionSchema,
   TransactionSummarySchema,
   UserSchema,
+  OrderRequestSchema,
+  CreateOrderRequestsSchema,
 } from "./schema";
 import Ajv from "ajv";
 
 const hostname = import.meta.env.VITE_API_URL;
 
 export type Part = FromSchema<typeof partSchema>;
+export type ItemDetails = FromSchema<typeof ItemDetailsSchema>;
 export type Repair = FromSchema<typeof repairSchema>;
+export type RepairDetails = FromSchema<typeof RepairDetailsSchema>;
 export type Transaction = FromSchema<typeof TransactionSchema>;
+export type TransactionDetails = FromSchema<typeof TransactionDetailsSchema>;
+export type CreateTransaction = FromSchema<typeof CreateTransactionSchema>;
+export type UpdateTransaction = FromSchema<typeof updateTransactionSchema>;
 export type TransactionSummary = FromSchema<typeof TransactionSummarySchema>;
 export type Customer = FromSchema<typeof CustomerSchema>;
 export type CreateCustomer = FromSchema<typeof CreateCustomerSchema>;
 export type Bike = FromSchema<typeof BikeSchema>;
-export type TransactionDetails = FromSchema<typeof TransactionDetailsSchema>;
-export type RepairDetails = FromSchema<typeof RepairDetailsSchema>;
-export type ItemDetails = FromSchema<typeof ItemDetailsSchema>;
-export type CreateTransaction = FromSchema<typeof CreateTransactionSchema>;
-export type UpdateTransaction = FromSchema<typeof updateTransactionSchema>;
 export type User = FromSchema<typeof UserSchema>;
+export type OrderRequest = FromSchema<typeof OrderRequestSchema>;
+export type CreateOrderRequests = FromSchema<typeof CreateOrderRequestsSchema>;
 
 export type PartArray = FromSchema<typeof partArraySchema>;
 export type RepairArray = FromSchema<typeof repairArraySchema>;
@@ -108,6 +112,7 @@ class DBModel {
   static validateBike: (data: unknown) => data is Bike;
   static validatePart: (data: unknown) => data is Part;
   static validateRepair: (data: unknown) => data is Repair;
+  static validateOrderRequest: (data: unknown) => data is OrderRequest;
   static validateTransactionDetails: (
     data: unknown
   ) => data is TransactionDetails;
@@ -148,6 +153,7 @@ class DBModel {
     DBModel.validateItemDetails = compile(ItemDetailsSchema);
     DBModel.validateRepairDetails = compile(RepairDetailsSchema);
     DBModel.validateUser = compile(UserSchema);
+    DBModel.validateOrderRequest = compile(OrderRequestSchema);
 
     // ARRAY VERIFICATION METHODS
     DBModel.validateTransactionsArray = compile(TransactionArraySchema);
@@ -309,6 +315,7 @@ class DBModel {
         throw new Error("Error posting transaction data: " + error); // More detailed error logging
       });
   };
+
 
   public static postTransaction = async (Transaction: CreateTransaction) =>
     fetch(`${hostname}/transactions`, {
@@ -554,6 +561,7 @@ class DBModel {
             repair_id: object_id,
             changed_by: changed_by,
             quantity: quantity,
+            completed: false,
           };
     console.log("posting transaction details", body);
     return fetch(`${hostname}/transactionDetails/${transaction_id}`, {
@@ -575,6 +583,34 @@ class DBModel {
       })
       .catch((error) => {
         throw new Error("Error posting transaction details data: " + error); // More detailed error logging
+      });
+  };
+
+  public static updateTransactionDetails = async (
+    transaction_detail_id: string,
+    completed: boolean 
+  ) => {
+    return fetch(`${hostname}/transactionDetails/${transaction_detail_id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ completed }),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        console.log(response);
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to update transaction details");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        console.error("Error updating transaction details data: ", error);
+        throw new Error("Error updating transaction details data: " + error); // More detailed error logging
       });
   };
 
@@ -651,12 +687,13 @@ class DBModel {
         throw new Error("Error posting transaction details data: " + error); // More detailed error logging
       });
 
-  public static postOrderRequest = async () =>
-    fetch(`${hostname}/orderRequests`,{
+  public static postOrderRequest = async (req: OrderRequest) =>
+    fetch(`${hostname}/orderRequests`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      body: JSON.stringify(req),
     })
       .then((response) => response.json())
       .then((response) => {
@@ -672,18 +709,55 @@ class DBModel {
         console.error("Error posting order request data: ", error);
         throw new Error("Error posting order request data: " + error); // More detailed error logging
       });
-
+  public static putOrderRequest = async (req: OrderRequest) =>
+    fetch(`${hostname}/orderRequests/${req.order_request_id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(req),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        console.log(response);
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post order request");
+        }
+      })
+      .catch((error) => {
+        console.error("Error posting order request data: ", error);
+        throw new Error("Error posting order request data: " + error); // More detailed error logging
+      });
   public static getOrderRequests = async (transaction_id: string) =>
     fetch(`${hostname}/orderRequests/${transaction_id}`)
       .then((response) => response.json())
       .then((response) => {
+        console.log(response);
+        if (response.statusCode === 404) {
+          return [];
+        }
         if (!DBModel.validateArrayResponse(response)) {
-          throw new Error("Invalid response");
+          throw new Error("Invalid response -- " + response.message);
         }
         if (!response.success) {
           throw new Error("Failed to load order requests");
         }
+
         return response.responseObject;
+      })
+      .then((orderRequests: unknown[]) => {
+        if (orderRequests.length === 0) {
+          return [];
+        }
+        for (const orderRequest of orderRequests) {
+          if (!DBModel.validateOrderRequest(orderRequest)) {
+            throw new Error("Invalid order request data" + orderRequest);
+          }
+        }
+        return orderRequests;
       })
       .catch((error) => {
         throw new Error("Error loading order requests data: " + error); // More detailed error logging

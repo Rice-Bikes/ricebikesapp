@@ -384,13 +384,15 @@ export const OrderRequestSchema = {
   title: "OrderRequest",
   type: "object",
   properties: {
-    order_request_id: { type: "string", format: "uuid" },
-    created_by: { type: "string", format: "uuid" },
-    transaction_id: { type: "string", format: "uuid" },
-    item_id: { type: "string", format: "uuid" },
-    date_created: { type: "string", format: "date-time" },
+    order_request_id: { type: "string",  },
+    created_by: { type: "string",  },
+    transaction_id: { type: "string",  },
+    item_id: { type: "string" },
+    date_created: { type: "string"},
     quantity: { type: "integer" },
     notes: { type: ["string", "null"] },
+    Item: partSchema,
+    User: UserSchema,
   },
   required: [
     "order_request_id",
@@ -400,22 +402,6 @@ export const OrderRequestSchema = {
     "date_created",
     "quantity",
   ],
-  additionalProperties: false,
-} as const satisfies JSONSchema;
-
-export const GetOrderRequestsSchema = {
-  $id: "GetOrderRequestsSchema.json",
-  type: "object",
-  properties: {
-    params: {
-      type: "object",
-      properties: {
-        id: { type: "string" },
-      },
-      required: ["id"],
-    },
-  },
-  required: ["params"],
   additionalProperties: false,
 } as const satisfies JSONSchema;
 
@@ -431,6 +417,8 @@ export const CreateOrderRequestsSchema = {
         item_id: { type: "string", format: "uuid" },
         quantity: { type: "integer" },
         notes: { type: ["string", "null"] },
+        Item: partSchema,
+        User: UserSchema,
       },
       required: ["created_by", "transaction_id", "item_id", "quantity"],
     },

@@ -1,4 +1,4 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -106,22 +106,22 @@ const AuthPrompt = ({
             type="text"
             fullWidth
             value={currentNetId}
+            error={error !== null}
+            helperText={
+              error
+                ? "Invalid netId"
+                : netId.length === 0
+                ? "Enter your NetID to continue"
+                : ""
+            }
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSubmit();
             }}
             onChange={(e) => setCurrentNetId(e.target.value)}
           />
-          <p
-            style={{
-              color: "red",
-              display: error ? "grid" : "none",
-            }}
-          >
-            {error ? "Invalid netId" : ""}
-          </p>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleSubmit} color="primary" >
+          <Button onClick={handleSubmit} color="primary">
             Submit
           </Button>
         </DialogActions>
