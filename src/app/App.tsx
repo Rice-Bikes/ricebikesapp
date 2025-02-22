@@ -97,7 +97,7 @@ function App() {
         />
         <Route
           path="/transaction-details/:transaction_id"
-          element={<TransactionDetail propUser={user} />}
+          element={<TransactionDetail  alertAuth={() => setExpediteAuth(true)} propUser={user} />}
         />
       </Routes>
     </>

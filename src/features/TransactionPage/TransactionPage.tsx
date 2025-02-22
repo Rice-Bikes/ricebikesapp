@@ -41,9 +41,10 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
 
 interface TransactionDetailProps {
   propUser: User;
+  alertAuth: () => void;
 }
 
-const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
+const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
   const { transaction_id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const nav = useNavigate();
@@ -360,12 +361,15 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const handlePaid = () => {
     setPaid(true);
+    setWaitEmail(false);
+    setNuclear(false);
+    setPriority(false);
     closeCheckout();
     queryClient.invalidateQueries({
       queryKey: ["transaction", transaction_id],
     });
     queryClient.invalidateQueries({
-      
+
       queryKey: ["transactions"],
     });
     nav("/");
@@ -377,6 +381,12 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       return params;
     });
     setTransactionType(newTransactionType);
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["transactions"],
+    });
   };
 
   // const updateTransaction = useMutation({});
@@ -388,21 +398,45 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const handleWaitEmail = () => {
     setWaitEmail(!waitEmail);
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["transactions"],
+    });
   };
 
   const handleWaitPart = () => {
     setShowWaitingParts(!showWaitingParts);
     setWaitPart(!waitPart);
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["transactions"],
+    });
   };
 
   const handlePriority = () => {
     console.log("priority: ", priority);
     setPriority(!priority);
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["transactions"],
+    });
   };
 
   const handleNuclear = () => {
     console.log("nuclear: ", nuclear);
     setNuclear(!nuclear);
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["transactions"],
+    });
   };
 
   const handleMarkDone = async () => {
@@ -411,7 +445,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     setIsCompleted(!isCompleted);
 
     const customer: Customer = transactionData?.Customer as Customer;
-    if(isCompleted === false){
+    if (isCompleted === false) {
       sendCheckoutEmail.mutate(customer);
       queryClient.invalidateQueries({
         queryKey: ["transactions"],
@@ -946,7 +980,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               onClick={handleCheckout}
               disabled={!isCompleted}
               style={{
-                backgroundColor: "green",
+                backgroundColor: isCompleted ? "green" : "grey",
                 border: "white",
                 marginRight: "10px",
                 color: "white",
@@ -1011,8 +1045,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                     position: fixed;
                     top: 0;
                     left: 0;
-                    width: 80vw;
-                    height: 80vh%;
+                    width: 100%;
+                    height: 100%;
                     background-color: rgba(0, 0, 0, 0.5);
                     display: flex;
                     justify-content: center;
@@ -1046,7 +1080,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               }}
               variant="contained"
             >
-              {isCompleted? "Open Transaction": "Complete Transaction"}
+              {isCompleted ? "Open Transaction" : "Complete Transaction"}
             </Button>
             {/* {showMarkDone && (
               <div className="markDone">

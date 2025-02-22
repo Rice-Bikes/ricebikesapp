@@ -291,7 +291,8 @@ export function TransactionsTable({
         transaction.is_paid === false) ||
       (viewType === "pickup" &&
         transaction.is_paid === false &&
-        transaction.is_completed === true) ||
+        transaction.is_completed === true
+      && transaction.is_refurb === false) ||
       (viewType === "paid" && transaction.is_paid === true) ||
       (viewType === "main" &&
         transaction.is_completed === false &&
