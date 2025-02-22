@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { User } from "../../model";
-import { TextField } from "@mui/material";
+import { TextField, Button } from "@mui/material";
 
 interface NotesProps {
   notes: string;
@@ -72,7 +72,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
           >
             {editedNotes || "No notes yet."}
           </pre>
-          <button
+          <Button
             onClick={() => handleOpenToEdit()}
             style={{
               marginTop: "10px",
@@ -83,7 +83,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
             }}
           >
             Edit Notes
-          </button>
+          </Button>
         </div>
       )}
     </div>

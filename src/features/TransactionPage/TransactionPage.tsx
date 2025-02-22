@@ -14,6 +14,7 @@ import DBModel, {
   Transaction,
   UpdateTransaction,
   Bike,
+  Customer
 } from "../../model";
 import { useMutation, useQueries } from "@tanstack/react-query";
 import { queryClient } from "../../app/main";
@@ -118,7 +119,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   // TODO: make a state that checks to see if you're the first person to
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const [showCheckout, setShowCheckout] = useState<boolean>(false);
-  const [showMarkDone, setShowMarkDone] = useState<boolean>(false);
   const [showBikeForm, setShowBikeForm] = useState<boolean>(false);
   const [showWaitingParts, setShowWaitingParts] = useState<boolean>(false);
 
@@ -131,11 +131,28 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const [priority, setPriority] = useState<boolean>();
   const [nuclear, setNuclear] = useState<boolean>();
   const [description, setDescription] = useState<string>();
-  const [isPaid, setPaid] = useState<boolean>();
-  const [isCompleted, setIsCompleted] = useState<boolean>();
+  const [isPaid, setPaid] = useState<boolean>(transactionData?.is_paid ?? false);
+  const [isCompleted, setIsCompleted] = useState<boolean>(transactionData?.is_waiting_on_email ?? false);
   const [beerBike, setBeerBike] = useState<boolean>();
 
   // const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
+
+  const sendCheckoutEmail = useMutation({
+    mutationFn: (customer: Customer) => {
+      if (!transactionData) throw new Error("Transaction data not found");
+      else
+        return DBModel.sendEmail(
+          customer,
+          transactionData.transaction_num
+        );
+    },
+    onSuccess: () => {
+      toast.success("Email sent");
+    },
+    onError: (error) => {
+      toast.error("Error sending email: " + error);
+    },
+  })
 
   const updateTransaction = useMutation({
     mutationFn: (input: {
@@ -197,14 +214,14 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         // waiting_on_part: waitPart,
         is_urgent: priority ?? false,
         is_nuclear: nuclear ?? false,
-        is_completed: showMarkDone,
-        is_paid: showCheckout,
+        is_completed: isCompleted,
+        is_paid: isPaid,
         is_beer_bike: beerBike ?? false,
         is_refurb: refurb,
         is_reserved: reserved,
         bike_id: bike?.bike_id,
         date_completed:
-          transactionData?.date_completed === null && showMarkDone
+          transactionData?.date_completed === null && isCompleted
             ? new Date().toISOString()
             : transactionData?.date_completed,
       } as UpdateTransaction;
@@ -228,7 +245,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     waitEmail,
     priority,
     nuclear,
-    showMarkDone,
+    isCompleted,
     showCheckout,
     bike,
     beerBike,
@@ -343,6 +360,15 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const handlePaid = () => {
     setPaid(true);
+    closeCheckout();
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({
+      
+      queryKey: ["transactions"],
+    });
+    nav("/");
   };
 
   const handleTransactionTypeChange = (newTransactionType: string) => {
@@ -355,10 +381,10 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   // const updateTransaction = useMutation({});
 
-  const handleCompleteT = () => {
-    // TODO: need to close transaction and go back to home page
-    setIsCompleted(!isCompleted);
-  };
+  // const handleCompleteT = () => {
+  //   // TODO: need to close transaction and go back to home page
+  //   setIsCompleted(!isCompleted);
+  // };
 
   const handleWaitEmail = () => {
     setWaitEmail(!waitEmail);
@@ -379,13 +405,23 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     setNuclear(!nuclear);
   };
 
-  const handleMarkDone = () => {
-    setShowMarkDone(!showMarkDone);
+  const handleMarkDone = async () => {
+    setIsCompleted(!isCompleted);
+    if (!transactionData) return;
+    if (!transactionData.Customer) return;
+
+    const customer: Customer = transactionData?.Customer as Customer;
+
+    sendCheckoutEmail.mutate(customer);
+    queryClient.invalidateQueries({
+      queryKey: ["transactions"],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
   };
 
-  const handleMarkDoneClose = () => {
-    setShowMarkDone(false);
-  };
+
 
   const handleCheckout = () => {
     setShowCheckout(true);
@@ -456,6 +492,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const allRepairsDone = () => {
     if (!repairDetails) return false;
+    console.log("repair details: ", repairDetails);
     return repairDetails.every((repair: RepairDetails) => repair.completed);
   };
 
@@ -466,6 +503,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   if (transactionData.Customer === null) {
     return <p>Customer not found</p>;
   }
+
+
 
   // console.log("current transaction cost ", transactionData?.total_cost);
   return (
@@ -591,6 +630,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           onBikeCreated={(bike: Bike) => {
             setBike(bike);
             setShowBikeForm(false);
+            queryClient.invalidateQueries({
+              queryKey: ["transactions"],
+            });
           }}
         />
       </Stack>
@@ -654,14 +696,14 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             searchData={parts == undefined ? [] : parts}
             columnData={[
               {
-                field: "name",
+                field: "description",
                 headerName: "Name",
                 width: 200,
                 autoHeight: true,
                 wrapText: true,
                 flex: 2,
                 filter: true,
-                tooltipField: "description",
+                tooltipField: "name",
                 headerTooltip: "Name of items",
                 cellRenderer: (params: ITooltipParams) => {
                   return (
@@ -827,7 +869,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         >
           <h3>Total</h3>
           <p>
-            <strong>${(totalPrice * 1.0625).toFixed(2)}</strong>
+            <strong>${(totalPrice * 1.0825).toFixed(2)}</strong>
           </p>
           <WhiteboardEntryModal
             open={showWaitingParts}
@@ -889,7 +931,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             <Button
               onClick={() => setBeerBike(!beerBike)}
               style={{
-                backgroundColor: beerBike ? "white" : "turquoise",
+                backgroundColor: beerBike ? "turquoise" : "white",
                 color: "black",
               }}
               variant="contained"
@@ -901,13 +943,13 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           <Grid2 size={6}>
             <Button
               onClick={handleCheckout}
-              disabled={!allRepairsDone() || transactionData.is_paid}
+              disabled={!isCompleted}
               style={{
                 backgroundColor: "green",
                 border: "white",
                 marginRight: "10px",
                 color: "white",
-                cursor: allRepairsDone() ? "pointer" : "not-allowed",
+                // cursor: allRepairsDone() ? "pointer" : "not-allowed",
                 opacity: allRepairsDone() ? 1 : 0.5,
               }}
             >
@@ -918,7 +960,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 <div className="checkout-content">
                   <p>
                     <strong>
-                      ${(transactionData.total_cost * 1.0625).toFixed(2)}
+                      ${(totalPrice * 1.0625).toFixed(2)}
                     </strong>
                   </p>
 
@@ -991,20 +1033,20 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             </style>
             <Button
               onClick={handleMarkDone}
-              disabled={!transactionData.is_paid}
+              disabled={!allRepairsDone()}
               style={{
                 marginRight: "10px",
-                cursor: transactionData.is_paid ? "pointer" : "not-allowed",
-                border: "white",
+                // border: "white",
                 color: "white",
-                backgroundColor: transactionData.is_completed
-                  ? "green"
-                  : "black",
+                // backgroundColor: allRepairsDone()
+                //   ? "green"
+                //   : "black",
               }}
+              variant="contained"
             >
-              Mark Transaction as Complete
+              Complete Transaction
             </Button>
-            {showMarkDone && (
+            {/* {showMarkDone && (
               <div className="markDone">
                 <div className="markDone-content">
                   <p>
@@ -1015,7 +1057,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                   <Button onClick={handleMarkDoneClose}>Go Back</Button>
                 </div>
               </div>
-            )}
+            )} */}
             <style>
               {`
                 .markDone {

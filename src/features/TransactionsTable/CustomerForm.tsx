@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dialog, TextField } from "@mui/material";
+import { Dialog, TextField, Button } from "@mui/material";
 // import { Link } from "react-router-dom";
 import DBModel, {
   CreateCustomer,
@@ -103,11 +103,11 @@ function NewTransactionForm({
       fullWidth={true}
       maxWidth="lg"
       className="modal-overlay"
-      sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+      // sx={{  justifyContent: "center", alignItems: "center" }}
     >
       <div
         className="modal-container"
-        style={{ width: "70vw", padding: "10px" }}
+        style={{ padding: "10px" }}
       >
         <button className="close-button" onClick={onClose}>
           x
@@ -169,7 +169,7 @@ function NewTransactionForm({
               />
             </label>
             <br />
-            <button type="submit">Submit Transaction</button>
+            <Button type="submit" variant="contained" >Submit Transaction</Button>
           </div>
         </form>
       </div>

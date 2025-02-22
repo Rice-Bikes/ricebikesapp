@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dialog, TextField } from "@mui/material";
+import { Button, Dialog, TextField } from "@mui/material";
 // import { Link } from "react-router-dom";
 import DBModel, { Bike } from "../../model";
 import { useMutation } from "@tanstack/react-query";
@@ -68,15 +68,11 @@ function NewBikeForm({ onBikeCreated, isOpen, onClose }: NewBikeFormProps) {
       fullWidth={true}
       maxWidth="lg"
       className="modal-overlay"
-      sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
+
     >
       <div
         className="modal-container"
-        style={{ width: "70vw", padding: "10px" }}
+        style={{  padding: "10px" }}
       >
         <button className="close-button" onClick={onClose}>
           x
@@ -127,7 +123,7 @@ function NewBikeForm({ onBikeCreated, isOpen, onClose }: NewBikeFormProps) {
               />
             </label>
             <br />
-            <button type="submit">Submit Bike</button>
+            <Button type="submit" variant="contained">Submit Bike</Button>
           </div>
         </form>
       </div>

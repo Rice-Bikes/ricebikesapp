@@ -763,6 +763,30 @@ class DBModel {
         throw new Error("Error loading order requests data: " + error); // More detailed error logging
       });
 
+    public static sendEmail = async (customer: Customer, transaction_num: number) => 
+      fetch(`${hostname}/customers/${transaction_num}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        customer
+      }),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        console.log(response);
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post order request");
+        }
+      })
+      .catch((error) => {
+        console.error("Error posting order request data: ", error);
+        throw new Error("Error posting order request data: " + error); // More detailed error logging
+      });
   public static getTransactionsQuery = (
     page_limit: number,
     aggregate: boolean
