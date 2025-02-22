@@ -5,7 +5,7 @@ import { User } from "../../model";
 import { useNavigate } from "react-router-dom";
 import Item from "../../components/TransactionPage/HeaderItem";
 import Notes from "../../components/TransactionPage/Notes";
-import { ITooltipParams, RowClickedEvent } from "ag-grid-community";
+import { RowClickedEvent } from "ag-grid-community";
 import DBModel, {
   ItemDetails,
   Part,
@@ -365,7 +365,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       queryKey: ["transaction", transaction_id],
     });
     queryClient.invalidateQueries({
-      
+
       queryKey: ["transactions"],
     });
     nav("/");
@@ -662,24 +662,25 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 filter: true,
                 tooltipField: "description",
                 headerTooltip: "Name of repairs",
-                cellRenderer: (params: ITooltipParams) => {
-                  return (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        fontSize: "16px",
-                      }}
-                    >
-                      <p>
-                        <b>{params.value}</b>
-                      </p>
-                      <i className="fa-solid fa-circle-info"></i>
-                    </div>
-                  );
-                },
+              //   cellRenderer: (params: ITooltipParams) => {
+              //     return (
+              //       <div
+              //         style={{
+              //           display: "flex",
+              //           flexDirection: "row",
+              //           alignItems: "center",
+              //           justifyContent: "space-between",
+              //           fontSize: "0.vw",
+              //         }}
+              //       >
+              //         <p>
+              //           <b>{params.value}</b>
+              //         </p>
+              //         <i className="fa-solid fa-circle-info"></i>
+              //       </div>
+              //     );
+              //   },
+              // },
               },
               { field: "price", headerName: "Price", width: 200 },
             ]}
@@ -696,33 +697,34 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             searchData={parts == undefined ? [] : parts}
             columnData={[
               {
-                field: "description",
+                field: "name",
                 headerName: "Name",
                 width: 200,
                 autoHeight: true,
                 wrapText: true,
                 flex: 2,
                 filter: true,
-                tooltipField: "name",
-                headerTooltip: "Name of items",
-                cellRenderer: (params: ITooltipParams) => {
-                  return (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <p>
-                        <b>{params.value}</b>
-                      </p>
-                      <i className="fa-solid fa-circle-info"></i>
-                    </div>
-                  );
-                },
+                // tooltipField: "name",
+                // headerTooltip: "Name of items",
+                // cellRenderer: (params: ITooltipParams) => {
+                //   return (
+                //     <div
+                //       style={{
+                //         display: "flex",
+                //         flexDirection: "row",
+                //         alignItems: "center",
+                //         justifyContent: "space-between",
+                //       }}
+                //     >
+                //       <p>
+                //         <b>{params.value}</b>
+                //       </p>
+                //       <i className="fa-solid fa-circle-info"></i>
+                //     </div>
+                //   );
+                // },
               },
+              { field: "description", headerName: "Description" },
               { field: "brand", headerName: "Brand" },
               { field: "standard_price", headerName: "Price", width: 200 },
               // { field: "stock", headerName: "Stock", width: 200 }, //TODO: Verify that this piece is actually true
