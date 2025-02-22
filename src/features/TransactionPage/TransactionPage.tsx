@@ -5,7 +5,7 @@ import { User } from "../../model";
 import { useNavigate } from "react-router-dom";
 import Item from "../../components/TransactionPage/HeaderItem";
 import Notes from "../../components/TransactionPage/Notes";
-import { ITooltipParams, RowClickedEvent } from "ag-grid-community";
+import { RowClickedEvent } from "ag-grid-community";
 import DBModel, {
   ItemDetails,
   Part,
@@ -133,7 +133,7 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
   const [nuclear, setNuclear] = useState<boolean>();
   const [description, setDescription] = useState<string>();
   const [isPaid, setPaid] = useState<boolean>(transactionData?.is_paid ?? false);
-  const [isCompleted, setIsCompleted] = useState<boolean>(transactionData?.is_waiting_on_email ?? false);
+  const [isCompleted, setIsCompleted] = useState<boolean>();
   const [beerBike, setBeerBike] = useState<boolean>();
 
   // const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
@@ -204,7 +204,9 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
       transactionStatus !== "pending" &&
       transactionStatus !== "error" &&
       description !== "" &&
-      description !== null
+      description !== null &&
+      isCompleted !== undefined
+
     ) {
       // console.log("description before update: ", description);
       const updatedTransaction = {
@@ -370,6 +372,7 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
     });
     queryClient.invalidateQueries({
 
+
       queryKey: ["transactions"],
     });
     nav("/");
@@ -445,6 +448,7 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
     setIsCompleted(!isCompleted);
 
     const customer: Customer = transactionData?.Customer as Customer;
+    if (isCompleted === false) {
     if (isCompleted === false) {
       sendCheckoutEmail.mutate(customer);
       queryClient.invalidateQueries({
@@ -697,24 +701,25 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
                 filter: true,
                 tooltipField: "description",
                 headerTooltip: "Name of repairs",
-                cellRenderer: (params: ITooltipParams) => {
-                  return (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        fontSize: "16px",
-                      }}
-                    >
-                      <p>
-                        <b>{params.value}</b>
-                      </p>
-                      <i className="fa-solid fa-circle-info"></i>
-                    </div>
-                  );
-                },
+                //   cellRenderer: (params: ITooltipParams) => {
+                //     return (
+                //       <div
+                //         style={{
+                //           display: "flex",
+                //           flexDirection: "row",
+                //           alignItems: "center",
+                //           justifyContent: "space-between",
+                //           fontSize: "0.vw",
+                //         }}
+                //       >
+                //         <p>
+                //           <b>{params.value}</b>
+                //         </p>
+                //         <i className="fa-solid fa-circle-info"></i>
+                //       </div>
+                //     );
+                //   },
+                // },
               },
               { field: "price", headerName: "Price", width: 200 },
             ]}
@@ -731,33 +736,34 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
             searchData={parts == undefined ? [] : parts}
             columnData={[
               {
-                field: "description",
+                field: "name",
                 headerName: "Name",
                 width: 200,
                 autoHeight: true,
                 wrapText: true,
                 flex: 2,
                 filter: true,
-                tooltipField: "name",
-                headerTooltip: "Name of items",
-                cellRenderer: (params: ITooltipParams) => {
-                  return (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <p>
-                        <b>{params.value}</b>
-                      </p>
-                      <i className="fa-solid fa-circle-info"></i>
-                    </div>
-                  );
-                },
+                // tooltipField: "name",
+                // headerTooltip: "Name of items",
+                // cellRenderer: (params: ITooltipParams) => {
+                //   return (
+                //     <div
+                //       style={{
+                //         display: "flex",
+                //         flexDirection: "row",
+                //         alignItems: "center",
+                //         justifyContent: "space-between",
+                //       }}
+                //     >
+                //       <p>
+                //         <b>{params.value}</b>
+                //       </p>
+                //       <i className="fa-solid fa-circle-info"></i>
+                //     </div>
+                //   );
+                // },
               },
+              { field: "description", headerName: "Description" },
               { field: "brand", headerName: "Brand" },
               { field: "standard_price", headerName: "Price", width: 200 },
               // { field: "stock", headerName: "Stock", width: 200 }, //TODO: Verify that this piece is actually true
@@ -957,11 +963,15 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
               onClick={handleNuclear}
               style={{
                 backgroundColor: nuclear ? "white" : "grey",
-                color: "white",
+                color: nuclear ? "red" : "white",
+                width: "fit-content",
               }}
               variant="contained"
             >
-              Mark as Nuclear
+              {nuclear ? <i
+                className="fas fa-radiation"
+                style={{ color: "red" }}
+              ></i> : "Mark as Nuclear"}
             </Button>
             <Button
               onClick={() => setBeerBike(!beerBike)}
@@ -993,49 +1003,56 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
             {showCheckout && (
               <div className="checkout">
                 <div className="checkout-content">
-                  <p>
-                    <strong>
+
+                  <Grid2 container sx={{ height: "80%" }}>
+                    <Grid2 size={6}>
+
+                      <h2>Repairs</h2>
+
+                      <ul>
+                        {repairDetails.map((repair: RepairDetails) => (
+                          <ListItem key={repair.transaction_detail_id}>
+                            {repair.Repair.name} - ${repair.Repair.price.toFixed(2)}
+                          </ListItem>
+                        ))}
+                      </ul>
+                    </Grid2>
+                    <Grid2 size={6}>
+
+                      <h2>Parts</h2>
+                      <ul>
+                        {itemDetails === undefined ? (
+                          <></>
+                        ) : (
+                          itemDetails.map((part: ItemDetails) => (
+                            <ListItem key={part.transaction_detail_id}>
+                              {part.Item.name} - $
+                              {part.Item.standard_price.toFixed(2)}
+                            </ListItem>
+                          ))
+                        )}
+                      </ul>
+                    </Grid2>
+
+                  </Grid2>
+                  <Grid2 container sx={{ height: "20%", width: "60%", margin: "0 20%", display: "flex" }}>
+                    <h3>
                       ${(totalPrice * 1.0825).toFixed(2)}
-                    </strong>
-                  </p>
+                    </h3>
+                    <Button
+                      onClick={handlePaid}
+                      style={{
+                        backgroundColor: "green",
+                        cursor: "pointer",
+                        color: "white",
+                        height: "5vh"
+                      }}
+                    >
+                      Finish
+                    </Button>
+                    <Button onClick={closeCheckout}>Back</Button>
+                  </Grid2>
 
-                  <p>
-                    <strong>Repairs:</strong>
-                  </p>
-                  <ul>
-                    {repairDetails.map((repair: RepairDetails) => (
-                      <ListItem key={repair.transaction_detail_id}>
-                        {repair.Repair.name} - ${repair.Repair.price.toFixed(2)}
-                      </ListItem>
-                    ))}
-                  </ul>
-
-                  <p>
-                    <strong>Parts</strong>
-                  </p>
-                  <ul>
-                    {itemDetails === undefined ? (
-                      <></>
-                    ) : (
-                      itemDetails.map((part: ItemDetails) => (
-                        <ListItem key={part.transaction_detail_id}>
-                          {part.Item.name} - $
-                          {part.Item.standard_price.toFixed(2)}
-                        </ListItem>
-                      ))
-                    )}
-                  </ul>
-                  <Button
-                    onClick={handlePaid}
-                    style={{
-                      backgroundColor: "green",
-                      cursor: "pointer",
-                      color: "white",
-                    }}
-                  >
-                    Finish
-                  </Button>
-                  <Button onClick={closeCheckout}>Back</Button>
                 </div>
               </div>
             )}
@@ -1051,10 +1068,13 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
                     display: flex;
                     justify-content: center;
                     align-items: center;
+                    z-index: 100;
                 }
                 .checkout-content {
                     background-color: grey;
                     padding: 20px;
+                    width: 80vw;
+                    height: 80vh;
                     border-radius: 5px;
                     text-align: center;
                 }
@@ -1080,6 +1100,7 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
               }}
               variant="contained"
             >
+              {isCompleted ? "Open Transaction" : "Complete Transaction"}
               {isCompleted ? "Open Transaction" : "Complete Transaction"}
             </Button>
             {/* {showMarkDone && (
