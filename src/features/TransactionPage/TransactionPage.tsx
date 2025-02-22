@@ -406,16 +406,17 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   };
 
   const handleMarkDone = async () => {
-    setIsCompleted(!isCompleted);
     if (!transactionData) return;
     if (!transactionData.Customer) return;
+    setIsCompleted(!isCompleted);
 
     const customer: Customer = transactionData?.Customer as Customer;
-
-    sendCheckoutEmail.mutate(customer);
-    queryClient.invalidateQueries({
-      queryKey: ["transactions"],
-    });
+    if(isCompleted === false){
+      sendCheckoutEmail.mutate(customer);
+      queryClient.invalidateQueries({
+        queryKey: ["transactions"],
+      });
+    }
     queryClient.invalidateQueries({
       queryKey: ["transaction", transaction_id],
     });
@@ -960,7 +961,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 <div className="checkout-content">
                   <p>
                     <strong>
-                      ${(totalPrice * 1.0625).toFixed(2)}
+                      ${(totalPrice * 1.0825).toFixed(2)}
                     </strong>
                   </p>
 
@@ -1010,8 +1011,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                     position: fixed;
                     top: 0;
                     left: 0;
-                    width: 100%;
-                    height: 100%;
+                    width: 80vw;
+                    height: 80vh%;
                     background-color: rgba(0, 0, 0, 0.5);
                     display: flex;
                     justify-content: center;
@@ -1038,13 +1039,14 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 marginRight: "10px",
                 // border: "white",
                 color: "white",
-                // backgroundColor: allRepairsDone()
+
+                backgroundColor: isCompleted ? "gray" : "blue",
                 //   ? "green"
                 //   : "black",
               }}
               variant="contained"
             >
-              Complete Transaction
+              {isCompleted? "Open Transaction": "Complete Transaction"}
             </Button>
             {/* {showMarkDone && (
               <div className="markDone">
