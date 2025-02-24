@@ -639,6 +639,7 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
         <Notes
           notes={transactionData.description ?? ""}
           onSave={handleSaveNotes}
+          checkUser={alertAuth}
           user={user}
         />
 

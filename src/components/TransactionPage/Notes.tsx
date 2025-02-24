@@ -1,29 +1,49 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { User } from "../../model";
 import { TextField, Button } from "@mui/material";
+import { queryClient } from "../../app/main";
 
 interface NotesProps {
   notes: string;
   onSave: (newNotes: string) => void;
   user: User;
+  // checkUser: () => void;
 }
 
 const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
   // console.log("initial data passed to Notes", notes);
+  const [currentUser, setCurrentUser] = useState(user);
   const [isEditing, setIsEditing] = useState(false);
   const [editedNotes, setEditedNotes] = useState(notes);
+  const [isWaitingForUser, setIsWaitingForUser] = useState(false);
+  useEffect(() => {
+    if (currentUser !== user && isWaitingForUser) {
+      console.log("setting new user in Notes component", user);
+      setCurrentUser(user);
+      setIsWaitingForUser(false);
+      handleSave();
+    }
+  }, [user, isWaitingForUser]);
+
+  const handleSubmit = () => {
+    setIsWaitingForUser(true);
+    queryClient.invalidateQueries({
+      queryKey: ["user"],
+    });
+    console.log("invalidated user query", user, isWaitingForUser);
+  }
 
   const handleSave = () => {
     setEditedNotes(editedNotes + " - " + user.firstname + " " + user.lastname);
     // console.log("edited notes in Notes component", editedNotes);
     onSave(editedNotes + " - " + user.firstname + " " + user.lastname);
-    setIsEditing(false);
   };
 
   const handleOpenToEdit = () => {
     setEditedNotes(editedNotes === "" ? "" : editedNotes + "\n");
     setIsEditing(true);
   };
+
 
   return (
     <div style={{ width: "100%", textAlign: "center", margin: "0 auto" }}>
@@ -41,13 +61,13 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
               )
             }
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) handleSave();
+              if (e.key === "Enter" && !e.shiftKey) handleSubmit();
             }}
             multiline
             autoFocus
           />
-          <button
-            onClick={handleSave}
+          <Button
+            onClick={handleSubmit}
             style={{
               marginTop: "10px",
               padding: "5px 10px",
@@ -57,7 +77,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
             }}
           >
             Save
-          </button>
+          </Button>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -65,7 +85,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
             style={{
               textAlign: "left",
               border: "1px solid black",
-              padding: "10px",
+              padding: "20px",
               textWrap: "wrap",
               height: "fit-content",
             }}

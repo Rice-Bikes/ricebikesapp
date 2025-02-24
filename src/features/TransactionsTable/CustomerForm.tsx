@@ -47,6 +47,7 @@ function NewTransactionForm({
       queryClient.invalidateQueries({
         queryKey: ["customers"],
       });
+      
       const submittedTransaction: CreateTransaction = {
         transaction_type: t_type,
         customer_id: data.customer_id, // TODO: need to figure this out

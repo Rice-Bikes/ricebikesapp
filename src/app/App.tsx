@@ -8,6 +8,7 @@ import TransactionDetail from "../features/TransactionPage/TransactionPage";
 import { useState } from "react";
 import AuthPrompt from "../components/AuthPrompt/AuthPrompt";
 import { User } from "../model";
+import AdminPage from "../features/AdminPage/AdminPage";
 //import {RepairItemList} from '../components/RepairItem/RepairItem';
 
 function App() {
@@ -15,7 +16,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User>();
   // const [user, setUser] = useState(null);
-  const [expediteAuth, setExpediteAuth] = useState(false);
+  const [, setExpediteAuth] = useState(false);
   // setUser(null);
   // const nav = useNavigate();
 
@@ -48,8 +49,8 @@ function App() {
           </Button>
         </header>
         <AuthPrompt
-          expediteAuth={true}
-          setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
+          // expediteAuth={true}
+          // setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
           setUser={(user: User) => setUser(user)}
         />
       </>
@@ -84,8 +85,8 @@ function App() {
         </Button>
       </header>
       <AuthPrompt
-        expediteAuth={expediteAuth}
-        setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
+        // expediteAuth={expediteAuth}
+        // setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
         setUser={(user: User) => setUser(user)}
       />
       <Routes>
@@ -97,7 +98,11 @@ function App() {
         />
         <Route
           path="/transaction-details/:transaction_id"
-          element={<TransactionDetail  alertAuth={() => setExpediteAuth(true)} propUser={user} />}
+          element={<TransactionDetail alertAuth={() => setExpediteAuth(true)} propUser={user} />}
+        />
+        <Route
+          path="/admin"
+          element={<AdminPage />}
         />
       </Routes>
     </>

@@ -274,7 +274,9 @@ export function TransactionsTable({
     _: React.MouseEvent<HTMLElement>,
     newAlignment: string
   ) => {
-    setViewType(newAlignment);
+    if (newAlignment !== null) {
+      setViewType(newAlignment);
+    }
     // gridApiRef.current?.onFilterChanged();
   };
 
@@ -292,7 +294,7 @@ export function TransactionsTable({
       (viewType === "pickup" &&
         transaction.is_paid === false &&
         transaction.is_completed === true
-      && transaction.is_refurb === false) ||
+        && transaction.is_refurb === false) ||
       (viewType === "paid" && transaction.is_paid === true) ||
       (viewType === "main" &&
         transaction.is_completed === false &&
@@ -349,6 +351,7 @@ export function TransactionsTable({
               value={viewType}
               exclusive
               onChange={handleViewType}
+
               aria-label="text alignment"
             >
               <ToggleButton value="main">Main Transactions</ToggleButton>

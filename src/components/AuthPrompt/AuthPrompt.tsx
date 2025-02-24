@@ -13,19 +13,35 @@ import { queryClient } from "../../app/main";
 import { useQuery } from "@tanstack/react-query";
 
 interface AuthPromptProps {
-  expediteAuth: boolean;
-  setExpediteAuth: (value: boolean) => void;
+  // expediteAuth: boolean;
+  // setExpediteAuth: (value: boolean) => void;
   setUser: (user: User) => void;
 }
 
 const AuthPrompt = ({
-  expediteAuth,
-  setExpediteAuth: setExpeditAuth,
+  // expediteAuth,
+  // setExpediteAuth: setAuthExpedited,
   setUser,
 }: AuthPromptProps) => {
   const [open, setOpen] = useState<boolean>(false);
   const [netId, setNetId] = useState<string>("");
   const [currentNetId, setCurrentNetId] = useState<string>("");
+
+
+  const { error, data, status, isFetching } = useQuery({
+    queryKey: ["user"],
+    queryFn: () => {
+      // setNetId("");
+      if (netId.trim() === "") return;
+      const newNetId = netId;
+      setNetId(" ");
+      return DBModel.fetchUser(newNetId);
+    },
+    retry: false,
+    enabled: netId !== "",
+  });
+
+  console.log("auth is currently loading", isFetching, error);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -38,30 +54,19 @@ const AuthPrompt = ({
       });
     }, 1000); // Update every second
 
-    if (expediteAuth) {
+    console.log("user data has changed", status, data);
+
+    if (isFetching || data === undefined || status === "error") {
       // setNetId("test");
       setOpen(true);
-      setExpeditAuth(false);
+      // setAuthExpedited(false);
     }
     return () => clearInterval(interval);
-  }, []);
-
-  const { error, data, status } = useQuery({
-    queryKey: ["user"],
-    queryFn: () => {
-      // setNetId("");
-      if (netId.trim() === "") throw new Error("No netid");
-      const newNetId = netId;
-      setNetId("");
-      return DBModel.fetchUser(newNetId);
-    },
-    retry: false,
-    enabled: netId !== "" && open,
-  });
+  }, [status, data, isFetching]);
 
   useEffect(() => {
     console.log(data);
-    if (!error && status !== "pending" && data) {
+    if (!error && status === "success" && data) {
       console.log("current user is submitted, closing dialog");
       setOpen(false);
     }
@@ -70,9 +75,10 @@ const AuthPrompt = ({
   const handleSubmit = () => {
     setNetId(currentNetId);
     setCurrentNetId("");
-    queryClient.invalidateQueries({
-      queryKey: ["user"],
-    });
+    // queryClient.invalidateQueries({
+    //   queryKey: ["user"],
+    // });
+    // setAuthExpedited(false);
   };
 
   if (data) {
@@ -106,13 +112,13 @@ const AuthPrompt = ({
             type="text"
             fullWidth
             value={currentNetId}
-            error={error !== null}
+            error={error !== null && netId.trim().length > 0}
             helperText={
               error
                 ? "Invalid netId"
                 : netId.length === 0
-                ? "Enter your NetID to continue"
-                : ""
+                  ? "Enter your NetID to continue"
+                  : ""
             }
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSubmit();

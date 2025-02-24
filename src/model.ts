@@ -401,6 +401,31 @@ class DBModel {
         throw Error("Error loading or parsing items data: " + error);
       });
 
+  public static refreshItems = async (csv: string) =>{
+
+    console.log("sending file in dbModel", csv);
+    return fetch(`${hostname}/items`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({csv: csv}),
+    }
+    ) 
+      .then((response) => response.json())
+      .then((itemsData: unknown) => {
+        console.log("Raw Parts Data:", itemsData);
+        if (!DBModel.validateArrayResponse(itemsData)) {
+          throw new Error("Invalid part response");
+        }
+        if (!itemsData.success) {
+          throw new Error("Failed to load parts");
+        }
+        // console.log(" Parts Array Data:", itemsData.responseObject);
+        return itemsData.responseObject;
+      })
+    }
+
   public static fetchRepairs = async () =>
     fetch(`${hostname}/repairs`)
       .then((response) => response.json())
