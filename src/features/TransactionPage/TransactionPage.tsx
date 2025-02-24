@@ -44,7 +44,7 @@ interface TransactionDetailProps {
   alertAuth: () => void;
 }
 
-const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
+const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const { transaction_id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const nav = useNavigate();
@@ -128,7 +128,7 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
   const [waitEmail, setWaitEmail] = useState<boolean>(
     transactionData?.is_waiting_on_email ?? false
   );
-  const [waitPart, setWaitPart] = useState<boolean>(false);
+  const [waitPart, setWaitPart] = useState<boolean>();
   const [priority, setPriority] = useState<boolean>();
   const [nuclear, setNuclear] = useState<boolean>();
   const [description, setDescription] = useState<string>();
@@ -214,7 +214,7 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
         transaction_type: transactionType,
         total_cost: totalPrice,
         is_waiting_on_email: waitEmail,
-        // waiting_on_part: waitPart,
+        waiting_on_part: waitPart,
         is_urgent: priority ?? false,
         is_nuclear: nuclear ?? false,
         is_completed: isCompleted,
@@ -277,6 +277,8 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
         setIsCompleted(transactionData.is_completed);
       if (transactionData.is_beer_bike !== beerBike)
         setBeerBike(transactionData.is_beer_bike);
+      if (transactionData.waiting_on_part !== waitPart)
+        setWaitPart(transactionData.waiting_on_part);
     }
   }, [transactionData]);
 
@@ -628,7 +630,10 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
         >
           <h3>
             <strong>📧: </strong>
-            {transactionData.Customer.email}
+            <a
+              href={`mailto:${transactionData.Customer.email}?subject=Your bike`} >
+              {transactionData.Customer.email}
+            </a>
           </h3>
           <h3>
             <strong>#: </strong>
@@ -916,6 +921,7 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
           <WhiteboardEntryModal
             open={showWaitingParts}
             onClose={() => setShowWaitingParts(false)}
+            setWaitingOnParts={(waiting: boolean) => setWaitPart(waiting)}
             parts={parts as Part[]}
             transaction_id={transaction_id}
             user_id={user.user_id}
@@ -926,9 +932,9 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
           // gap={2}
           >
             <Button
-              onClick={handleWaitPart}
+              // onClick={handleWaitPart}
               style={{
-                backgroundColor: waitPart ? "red" : "grey",
+                backgroundColor:  ? "red" : "grey",
                 color: "white",
               }}
               variant="contained"
@@ -1004,55 +1010,55 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
             {showCheckout && (
               <div className="checkout">
                 <div className="checkout-content">
-
+                  {/* 
                   <Grid2 container sx={{ height: "80%" }}>
-                    <Grid2 size={6}>
+                    <Grid2 size={6}> */}
 
-                      <h2>Repairs</h2>
+                  <h2>Repairs</h2>
 
-                      <ul>
-                        {repairDetails.map((repair: RepairDetails) => (
-                          <ListItem key={repair.transaction_detail_id}>
-                            {repair.Repair.name} - ${repair.Repair.price.toFixed(2)}
-                          </ListItem>
-                        ))}
-                      </ul>
-                    </Grid2>
-                    <Grid2 size={6}>
+                  <ul>
+                    {repairDetails.map((repair: RepairDetails) => (
+                      <ListItem key={repair.transaction_detail_id}>
+                        {repair.Repair.name} - ${repair.Repair.price.toFixed(2)}
+                      </ListItem>
+                    ))}
+                  </ul>
+                  {/* </Grid2>
+                    <Grid2 size={6}> */}
 
-                      <h2>Parts</h2>
-                      <ul>
-                        {itemDetails === undefined ? (
-                          <></>
-                        ) : (
-                          itemDetails.map((part: ItemDetails) => (
-                            <ListItem key={part.transaction_detail_id}>
-                              {part.Item.name} - $
-                              {part.Item.standard_price.toFixed(2)}
-                            </ListItem>
-                          ))
-                        )}
-                      </ul>
-                    </Grid2>
+                  <h2>Parts</h2>
+                  <ul>
+                    {itemDetails === undefined ? (
+                      <></>
+                    ) : (
+                      itemDetails.map((part: ItemDetails) => (
+                        <ListItem key={part.transaction_detail_id}>
+                          {part.Item.name} - $
+                          {part.Item.standard_price.toFixed(2)}
+                        </ListItem>
+                      ))
+                    )}
+                  </ul>
+                  {/* </Grid2>
 
-                  </Grid2>
-                  <Grid2 container sx={{ height: "20%", width: "60%", margin: "0 20%", display: "flex" }}>
-                    <h3>
-                      ${(totalPrice * 1.0825).toFixed(2)}
-                    </h3>
-                    <Button
-                      onClick={handlePaid}
-                      style={{
-                        backgroundColor: "green",
-                        cursor: "pointer",
-                        color: "white",
-                        height: "5vh"
-                      }}
-                    >
-                      Finish
-                    </Button>
-                    <Button onClick={closeCheckout}>Back</Button>
-                  </Grid2>
+                  </Grid2> */}
+                  {/* <Grid2 container sx={{ height: "20%", width: "60%", margin: "0 20%", display: "flex" }}> */}
+                  <h3>
+                    ${(totalPrice * 1.0825).toFixed(2)}
+                  </h3>
+                  <Button
+                    onClick={handlePaid}
+                    style={{
+                      backgroundColor: "green",
+                      cursor: "pointer",
+                      color: "white",
+                      height: "5vh"
+                    }}
+                  >
+                    Finish
+                  </Button>
+                  <Button onClick={closeCheckout}>Back</Button>
+                  {/* </Grid2> */}
 
                 </div>
               </div>
@@ -1063,8 +1069,8 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
                     position: fixed;
                     top: 0;
                     left: 0;
-                    width: 80vw;
-                    height: 80vh%;
+                    width: 100%;
+                    height: 100%;
                     background-color: rgba(0, 0, 0, 0.5);
                     display: flex;
                     justify-content: center;
@@ -1074,8 +1080,6 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
                 .checkout-content {
                     background-color: grey;
                     padding: 20px;
-                    width: 80vw;
-                    height: 80vh;
                     border-radius: 5px;
                     text-align: center;
                 }
@@ -1092,12 +1096,9 @@ const TransactionDetail = ({ propUser, alertAuth }: TransactionDetailProps) => {
               disabled={!allRepairsDone()}
               style={{
                 marginRight: "10px",
-                // border: "white",
                 color: "white",
-
-                backgroundColor: isCompleted ? "gray" : "blue",
-                //   ? "green"
-                //   : "black",
+                backgroundColor: isCompleted || !allRepairsDone() ? "gray" : "blue",
+                opacity: allRepairsDone() ? 1 : 0.5,
               }}
               variant="contained"
             >

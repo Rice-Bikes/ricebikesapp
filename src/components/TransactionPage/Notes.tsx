@@ -67,7 +67,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
             autoFocus
           />
           <Button
-            onClick={handleSubmit}
+            onClick={handleSave}
             style={{
               marginTop: "10px",
               padding: "5px 10px",
