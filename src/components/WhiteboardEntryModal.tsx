@@ -26,6 +26,7 @@ type WhiteboardEntryModalProps = {
   open: boolean;
   onClose: () => void;
   parts: Part[];
+  setWaitingOnParts: (waitingOnParts: boolean) => void;
   transaction_id: string;
   user_id: string;
 };
@@ -34,6 +35,7 @@ const WhiteboardEntryModal = ({
   open,
   onClose,
   parts,
+  setWaitingOnParts,
   transaction_id,
   user_id,
 }: WhiteboardEntryModalProps) => {
@@ -70,6 +72,7 @@ const WhiteboardEntryModal = ({
   useEffect(() => {
     if (orderRequestData) {
       console.log(orderRequestData);
+      setWaitingOnParts(orderRequestData.length > 0);
       setLoading(false);
     }
   }, [orderRequestData]);

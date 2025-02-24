@@ -46,7 +46,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
             multiline
             autoFocus
           />
-          <button
+          <Button
             onClick={handleSave}
             style={{
               marginTop: "10px",
@@ -57,7 +57,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
             }}
           >
             Save
-          </button>
+          </Button>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
