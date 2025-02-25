@@ -136,6 +136,51 @@ export const BikeSchema = {
   additionalProperties: false,
 } as const satisfies JSONSchema;
 
+
+export const UserSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "User",
+  type: "object",
+  properties: {
+    user_id: { type: "string" },
+    username: { type: "string" },
+    firstname: { type: "string" },
+    lastname: { type: "string" },
+    active: { type: "boolean" },
+  },
+  required: ["user_id", "username", "firstname", "lastname", "active"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+
+
+// Order Request Schema
+export const OrderRequestSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "OrderRequest",
+  type: "object",
+  properties: {
+    order_request_id: { type: "string",  },
+    created_by: { type: "string",  },
+    transaction_id: { type: "string",  },
+    item_id: { type: "string" },
+    date_created: { type: "string"},
+    quantity: { type: "integer" },
+    notes: { type: ["string", "null"] },
+    Item: partSchema,
+    User: UserSchema,
+  },
+  required: [
+    "order_request_id",
+    "created_by",
+    "transaction_id",
+    "item_id",
+    "date_created",
+    "quantity",
+  ],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
 export const TransactionSchema = {
   $schema: "http://json-schema.org/draft-07/schema",
   title: "Transaction",
@@ -169,6 +214,11 @@ export const TransactionSchema = {
       nullable: true,
       properties: CustomerSchema.properties,
     },
+    OrderRequests: {
+      type: "array",
+      // nullable: true,
+      items: OrderRequestSchema,
+    },
   },
   required: [
     "transaction_num",
@@ -185,6 +235,7 @@ export const TransactionSchema = {
     "is_reserved",
     "is_waiting_on_email",
     "transaction_id",
+    // "OrderRequests"
   ],
   additionalProperties: false,
 } as const satisfies JSONSchema;
@@ -361,49 +412,9 @@ export const TransactionSummarySchema = {
   additionalProperties: false,
 } as const satisfies JSONSchema;
 
-export const UserSchema = {
-  $schema: "http://json-schema.org/draft-07/schema",
-  title: "User",
-  type: "object",
-  properties: {
-    user_id: { type: "string" },
-    username: { type: "string" },
-    firstname: { type: "string" },
-    lastname: { type: "string" },
-    active: { type: "boolean" },
-  },
-  required: ["user_id", "username", "firstname", "lastname", "active"],
-  additionalProperties: false,
-} as const satisfies JSONSchema;
 
 
 
-// Order Request Schema
-export const OrderRequestSchema = {
-  $schema: "http://json-schema.org/draft-07/schema",
-  title: "OrderRequest",
-  type: "object",
-  properties: {
-    order_request_id: { type: "string",  },
-    created_by: { type: "string",  },
-    transaction_id: { type: "string",  },
-    item_id: { type: "string" },
-    date_created: { type: "string"},
-    quantity: { type: "integer" },
-    notes: { type: ["string", "null"] },
-    Item: partSchema,
-    User: UserSchema,
-  },
-  required: [
-    "order_request_id",
-    "created_by",
-    "transaction_id",
-    "item_id",
-    "date_created",
-    "quantity",
-  ],
-  additionalProperties: false,
-} as const satisfies JSONSchema;
 
 export const CreateOrderRequestsSchema = {
   $id: "CreateOrderRequestsSchema.json",

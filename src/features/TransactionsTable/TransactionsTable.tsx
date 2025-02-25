@@ -21,7 +21,7 @@ import type {
 } from "ag-grid-community";
 import CreateTransactionDropdown from "./TransactionTypeDropdown"; // Create Transaction Dropdown Component
 import "./TransactionsTable.css"; // CSS Stylesheet
-import { Transaction, Bike, Customer, TransactionSummary } from "../../model";
+import { Transaction, Bike, Customer, TransactionSummary, OrderRequest } from "../../model";
 import { useNavigate } from "react-router-dom";
 import DBModel from "../../model";
 import PriceCheckModal from "../../components/PriceCheckModal";
@@ -32,6 +32,7 @@ export interface IRow {
   // "#": number;
   Transaction: Transaction;
   Customer: Customer;
+  OrderRequests: Array<OrderRequest>;
   Bike?: Bike;
 }
 
@@ -135,6 +136,7 @@ export function TransactionsTable({
         const isNuclear = params.data?.Transaction.is_nuclear;
         const isBeerBike = params.data?.Transaction.is_beer_bike;
         const transaction_type = params.data?.Transaction.transaction_type;
+        const isWaitingOnParts = (params.data?.OrderRequests?.length ?? 0) > 0;
 
         return (
           <Stack
@@ -202,6 +204,12 @@ export function TransactionsTable({
             {isUrgent && (
               <ErrorSharp style={{ color: "red", marginRight: "5px" }} />
 
+            )}
+            {isWaitingOnParts && (
+              <i
+                className="fas fa-wrench"
+                style={{ color: "orange", marginRight: "5px" }}
+              />
             )}
             {isNuclear && (
               <i
@@ -276,6 +284,7 @@ export function TransactionsTable({
   ) => {
     if (newAlignment !== null) {
       setViewType(newAlignment);
+
     }
     // gridApiRef.current?.onFilterChanged();
   };
@@ -338,62 +347,63 @@ export function TransactionsTable({
         </article>
       </header>
       <section
-        className={status === "pending" ? "lds-dual-ring" : ""}
+        // className={status === "pending" ? "lds-dual-ring" : ""}
         id="transactions-table"
       >
-        {status === "pending" ? (
+        {/* {status === "pending" ? (
           "Loading..."
         ) : status === "error" ? (
           "Error loading data"
-        ) : (
-          <>
-            <ToggleButtonGroup
-              value={viewType}
-              exclusive
-              onChange={handleViewType}
+        ) : ( */}
+        <>
+          <ToggleButtonGroup
+            value={viewType}
+            exclusive
+            onChange={handleViewType}
 
-              aria-label="text alignment"
-            >
-              <ToggleButton value="main">Main Transactions</ToggleButton>
-              <ToggleButton value="pickup">Waiting on Pickup</ToggleButton>
-              <ToggleButton value="retrospec">Retrospec</ToggleButton>
-              <ToggleButton value="paid">Paid</ToggleButton>
-              <ToggleButton value="employee"> Employee </ToggleButton>
-            </ToggleButtonGroup>
-            <AgGridReact
-              ref={gridApiRef}
-              rowData={data}
-              columnDefs={colDefs}
-              defaultColDef={defaultColDef}
-              rowSelection={rowSelection}
-              onRowClicked={onRowClicked}
-              getRowStyle={({ data }) => {
-                if (
-                  isDaysLess(
-                    5,
-                    currDate,
-                    new Date(data?.Transaction.date_created)
-                  )
-                ) {
-                  return { backgroundColor: "lightcoral" };
-                } else if (
-                  isDaysLess(
-                    2,
-                    currDate,
-                    new Date(data?.Transaction.date_created)
-                  )
-                ) {
-                  return { backgroundColor: "lightyellow" };
-                } else return { backgroundColor: "white" };
-              }}
-              isExternalFilterPresent={isExternalFilterPresent}
-              doesExternalFilterPass={doesExternalFilterPass}
-              domLayout="autoHeight"
-              pagination={viewType === "paid"}
-            // paginationPageSize={true}
-            />
-          </>
-        )}
+            aria-label="text alignment"
+          >
+            <ToggleButton value="main">Main Transactions</ToggleButton>
+            <ToggleButton value="pickup">Waiting on Pickup</ToggleButton>
+            <ToggleButton value="retrospec">Retrospec</ToggleButton>
+            <ToggleButton value="paid">Paid</ToggleButton>
+            <ToggleButton value="employee"> Employee </ToggleButton>
+          </ToggleButtonGroup>
+          <AgGridReact
+            ref={gridApiRef}
+            loading={status !== "success"}
+            rowData={data}
+            columnDefs={colDefs}
+            defaultColDef={defaultColDef}
+            rowSelection={rowSelection}
+            onRowClicked={onRowClicked}
+            getRowStyle={({ data }) => {
+              if (
+                isDaysLess(
+                  5,
+                  currDate,
+                  new Date(data?.Transaction.date_created)
+                )
+              ) {
+                return { backgroundColor: "lightcoral" };
+              } else if (
+                isDaysLess(
+                  2,
+                  currDate,
+                  new Date(data?.Transaction.date_created)
+                )
+              ) {
+                return { backgroundColor: "lightyellow" };
+              } else return { backgroundColor: "white" };
+            }}
+            isExternalFilterPresent={isExternalFilterPresent}
+            doesExternalFilterPass={doesExternalFilterPass}
+            domLayout="autoHeight"
+            pagination={viewType === "paid"}
+          // paginationPageSize={true}
+          />
+        </>
+
       </section>
     </main>
   );

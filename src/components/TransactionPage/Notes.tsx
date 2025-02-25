@@ -31,12 +31,14 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
       queryKey: ["user"],
     });
     console.log("invalidated user query", user, isWaitingForUser);
+    handleSave();
   }
 
   const handleSave = () => {
     setEditedNotes(editedNotes + " - " + user.firstname + " " + user.lastname);
     // console.log("edited notes in Notes component", editedNotes);
     onSave(editedNotes + " - " + user.firstname + " " + user.lastname);
+    setIsEditing(false);
   };
 
   const handleOpenToEdit = () => {

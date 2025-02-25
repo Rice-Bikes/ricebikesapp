@@ -34,7 +34,7 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
     });
   if (parts)
     parts.forEach((part) => {
-      total += part.Item.standard_price;
+      total += Math.max(part.Item.standard_price, part.Item.wholesale_cost * 2);
     });
   return total;
 };
@@ -214,7 +214,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         transaction_type: transactionType,
         total_cost: totalPrice,
         is_waiting_on_email: waitEmail,
-        waiting_on_part: waitPart,
         is_urgent: priority ?? false,
         is_nuclear: nuclear ?? false,
         is_completed: isCompleted,
@@ -277,8 +276,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         setIsCompleted(transactionData.is_completed);
       if (transactionData.is_beer_bike !== beerBike)
         setBeerBike(transactionData.is_beer_bike);
-      if (transactionData.waiting_on_part !== waitPart)
-        setWaitPart(transactionData.waiting_on_part);
     }
   }, [transactionData]);
 
@@ -411,15 +408,15 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     });
   };
 
-  const handleWaitPart = () => {
+  const handleWaitPartClick = () => {
     setShowWaitingParts(!showWaitingParts);
-    setWaitPart(!waitPart);
-    queryClient.invalidateQueries({
-      queryKey: ["transaction", transaction_id],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ["transactions"],
-    });
+    // setWaitPart(!waitPart);
+    // queryClient.invalidateQueries({
+    //   queryKey: ["transaction", transaction_id],
+    // });
+    // queryClient.invalidateQueries({
+    //   queryKey: ["transactions"],
+    // });
   };
 
   const handlePriority = () => {
@@ -644,7 +641,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         <Notes
           notes={transactionData.description ?? ""}
           onSave={handleSaveNotes}
-          checkUser={alertAuth}
+          // checkUser={alertAuth}
           user={user}
         />
 
@@ -771,7 +768,11 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               },
               { field: "description", headerName: "Description" },
               { field: "brand", headerName: "Brand" },
-              { field: "standard_price", headerName: "Price", width: 200 },
+              {
+                field: "standard_price", headerName: "Price", width: 200,
+                valueGetter: (params) => params.data?.standard_price as number > 0 ? params.data?.standard_price : params.data?.wholesale_cost as number * 2,
+
+              },
               // { field: "stock", headerName: "Stock", width: 200 }, //TODO: Verify that this piece is actually true
               {
                 field: "upc",
@@ -922,6 +923,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             open={showWaitingParts}
             onClose={() => setShowWaitingParts(false)}
             setWaitingOnParts={(waiting: boolean) => setWaitPart(waiting)}
+            waitingOnParts={waitPart ?? false}
             parts={parts as Part[]}
             transaction_id={transaction_id}
             user_id={user.user_id}
@@ -932,9 +934,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           // gap={2}
           >
             <Button
-              // onClick={handleWaitPart}
+              onClick={handleWaitPartClick}
               style={{
-                backgroundColor:  ? "red" : "grey",
+                backgroundColor: waitPart ? "red" : "grey",
                 color: "white",
               }}
               variant="contained"

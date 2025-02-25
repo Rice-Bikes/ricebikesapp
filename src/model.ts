@@ -227,10 +227,20 @@ class DBModel {
             console.error("Invalid customer:", part.Customer);
             throw new Error("Invalid customer found");
           }
+
+          if( part.OrderRequests && (part.OrderRequests instanceof Array )){
+            for(let i = 0; i < part.OrderRequests.length; i++){
+              if (!DBModel.validateOrderRequest(part.OrderRequests[i])) {
+                console.error("Invalid order request:", part.OrderRequests[i]);
+                throw new Error("Invalid order request found");
+              }
+            }
+          }
           return {
             Transaction: part,
             Customer: part.Customer,
             Bike: part.Bike,
+            OrderRequests: part.OrderRequests ?? [],
             Submitted: new Date(part.date_created),
           };
         });
@@ -786,6 +796,25 @@ class DBModel {
       })
       .catch((error) => {
         throw new Error("Error loading order requests data: " + error); // More detailed error logging
+      });
+
+  public static deleteOrderRequest = async (req: OrderRequest) =>
+    fetch(`${hostname}/orderRequests/${req.order_request_id}`, {
+      method: "DELETE",
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        console.log(response);
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to delete order request");
+        }
+      })
+      .catch((error) => {
+        console.error("Error deleting order request data: ", error);
+        throw new Error("Error posting order request data: " + error); // More detailed error logging
       });
 
     public static sendEmail = async (customer: Customer, transaction_num: number) => 

@@ -16,7 +16,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User>();
   // const [user, setUser] = useState(null);
-  const [, setExpediteAuth] = useState(false);
+  const [expediteAuth, setExpediteAuth] = useState(false);
   // setUser(null);
   // const nav = useNavigate();
 
@@ -49,8 +49,8 @@ function App() {
           </Button>
         </header>
         <AuthPrompt
-          // expediteAuth={true}
-          // setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
+          expediteAuth={true}
+          setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
           setUser={(user: User) => setUser(user)}
         />
       </>
@@ -85,8 +85,8 @@ function App() {
         </Button>
       </header>
       <AuthPrompt
-        // expediteAuth={expediteAuth}
-        // setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
+        expediteAuth={expediteAuth}
+        setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
         setUser={(user: User) => setUser(user)}
       />
       <Routes>
