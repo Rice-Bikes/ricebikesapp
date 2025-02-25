@@ -74,7 +74,11 @@ const WhiteboardEntryModal = ({
   });
 
   const updateOrderRequest = useMutation({
-    mutationFn: (req: OrderRequest) => DBModel.putOrderRequest(req),
+    mutationFn: (req: OrderRequest) => {
+      const { Item, User, ...reqWithoutAgg } = req;
+      console.log(Item, User);
+      return DBModel.putOrderRequest(reqWithoutAgg);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["orderRequest", transaction_id],
