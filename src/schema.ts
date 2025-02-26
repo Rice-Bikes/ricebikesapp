@@ -437,3 +437,45 @@ export const CreateOrderRequestsSchema = {
   required: ["body"],
   additionalProperties: false,
 } as const satisfies JSONSchema;
+
+
+export const CreateTransactionLogSchema = {
+  $id: "CreateTransactionLogSchema.json",
+  type: "object",
+  properties: {
+    body: {
+      type: "object",
+      properties: {
+        item_id: { type: ["string", "null"] },
+        repair_id: { type: ["string", "null"], format: "uuid" },
+        changed_by: { type: "string", format: "uuid" },
+        quantity: { type: "integer" },
+      },
+      required: ["changed_by", "quantity"],
+    },
+  },
+  required: ["body"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+export const TransactionLogSchema = {
+  $id: "transactionLog.json",
+  type: "object",
+  properties: {
+    log_id: { type: "string" },
+    transaction_num: { type: "number" },
+    changed_by: { type: "string" },
+    date_modified: { type: "string" },
+    change_type: { type: "string" },
+    description: { type: "string" },
+    Users: UserSchema,
+  },
+  required: ["log_id", "transaction_num", "changed_by", "date_modified", "change_type", "description"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+export const TransactionLogArraySchema = {
+  $id: "transactionLogArray.json",
+  type: "array",
+  items: TransactionLogSchema,
+} as const satisfies JSONSchema;

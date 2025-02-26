@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { User } from "../../model";
+import DBModel, { User } from "../../model";
 import { TextField, Button } from "@mui/material";
 import { queryClient } from "../../app/main";
 
@@ -7,42 +7,51 @@ interface NotesProps {
   notes: string;
   onSave: (newNotes: string) => void;
   user: User;
+  transaction_num: number;
   // checkUser: () => void;
 }
 
-const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
+const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) => {
   // console.log("initial data passed to Notes", notes);
   const [currentUser, setCurrentUser] = useState(user);
   const [isEditing, setIsEditing] = useState(false);
   const [editedNotes, setEditedNotes] = useState(notes);
   const [isWaitingForUser, setIsWaitingForUser] = useState(false);
+  const [prevLengthOfNotes, setPrevLengthOfNotes] = useState(0);
   useEffect(() => {
     if (currentUser !== user && isWaitingForUser) {
       console.log("setting new user in Notes component", user);
       setCurrentUser(user);
       setIsWaitingForUser(false);
-      handleSave();
     }
   }, [user, isWaitingForUser]);
 
   const handleSubmit = () => {
     setIsWaitingForUser(true);
-    queryClient.invalidateQueries({
-      queryKey: ["user"],
-    });
     console.log("invalidated user query", user, isWaitingForUser);
     handleSave();
   }
 
   const handleSave = () => {
+    const currentLengthOfNotes = editedNotes.length;
     setEditedNotes(editedNotes + " - " + user.firstname + " " + user.lastname);
     // console.log("edited notes in Notes component", editedNotes);
     onSave(editedNotes + " - " + user.firstname + " " + user.lastname);
+    DBModel.postTransactionLog(
+      transaction_num,
+      user.user_id,
+      `"${editedNotes.slice(prevLengthOfNotes, currentLengthOfNotes).trim()}"`,
+      "updated"
+    )
     setIsEditing(false);
   };
 
   const handleOpenToEdit = () => {
     setEditedNotes(editedNotes === "" ? "" : editedNotes + "\n");
+    queryClient.resetQueries({
+      queryKey: ["user"],
+    });
+    setPrevLengthOfNotes(editedNotes.length);
     setIsEditing(true);
   };
 
@@ -90,6 +99,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user }) => {
               padding: "20px",
               textWrap: "wrap",
               height: "fit-content",
+              fontSize: "16px"
             }}
           >
             {editedNotes || "No notes yet."}

@@ -46,12 +46,13 @@ const AuthPrompt = ({
     return () => clearInterval(interval);
   }, []);
 
+
+
   const { error, data, status } = useQuery({
     queryKey: ["user"],
     queryFn: () => {
-      // setNetId("");
       if (netId.trim() === "") throw new Error("No netid");
-      const newNetId = netId;
+      const newNetId = String(netId);
       setNetId("");
       return DBModel.fetchUser(newNetId);
     },
@@ -70,21 +71,31 @@ const AuthPrompt = ({
   const handleSubmit = () => {
     setNetId(currentNetId);
     setCurrentNetId("");
-    queryClient.invalidateQueries({
+    queryClient.removeQueries({
       queryKey: ["user"],
     });
   };
 
+  useEffect(() => {
+    if (!data) {
+      setOpen(true);
+    }
+
+  }, [data]);
+
+
+
   if (data) {
     setUser(data);
   }
+
 
   return (
     <>
       <Button
         onClick={() => {
           setOpen(true);
-          queryClient.invalidateQueries({
+          queryClient.removeQueries({
             queryKey: ["user"],
           });
         }}

@@ -15,6 +15,7 @@ interface NewTransactionFormProps {
   isOpen: boolean;
   onClose: () => void;
   t_type: string;
+  user_id: string;
 }
 
 function NewTransactionForm({
@@ -22,6 +23,7 @@ function NewTransactionForm({
   isOpen,
   onClose,
   t_type,
+  // user_id,
 }: NewTransactionFormProps) {
   const [formState, setFormState] = useState({
     first_name: "",

@@ -21,10 +21,11 @@ import type {
 } from "ag-grid-community";
 import CreateTransactionDropdown from "./TransactionTypeDropdown"; // Create Transaction Dropdown Component
 import "./TransactionsTable.css"; // CSS Stylesheet
-import { Transaction, Bike, Customer, TransactionSummary, OrderRequest } from "../../model";
+import { Transaction, Bike, Customer, TransactionSummary, OrderRequest, User } from "../../model";
 import { useNavigate } from "react-router-dom";
 import DBModel from "../../model";
 import PriceCheckModal from "../../components/PriceCheckModal";
+import { queryClient } from "../../app/main";
 // import SearchModal from "../../components/TransactionPage/SearchModal";
 
 // Row Data Interface
@@ -68,10 +69,12 @@ function timeAgo(input: Date) {
 
 interface TransactionTableProps {
   alertAuth: () => void;
+  user: User;
 }
 
 export function TransactionsTable({
   alertAuth,
+  user,
 }: TransactionTableProps): JSX.Element {
   // const model = new TransactionTableModel();
   // Row Data: The data to be displayed.
@@ -92,6 +95,9 @@ export function TransactionsTable({
   // console.log(rowData);
   // const [pageSize, setPageSize] = useState(100);
   const onRowClicked = (e: RowClickedEvent) => {
+    queryClient.invalidateQueries({
+      queryKey: ["user"],
+    });
     navigate(
       `/transaction-details/${e.data.Transaction.transaction_id}?type=${e.data.Transaction.transaction_type}`
     );
@@ -328,7 +334,7 @@ export function TransactionsTable({
       <Button></Button>
       <header>
         <ButtonGroup id="nav-buttons">
-          <CreateTransactionDropdown alertAuth={alertAuth} />
+          <CreateTransactionDropdown alertAuth={alertAuth} user={user} />
           <Button>Whiteboard</Button>
           <Button onClick={() => setShowPriceCheckModal(!showPriceCheckModal)}>Price Check</Button>
           <PriceCheckModal open={showPriceCheckModal} onClose={() => { setShowPriceCheckModal(false) }} />

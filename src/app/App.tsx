@@ -93,7 +93,7 @@ function App() {
         <Route
           path="/"
           element={
-            <TransactionsTable alertAuth={() => setExpediteAuth(true)} />
+            <TransactionsTable user={user} alertAuth={() => setExpediteAuth(true)} />
           }
         />
         <Route

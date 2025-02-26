@@ -5,6 +5,10 @@
   text-align: center;
 } */
 
+.ag-cell {
+  font-size: 16px; /* Adjust the value as needed */
+}
+
 #taskbar {
   width: 100vw;
   max-height: 20vh;

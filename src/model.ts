@@ -28,6 +28,8 @@ import {
   UserSchema,
   OrderRequestSchema,
   CreateOrderRequestsSchema,
+  TransactionLogSchema,
+  TransactionLogArraySchema,
 } from "./schema";
 import Ajv from "ajv";
 
@@ -55,6 +57,8 @@ export type TransactionArray = FromSchema<typeof TransactionArraySchema>;
 export type TransactionDetailsArray = FromSchema<
   typeof TransactionDetailsArraySchema
 >;
+export type TransactionLogArray = FromSchema< typeof TransactionLogArraySchema>;
+export type TransactionLog = FromSchema<typeof TransactionLogSchema>;
 
 export type PartResponse = FromSchema<typeof partResponseSchema>;
 export type RepairResponse = FromSchema<typeof repairResponseSchema>;
@@ -119,6 +123,7 @@ class DBModel {
   public static validateRepairDetails: (data: unknown) => data is RepairDetails;
   public static validateItemDetails: (data: unknown) => data is ItemDetails;
   public static validateUser: (data: unknown) => data is User;
+  public static validateTransactionLog: (data: unknown) => data is TransactionLog;
 
   // ARRAY VERIFICATION METHODS
   static validatePartsArray: (data: unknown) => data is Part[];
@@ -127,6 +132,7 @@ class DBModel {
   static validateTransactionDetailsArray: (
     data: unknown
   ) => data is TransactionDetails[] | RepairDetails[] | ItemDetails[];
+  static validateTransactionLogArray: (data: unknown) => data is TransactionLog[];
 
   // RESPONSE VERIFICATION METHODS
   static validateRepairsResponse: (data: unknown) => data is RepairResponse;
@@ -154,6 +160,7 @@ class DBModel {
     DBModel.validateRepairDetails = compile(RepairDetailsSchema);
     DBModel.validateUser = compile(UserSchema);
     DBModel.validateOrderRequest = compile(OrderRequestSchema);
+    DBModel.validateTransactionLog = compile(TransactionLogSchema);
 
     // ARRAY VERIFICATION METHODS
     DBModel.validateTransactionsArray = compile(TransactionArraySchema);
@@ -648,6 +655,67 @@ class DBModel {
         throw new Error("Error updating transaction details data: " + error); // More detailed error logging
       });
   };
+
+  public static fetchTransactionLogs = async (transaction_id: number) =>
+    fetch(`${hostname}/transactionLogs/${transaction_id}`)
+      .then((response) => response.json())
+      .then((response) => {
+        console.log(response);
+        if (!DBModel.validateArrayResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to load transaction logs");
+        }
+        return response.responseObject;
+      })
+      .then((transactionLogs: unknown[]) => {
+        if (transactionLogs.length === 0) {
+          return [];
+        }
+        for (const transactionLog of transactionLogs) {
+          if (!DBModel.validateTransactionLog(transactionLog)) {
+            throw new Error("Invalid transaction log data");
+          }
+        }
+        return transactionLogs;
+      })
+
+
+    public static postTransactionLog = async (
+      transaction_id: number,
+      changed_by: string,
+      description: string,
+      change_type: string
+    ) => {
+      const body = {
+        changed_by: changed_by,
+        description: description,
+        change_type: change_type,
+      };
+
+      return fetch(`${hostname}/transactionLogs/${transaction_id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      })
+        .then((response) => response.json())
+        .then((response) => {
+          console.log(response);
+          if (!DBModel.validateObjectResponse(response)) {
+            throw new Error("Invalid response");
+          }
+          if (!response.success) {
+            throw new Error("Failed to post transaction log");
+          }
+        })
+        .catch((error) => {
+          console.error("Error posting transaction log data: ", error);
+          throw new Error("Error posting transaction log data: " + error); // More detailed error logging
+        });
+    };
 
   public static createCustomer = async (customer: CreateCustomer) => {
     return fetch(`${hostname}/customers`, {

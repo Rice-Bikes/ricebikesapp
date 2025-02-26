@@ -12,16 +12,18 @@ import {
   Modal,
   Box,
 } from "@mui/material";
-import { Transaction } from "../../model";
+import { Transaction, User } from "../../model";
 import NewTransactionForm from "./CustomerForm";
 
 interface TransactionDropdownProps {
   alertAuth: () => void;
+  user: User
 }
 
 const options = ["Inpatient", "Outpatient", "Merchandise", "Retrospec"]; // list of actions
 export default function CreateTransactionDropdown({
   alertAuth,
+  user, 
 }: TransactionDropdownProps): JSX.Element {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
@@ -127,6 +129,7 @@ export default function CreateTransactionDropdown({
           <NewTransactionForm
             onTransactionCreated={handleTransactionCreated}
             isOpen={showForm}
+            user_id={user.user_id}
             onClose={() => setShowForm(false)}
             t_type={options[selectedIndex]}
           />

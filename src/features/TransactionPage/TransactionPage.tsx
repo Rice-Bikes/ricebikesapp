@@ -25,6 +25,7 @@ import NewBikeForm from "../../components/TransactionPage/BikeForm";
 import TransactionOptionDropdown from "../../components/TransactionPage/TransactionOptionDropdown";
 import WhiteboardEntryModal from "../../components/WhiteboardEntryModal";
 import ErrorSharp from "@mui/icons-material/ErrorSharp";
+import TransactionsLogModal from "../../components/TransactionsLogModal";
 
 const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
   let total = 0;
@@ -142,10 +143,19 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     mutationFn: (customer: Customer) => {
       if (!transactionData) throw new Error("Transaction data not found");
       else
-        return DBModel.sendEmail(
-          customer,
-          transactionData.transaction_num
+        DBModel.postTransactionLog(
+          transactionData.transaction_num,
+          user.user_id,
+          "sent email",
+          "completed transaction"
         );
+      queryClient.removeQueries({
+        queryKey: ["transactionLogs", transactionData.transaction_num],
+      });
+      return DBModel.sendEmail(
+        customer,
+        transactionData.transaction_num
+      );
     },
     onSuccess: () => {
       toast.success("Email sent");
@@ -179,7 +189,17 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     mutationFn: (input: {
       transaction_detail_id: string;
       status: boolean;
+      repair_name: string;
     }) => {
+      DBModel.postTransactionLog(
+        transactionData?.transaction_num ?? 0,
+        user.user_id,
+        input.repair_name,
+        `${input.status ? "completed" : "reopened"} repair`,
+      );
+      queryClient.removeQueries({
+        queryKey: ["transactionLogs", transactionData?.transaction_num],
+      });
       console.log("calling update transaction on dbmodel", input.status);
       return DBModel.updateTransactionDetails(input.transaction_detail_id, input.status);
     },
@@ -281,6 +301,15 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const addRepair = useMutation({
     mutationFn: (repair: Repair) => {
+      DBModel.postTransactionLog(
+        transactionData?.transaction_num ?? 0,
+        user.user_id,
+        repair.name,
+        "added repair",
+      );
+      queryClient.removeQueries({
+        queryKey: ["transactionLogs", transactionData?.transaction_num],
+      });
       return DBModel.postTransactionDetails(
         transaction_id,
         repair.repair_id,
@@ -299,6 +328,15 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const deleteRepair = useMutation({
     mutationFn: (transactionDetail: RepairDetails) => {
+      DBModel.postTransactionLog(
+        transactionData?.transaction_num ?? 0,
+        user.user_id,
+        transactionDetail.Repair.name,
+        "deleted repair",
+      );
+      queryClient.removeQueries({
+        queryKey: ["transactionLogs", transactionData?.transaction_num],
+      });
       return DBModel.deleteTransactionDetails(
         transactionDetail.transaction_detail_id
       );
@@ -313,6 +351,15 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const addPart = useMutation({
     mutationFn: (part: Part) => {
+      DBModel.postTransactionLog(
+        transactionData?.transaction_num ?? 0,
+        user.user_id,
+        part.description ?? "",
+        "part",
+      );
+      queryClient.removeQueries({
+        queryKey: ["transactionLogs", transactionData?.transaction_num],
+      });
       return DBModel.postTransactionDetails(
         transaction_id,
         part.item_id,
@@ -332,6 +379,15 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const deletePart = useMutation({
     mutationFn: (transactionDetail: ItemDetails) => {
+      DBModel.postTransactionLog(
+        transactionData?.transaction_num ?? 0,
+        user.user_id,
+        "transaction deleted",
+        "transaction",
+      );
+      queryClient.removeQueries({
+        queryKey: ["transactionLogs", transactionData?.transaction_num],
+      });
       return DBModel.deleteTransactionDetails(
         transactionDetail.transaction_detail_id
       );
@@ -346,6 +402,15 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const deleteTransaction = useMutation({
     mutationFn: (transaction: Transaction) => {
+      DBModel.postTransactionLog(
+        transaction.transaction_num,
+        user.user_id,
+        "transaction deleted",
+        "transaction",
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["transactionLogs", transactionData?.transaction_num],
+      });
       return DBModel.deleteTransaction(transaction.transaction_id);
     },
     onSuccess: () => {
@@ -370,8 +435,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       queryKey: ["transaction", transaction_id],
     });
     queryClient.invalidateQueries({
-
-
       queryKey: ["transactions"],
     });
     nav("/");
@@ -471,6 +534,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const handleSaveNotes = (newNotes: string) => {
     console.log("new notes: ", newNotes);
+    queryClient.removeQueries({
+      queryKey: ["transactionLogs", transaction_id],
+    });
     setDescription(newNotes);
   };
 
@@ -524,7 +590,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const toggleDoneRepair = (repairDetail: RepairDetails) => {
     const newStatus: boolean = !repairDetail.completed;
     const repairId: string = repairDetail.transaction_detail_id;
-    completeRepair.mutate({ transaction_detail_id: repairId, status: newStatus });
+    completeRepair.mutate({ repair_name: repairDetail.Repair.name, transaction_detail_id: repairId, status: newStatus });
 
   };
 
@@ -607,6 +673,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               justifyContent: "flex-end",
             }}
           >
+            <TransactionsLogModal
+              transaction_id={transactionData.transaction_num}
+            />
             <Button
               variant="contained"
               sx={{ backgroundColor: "red", alignSelf: "center" }}
@@ -641,6 +710,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         <Notes
           notes={transactionData.description ?? ""}
           onSave={handleSaveNotes}
+          transaction_num={transactionData.transaction_num}
           // checkUser={alertAuth}
           user={user}
         />
