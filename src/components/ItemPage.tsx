@@ -3,6 +3,7 @@ import { Modal, Box, Typography, Grid2, TextField, Button, CircularProgress } fr
 import DBModel, { Part } from '../model'
 import { useMutation } from '@tanstack/react-query';
 import { toast, ToastContainer } from 'react-toastify';
+import { queryClient } from '../app/main';
 
 interface ItemPageModalProps {
     open: boolean;
@@ -60,6 +61,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
             setIsLoading(false);
             console.log("Item created successfully", data);
             toast.success("Item created successfully");
+            queryClient.invalidateQueries({ queryKey: ['items'] });
             onClose();
         },
         onError: (error) => {
