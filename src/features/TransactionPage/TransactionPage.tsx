@@ -38,7 +38,7 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
     });
   if (parts)
     parts.forEach((part) => {
-      total += Math.max(part.Item.standard_price, part.Item.wholesale_cost * 2);
+      total += part.Item.standard_price;
     });
   return total;
 };
