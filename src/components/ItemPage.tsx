@@ -43,11 +43,9 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
             managed: true,
             condition: "new",
             disabled: false,
-            specifications: {
-
-            },
+            specifications: {},
             features: [],
-            item_id: item?.item_id || crypto.randomUUID(),
+            item_id: "",
         };
 
         upsertItem.mutate(newItem);
