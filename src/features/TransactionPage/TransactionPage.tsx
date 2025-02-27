@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { Button, Stack, List, ListItem, Grid2 } from "@mui/material";
+import { Button, Stack, List, ListItem, Grid2, Chip } from "@mui/material";
 import { User } from "../../model";
 import { useNavigate } from "react-router-dom";
 import Item from "../../components/TransactionPage/HeaderItem";
@@ -27,6 +27,7 @@ import WhiteboardEntryModal from "../../components/WhiteboardEntryModal";
 import ErrorSharp from "@mui/icons-material/ErrorSharp";
 import TransactionsLogModal from "../../components/TransactionsLogModal";
 import CompleteTransactionDropdown from "./CompleteTransactionDropdown";
+import SetProjectsTypesDropdown from "./SetProjectsTypesDropdown";
 
 const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
   let total = 0;
@@ -125,7 +126,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const [showBikeForm, setShowBikeForm] = useState<boolean>(false);
   const [showWaitingParts, setShowWaitingParts] = useState<boolean>(false);
 
-  const [refurb] = useState<boolean>(transactionData?.is_refurb ?? false); // TODO: create refurb Button
+  const [refurb, setIsRefurb] = useState<boolean>(); // TODO: create refurb Button
   const [reserved] = useState<boolean>(transactionData?.is_reserved ?? false); // TODO: create retrospec stuff
   const [waitEmail, setWaitEmail] = useState<boolean>(
     transactionData?.is_waiting_on_email ?? false
@@ -299,6 +300,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         setIsCompleted(transactionData.is_completed);
       if (transactionData.is_beer_bike !== beerBike)
         setBeerBike(transactionData.is_beer_bike);
+      if (transactionData.is_refurb !== refurb)
+        setIsRefurb(transactionData.is_refurb);
     }
   }, [transactionData]);
 
@@ -543,7 +546,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const handleSaveNotes = (newNotes: string) => {
     console.log("new notes: ", newNotes);
-    queryClient.removeQueries({
+    queryClient.resetQueries({
       queryKey: ["transactionLogs", transaction_id],
     });
     setDescription(newNotes);
@@ -653,6 +656,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               display: "flex",
               alignItems: "center",
               justifyContent: "flex-start",
+              gap: "10px",
             }}
           >
             <h2
@@ -673,6 +677,23 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 transactionType.toLowerCase()
               )}
             />
+            {beerBike && <Chip
+              style={{
+                backgroundColor: "blue",
+                color: "white",
+              }}
+              label="Beer Bike"
+            />
+            }
+
+            {refurb && <Chip
+              style={{
+                backgroundColor: "gray",
+                color: "black",
+              }}
+              label="Refurb"
+            />
+            }
           </Grid2>
           <Grid2
             size={6}
@@ -1061,17 +1082,12 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 style={{ color: "red" }}
               ></i> : "Mark as Nuclear"}
             </Button>
-            <Button
-              onClick={() => setBeerBike(!beerBike)}
-              style={{
-                backgroundColor: beerBike ? "turquoise" : "white",
-                color: "black",
-              }}
-              variant="contained"
-            >
-              {" "}
-              Mark as Beer Bike
-            </Button>
+
+            <SetProjectsTypesDropdown
+              setRefurb={() => setIsRefurb(!refurb)}
+              setBeerBike={() => setBeerBike(!beerBike)}
+            />
+
           </Grid2>
           <Grid2 size={6}>
             <Button
