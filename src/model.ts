@@ -418,6 +418,31 @@ class DBModel {
         throw Error("Error loading or parsing items data: " + error);
       });
 
+    public static createItem = async (item: Part) =>
+    fetch(`${hostname}/items`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(item),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post item");
+        }
+        // if (!DBModel.validatePart(response.responseObject)) {
+        //   throw new Error("Invalid item response");
+        // }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error posting item data: " + error); // More detailed error logging
+      });
+
   public static refreshItems = async (csv: string) =>{
 
     console.log("sending file in dbModel", csv);
