@@ -20,7 +20,7 @@ interface TransactionDropdownProps {
   user: User
 }
 
-const options = ["Inpatient", "Outpatient", "Merchandise", "Retrospec"]; // list of actions
+const options = ["Inpatient", "Outpatient", "Merch", "Retrospec"]; // list of actions
 export default function CreateTransactionDropdown({
   alertAuth,
   user,
