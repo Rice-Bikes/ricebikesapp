@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Button,
   Dialog,
@@ -10,6 +10,8 @@ import {
 import { AgGridReact } from "ag-grid-react";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
 import { Part, Repair } from "../../model";
+import { CustomNoRowsOverlay } from "./CreateItemModal";
+// import { CustomNoRowsOverlay } from "./CreateItemModal";
 
 interface SearchModalProps {
   searchData: Array<Part | Repair>;
@@ -33,6 +35,9 @@ const SearchModal: React.FC<SearchModalProps> = ({
   const [quantity, setQuantity] = useState(1);
   const [errorMsg, setErrorMsg] = useState("");
 
+
+  const gridApiRef = useRef<AgGridReact>(null); // <= defined useRef for gridApi
+
   const showModal = () => {
     setVisible(true);
   };
@@ -44,12 +49,6 @@ const SearchModal: React.FC<SearchModalProps> = ({
     setErrorMsg("");
   };
 
-  //   const handleOk = () => {
-  //     console.log("Search Term:", searchTerm);
-  //     setVisible(false);
-  //   };
-  // console.log("search data", searchData);
-
   const handleCancel = () => {
     setVisible(false);
     setSearchTerm("");
@@ -58,6 +57,13 @@ const SearchModal: React.FC<SearchModalProps> = ({
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
+
+  useEffect(() => {
+    if (gridApiRef.current && gridApiRef.current.api.getDisplayedRowCount() == 0) {
+      gridApiRef.current.api.showNoRowsOverlay();
+    }
+  }
+    , [searchTerm]);
 
   return (
     <>
@@ -154,6 +160,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
               }}
             >
               <AgGridReact
+                ref={gridApiRef} // <= attach the ref to AgGridReact
                 rowData={searchData}
                 columnDefs={columnData}
                 defaultColDef={colDefaults}
@@ -166,6 +173,9 @@ const SearchModal: React.FC<SearchModalProps> = ({
                     setErrorMsg("Please enter a quantity greater than 0");
                   }
                 }}
+                noRowsOverlayComponent={
+                  CustomNoRowsOverlay
+                }
                 quickFilterText={searchTerm}
               />
             </section>

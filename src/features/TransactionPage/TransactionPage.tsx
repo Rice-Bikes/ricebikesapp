@@ -19,13 +19,14 @@ import DBModel, {
 import { useMutation, useQueries } from "@tanstack/react-query";
 import { queryClient } from "../../app/main";
 import { ToastContainer, toast } from "react-toastify";
-import SearchModal from "../../components/TransactionPage/SearchModal";
+import SearchModal from "../../components/ItemSearch/SearchModal";
 import "./TransactionPage.css";
 import NewBikeForm from "../../components/TransactionPage/BikeForm";
 import TransactionOptionDropdown from "../../components/TransactionPage/TransactionOptionDropdown";
 import WhiteboardEntryModal from "../../components/WhiteboardEntryModal";
 import ErrorSharp from "@mui/icons-material/ErrorSharp";
 import TransactionsLogModal from "../../components/TransactionsLogModal";
+import CompleteTransactionDropdown from "./CompleteTransactionDropdown";
 
 const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
   let total = 0;
@@ -229,6 +230,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
     ) {
       // console.log("description before update: ", description);
+
+
       const updatedTransaction = {
         description: description ?? "",
         transaction_type: transactionType,
@@ -354,8 +357,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       DBModel.postTransactionLog(
         transactionData?.transaction_num ?? 0,
         user.user_id,
-        part.description ?? "",
-        "part",
+        part.name,
+        "added part",
       );
       queryClient.removeQueries({
         queryKey: ["transactionLogs", transactionData?.transaction_num],
@@ -382,8 +385,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       DBModel.postTransactionLog(
         transactionData?.transaction_num ?? 0,
         user.user_id,
-        "transaction deleted",
-        "transaction",
+        transactionDetail.Item.name,
+        "deleted item",
       );
       queryClient.removeQueries({
         queryKey: ["transactionLogs", transactionData?.transaction_num],
@@ -504,20 +507,26 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     });
   };
 
-  const handleMarkDone = async () => {
+  const handleMarkDone = async (email: boolean) => {
     if (!transactionData) return;
     if (!transactionData.Customer) return;
-    setIsCompleted(!isCompleted);
+    setIsCompleted(true);
 
     const customer: Customer = transactionData?.Customer as Customer;
-    if (isCompleted === false) {
+    if (isCompleted === false && email) {
       sendCheckoutEmail.mutate(customer);
-      queryClient.invalidateQueries({
-        queryKey: ["transactions"],
-      });
+      DBModel.postTransactionLog(
+        transactionData.transaction_num,
+        user.user_id,
+        "completed and sent email",
+        "transaction",
+      );
     }
     queryClient.invalidateQueries({
       queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["transactions"],
     });
 
   }
@@ -1074,7 +1083,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 marginRight: "10px",
                 color: "white",
                 // cursor: allRepairsDone() ? "pointer" : "not-allowed",
-                opacity: allRepairsDone() ? 1 : 0.5,
+                opacity: isCompleted ? 1 : 0.5,
               }}
             >
               Checkout
@@ -1163,19 +1172,34 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 }
                 `}
             </style>
-            <Button
-              onClick={handleMarkDone}
-              disabled={!allRepairsDone()}
+
+            {!isCompleted ? (
+              <CompleteTransactionDropdown
+                sendEmail={() => handleMarkDone(true)}
+                disabled={!allRepairsDone() || repairDetails && repairDetails.length === 0 && searchParams.get("type") !== "Merch"}
+                completeTransaction={() => handleMarkDone(false)}
+              />
+            ) : <Button
+              onClick={() => {
+                setIsCompleted(false)
+                queryClient.invalidateQueries({
+                  queryKey: ["transaction", transaction_id],
+                });
+                queryClient.invalidateQueries({
+                  queryKey: ["transactions"],
+                });
+              }}
               style={{
                 marginRight: "10px",
                 color: "white",
-                backgroundColor: isCompleted || !allRepairsDone() ? "gray" : "blue",
-                opacity: allRepairsDone() ? 1 : 0.5,
+                backgroundColor: "gray",
               }}
               variant="contained"
             >
-              {isCompleted ? "Open Transaction" : "Complete Transaction"}
+              Reopen Transaction
             </Button>
+
+            }
             {/* {showMarkDone && (
               <div className="markDone">
                 <div className="markDone-content">

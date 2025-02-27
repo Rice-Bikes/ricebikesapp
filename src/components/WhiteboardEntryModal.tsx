@@ -21,7 +21,7 @@ import {
 import { AgGridReact } from "ag-grid-react";
 import DBModel, { OrderRequest, Part } from "../model";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import SearchModal from "./TransactionPage/SearchModal";
+import SearchModal from "./ItemSearch/SearchModal";
 import { queryClient } from "../app/main";
 import { ErrorBoundary } from "react-error-boundary";
 
