@@ -12,7 +12,7 @@ import {
   Modal,
   Box,
 } from "@mui/material";
-import { Transaction, User } from "../../model";
+import DBModel, { Transaction, User } from "../../model";
 import NewTransactionForm from "./CustomerForm";
 
 interface TransactionDropdownProps {
@@ -23,7 +23,7 @@ interface TransactionDropdownProps {
 const options = ["Inpatient", "Outpatient", "Merchandise", "Retrospec"]; // list of actions
 export default function CreateTransactionDropdown({
   alertAuth,
-  user, 
+  user,
 }: TransactionDropdownProps): JSX.Element {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
@@ -64,10 +64,16 @@ export default function CreateTransactionDropdown({
 
   const handleTransactionCreated = (newTransaction: Transaction) => {
     console.log("Transaction created", newTransaction);
+    DBModel.postTransactionLog(
+      newTransaction.transaction_num,
+      user.user_id,
+      newTransaction.transaction_type,
+      "created transaction",
+    );
     setShowForm(false);
     nav(
       `/transaction-details/${newTransaction.transaction_id}?` +
-        new URLSearchParams({ type: options[selectedIndex] })
+      new URLSearchParams({ type: options[selectedIndex] })
     );
   };
 

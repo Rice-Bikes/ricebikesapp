@@ -17,6 +17,7 @@ import type {
   RowSelectionOptions,
   ICellRendererParams,
   IRowNode,
+  // GridReadyEvent,
   // ITooltipParams
 } from "ag-grid-community";
 import CreateTransactionDropdown from "./TransactionTypeDropdown"; // Create Transaction Dropdown Component
@@ -36,6 +37,13 @@ export interface IRow {
   OrderRequests: Array<OrderRequest>;
   Bike?: Bike;
 }
+
+// interface SortConfig {
+//   colId: string;
+//   sort: "asc" | "desc" | null | undefined;
+//   sortIndex: number | null | undefined;
+
+// }
 
 // Creating new transaction
 
@@ -92,6 +100,7 @@ export function TransactionsTable({
   const [, setRowData] = useState<IRow[]>([]);
   const [summaryData, setSummaryData] = useState<TransactionSummary>();
   const [showPriceCheckModal, setShowPriceCheckModal] = useState(false);
+  // const [savedSort, setSavedSort] = useState<SortConfig[]>();
   // console.log(rowData);
   // const [pageSize, setPageSize] = useState(100);
   const onRowClicked = (e: RowClickedEvent) => {
@@ -130,6 +139,7 @@ export function TransactionsTable({
   const [colDefs] = useState<ColDef<IRow>[]>([
     {
       headerName: "#",
+      colId: "transaction_num",
       valueGetter: (params) => params.data?.Transaction.transaction_num,
       filter: true,
     },
@@ -143,6 +153,7 @@ export function TransactionsTable({
         const isBeerBike = params.data?.Transaction.is_beer_bike;
         const transaction_type = params.data?.Transaction.transaction_type;
         const isWaitingOnParts = (params.data?.OrderRequests?.length ?? 0) > 0;
+        const is_completed = params.data?.Transaction.is_completed;
 
         return (
           <Stack
@@ -207,17 +218,17 @@ export function TransactionsTable({
                 }}
               />
             )}
-            {isUrgent && (
+            {isUrgent && !is_completed && (
               <ErrorSharp style={{ color: "red", marginRight: "5px" }} />
 
             )}
-            {isWaitingOnParts && (
+            {isWaitingOnParts && !is_completed && (
               <i
                 className="fas fa-wrench"
                 style={{ color: "orange", marginRight: "5px" }}
               />
             )}
-            {isNuclear && (
+            {isNuclear && !is_completed && (
               <i
                 className="fas fa-radiation"
                 style={{ color: "red", marginRight: "5px" }}
@@ -276,21 +287,16 @@ export function TransactionsTable({
     };
   }, []);
 
-  // const gridOptions = useMemo(() => {
-  //   return {
-  //     rowSelection: 'single',
-  //     isExternalFilterPresent: isExternalFilterPresent,
-  //     doesExternalFilterPass: doesExternalFilterPass,
-  //   };
-  // }, [viewType]);
 
   const handleViewType = (
     _: React.MouseEvent<HTMLElement>,
     newAlignment: string
   ) => {
     if (newAlignment !== null) {
+      console.log("new alignment", newAlignment);
       setViewType(newAlignment);
-
+      const sortFunc = sortMap.get(newAlignment) ?? clearSort;
+      sortFunc();
     }
     // gridApiRef.current?.onFilterChanged();
   };
@@ -309,7 +315,8 @@ export function TransactionsTable({
       (viewType === "pickup" &&
         transaction.is_paid === false &&
         transaction.is_completed === true
-        && transaction.is_refurb === false) ||
+        && transaction.is_refurb === false
+        && !isDaysLess(183, new Date(transaction.date_created), new Date())) ||
       (viewType === "paid" && transaction.is_paid === true) ||
       (viewType === "main" &&
         transaction.is_completed === false &&
@@ -319,14 +326,44 @@ export function TransactionsTable({
       (viewType === "employee" &&
         transaction.is_employee === true &&
         transaction.is_completed === false) ||
+      (viewType === "refurb" && transaction.is_refurb === true) ||
+      (viewType === "beer bike" &&
+        transaction.is_beer_bike === true && transaction.is_paid == false) ||
       viewType === ""
     );
   }
 
-  //   const onGridReady = (params) => {
-  //     params.api.resetRowHeights();
-  //     gridApiRef.current = params.api // <= assigned gridApi value on Grid ready
-  // }
+  function sortByTransactionNumAsc() {
+    gridApiRef.current!.api.applyColumnState({
+      state: [{ colId: "transaction_num", sort: "asc" }],
+      defaultState: { sort: null },
+    });
+  }
+
+  function sortByTransactionNumDesc() {
+    gridApiRef.current!.api.applyColumnState({
+      state: [{ colId: "transaction_num", sort: "desc" }],
+      defaultState: { sort: null },
+    });
+  }
+
+
+  function clearSort() {
+    gridApiRef.current!.api.applyColumnState({
+      defaultState: { sort: null },
+    });
+  }
+
+  const sortMap: Map<string, () => void> = new Map([
+    ["pickup", sortByTransactionNumDesc],
+    ["paid", sortByTransactionNumDesc],
+    ["employee", sortByTransactionNumDesc],
+    ["refurb", sortByTransactionNumDesc],
+    ["beer bike", sortByTransactionNumAsc],
+    ["retrospec", sortByTransactionNumDesc]
+  ]);
+
+
 
   // Container: Defines the grid's theme & dimensions.
   return (
@@ -374,6 +411,8 @@ export function TransactionsTable({
             <ToggleButton value="retrospec">Retrospec</ToggleButton>
             <ToggleButton value="paid">Paid</ToggleButton>
             <ToggleButton value="employee"> Employee </ToggleButton>
+            <ToggleButton value="refurb"> Refurbs </ToggleButton>
+            <ToggleButton value="beer bike"> Beer Bike </ToggleButton>
           </ToggleButtonGroup>
           <AgGridReact
             ref={gridApiRef}
@@ -384,23 +423,32 @@ export function TransactionsTable({
             rowSelection={rowSelection}
             onRowClicked={onRowClicked}
             getRowStyle={({ data }) => {
-              if (
-                isDaysLess(
-                  5,
-                  currDate,
-                  new Date(data?.Transaction.date_created)
-                )
-              ) {
-                return { backgroundColor: "lightcoral" };
-              } else if (
-                isDaysLess(
-                  2,
-                  currDate,
-                  new Date(data?.Transaction.date_created)
-                )
-              ) {
-                return { backgroundColor: "lightyellow" };
-              } else return { backgroundColor: "white" };
+              const transaction = data?.Transaction as Transaction;
+              if (transaction.is_completed === false &&
+                transaction.transaction_type !== "retrospec" &&
+                transaction.is_employee === false &&
+                transaction.is_refurb === false ||
+                transaction.is_paid === false &&
+                transaction.is_completed === true
+                && transaction.is_refurb === false
+              )
+                if (
+                  isDaysLess(
+                    5,
+                    currDate,
+                    new Date(transaction.date_created)
+                  )
+                ) {
+                  return { backgroundColor: "lightcoral" };
+                } else if (
+                  isDaysLess(
+                    2,
+                    currDate,
+                    new Date(transaction.date_created)
+                  )
+                ) {
+                  return { backgroundColor: "lightyellow" };
+                } else return { backgroundColor: "white" };
             }}
             isExternalFilterPresent={isExternalFilterPresent}
             doesExternalFilterPass={doesExternalFilterPass}

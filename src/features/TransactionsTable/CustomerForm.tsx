@@ -71,7 +71,7 @@ function NewTransactionForm({
       queryClient.invalidateQueries({
         queryKey: ["transactions"],
       });
-      onTransactionCreated(data);
+      // onTransactionCreated(data);
       onClose();
     },
     onError: (error) => {
