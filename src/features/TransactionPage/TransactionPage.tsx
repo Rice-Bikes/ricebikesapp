@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { Button, Stack, List, ListItem, Grid2, Chip } from "@mui/material";
+import { Button, Stack, List, ListItem, Grid2 } from "@mui/material";
 import { User } from "../../model";
 import { useNavigate } from "react-router-dom";
 import Item from "../../components/TransactionPage/HeaderItem";
@@ -677,22 +677,32 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 transactionType.toLowerCase()
               )}
             />
-            {beerBike && <Chip
+            {beerBike && <Button
               style={{
-                backgroundColor: "blue",
-                color: "white",
+                backgroundColor: "turquoise",
+                color: "black",
+                pointerEvents: "none",
+                width: "fit-content",
+                // wordWrap: "break-word",
+                whiteSpace: "nowrap",
               }}
-              label="Beer Bike"
-            />
+              variant="contained"
+              size="small"
+
+            > Beer Bike</Button>
             }
 
-            {refurb && <Chip
+            {refurb && <Button
               style={{
-                backgroundColor: "gray",
+                backgroundColor: "beige",
                 color: "black",
+                pointerEvents: "none",
               }}
-              label="Refurb"
-            />
+              variant="contained"
+              size="small"
+            >
+              Refurb
+            </Button>
             }
           </Grid2>
           <Grid2

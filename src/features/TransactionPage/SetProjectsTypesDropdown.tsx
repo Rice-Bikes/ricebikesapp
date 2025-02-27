@@ -63,13 +63,8 @@ export default function SetProjectsTypesDropdown({
     return (
         <>
             <ButtonGroup
-                style={
-                    {
-                        color: "white",
-                        backgroundColor: "primary"
-                    }
-                }
-                variant="contained"
+                color="primary"
+                variant="outlined"
                 ref={anchorRef}
                 aria-label="Button group with a nested menu"
             >
@@ -79,10 +74,7 @@ export default function SetProjectsTypesDropdown({
                     aria-label="select merge strategy"
                     aria-haspopup="menu"
                     onClick={handleToggle}
-                    sx={{
-                        color: "white",
-                    }}
-
+                    size="medium"
                 >
                     Set Project Type
                 </Button>

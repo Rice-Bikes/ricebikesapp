@@ -62,6 +62,9 @@ const SearchModal: React.FC<SearchModalProps> = ({
     if (gridApiRef.current && gridApiRef.current.api.getDisplayedRowCount() == 0) {
       gridApiRef.current.api.showNoRowsOverlay();
     }
+    else if (gridApiRef.current) {
+      gridApiRef.current.api.hideOverlay();
+    }
   }
     , [searchTerm]);
 
@@ -174,7 +177,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
                   }
                 }}
                 noRowsOverlayComponent={
-                  CustomNoRowsOverlay
+                  searchData.length > 0 && "upc" in searchData[0] ? CustomNoRowsOverlay : "Search for another repair"
                 }
                 quickFilterText={searchTerm}
               />
