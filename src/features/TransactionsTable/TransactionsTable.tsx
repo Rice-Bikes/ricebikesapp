@@ -26,12 +26,11 @@ import { Transaction, Bike, Customer, TransactionSummary, OrderRequest, User } f
 import { useNavigate } from "react-router-dom";
 import DBModel from "../../model";
 import PriceCheckModal from "../../components/PriceCheckModal";
-import { queryClient } from "../../app/main";
+// import { queryClient } from "../../app/main";
 // import SearchModal from "../../components/TransactionPage/SearchModal";
 
 // Row Data Interface
 export interface IRow {
-  // "#": number;
   Transaction: Transaction;
   Customer: Customer;
   OrderRequests: Array<OrderRequest>;
@@ -104,9 +103,7 @@ export function TransactionsTable({
   // console.log(rowData);
   // const [pageSize, setPageSize] = useState(100);
   const onRowClicked = (e: RowClickedEvent) => {
-    queryClient.resetQueries({
-      queryKey: ["user"],
-    });
+
     navigate(
       `/transaction-details/${e.data.Transaction.transaction_id}?type=${e.data.Transaction.transaction_type}`
     );
@@ -262,14 +259,16 @@ export function TransactionsTable({
     },
     {
       headerName: "Submitted",
+      colId: "submitted",
       valueGetter: (params) => {
+
         if (
           !params.data?.Transaction ||
           params.data?.Transaction.date_created === ""
         ) {
           return "";
         }
-        return timeAgo(new Date(params.data?.Transaction.date_created));
+        return params.data.Transaction.date_completed ? timeAgo(new Date(params.data?.Transaction.date_completed)) : timeAgo(new Date(params.data?.Transaction.date_created));
       },
     },
   ]);
@@ -347,6 +346,13 @@ export function TransactionsTable({
     });
   }
 
+  function sortByDateAsc() {
+    gridApiRef.current!.api.applyColumnState({
+      state: [{ colId: "submitted", sort: "asc" }],
+      defaultState: { sort: null },
+    });
+  }
+
 
   function clearSort() {
     gridApiRef.current!.api.applyColumnState({
@@ -355,7 +361,7 @@ export function TransactionsTable({
   }
 
   const sortMap: Map<string, () => void> = new Map([
-    ["pickup", sortByTransactionNumDesc],
+    ["pickup", sortByDateAsc],
     ["paid", sortByTransactionNumDesc],
     ["employee", sortByTransactionNumDesc],
     ["refurb", sortByTransactionNumDesc],

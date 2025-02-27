@@ -194,22 +194,12 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
                             </Grid2>
                             <Grid2 size={4}>
                                 <Typography variant="body1">Price:</Typography>
-                                {edit ? <TextField type="number" value={standard_price} onChange={(e) => setStandardPrice(Number.parseInt(e.target.value))} required={standard_price > 0} /> :
-                                    <Button
-                                        variant="outlined"
-                                        sx={{
-                                            color: "black",
-                                            backgroundColor: "white",
-                                            borderColor: "white",
-                                            pointerEvents: "none",
-                                        }}
-                                        fullWidth
-                                        style={{ height: "80%" }}
-                                    >{standard_price}</Button>}
+                                {edit ? <TextField type="number" slotProps={{ "htmlInput": { step: 0.01 } }} value={standard_price} onChange={(e) => setStandardPrice(Number.parseFloat(e.target.value))} required={standard_price > 0} /> :
+                                    <Button variant="outlined" fullWidth style={{ height: "80%" }} sx={{ color: "black", backgroundColor: "white", borderColor: "white", pointerEvents: "none" }}>{standard_price}</Button>}
                             </Grid2>
                             <Grid2 size={4}>
                                 <Typography variant="body1">Wholesale Cost:</Typography>
-                                {edit ? <TextField type="number" value={wholesale_cost} onChange={(e) => setWholesaleCost(Number.parseInt(e.target.value))} required={wholesale_cost > 0} /> :
+                                {edit ? <TextField type="number" value={wholesale_cost} onChange={(e) => setWholesaleCost(Number.parseFloat(e.target.value))} required={wholesale_cost > 0} /> :
                                     <Button
                                         variant="outlined"
                                         sx={{
