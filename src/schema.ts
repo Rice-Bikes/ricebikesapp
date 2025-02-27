@@ -59,6 +59,40 @@ export const partResponseSchema = {
   additionalProperties: false,
 } as const satisfies JSONSchema;
 
+export const CreatePartSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "Part",
+  type: "object",
+  properties: {
+    upc: { type: "string" },
+    name: { type: "string" },
+    description: { type: ["string", "null"] },
+    brand: { type: ["string", "null"] },
+    stock: { type: ["number", "null"] },
+    minimum_stock: { type: ["number", "null"] },
+    standard_price: { type: "number" },
+    wholesale_cost: { type: "number" },
+    condition: { type: ["string", "null"] },
+    disabled: { type: ["boolean", "null"] },
+    managed: { type: ["boolean", "null"] },
+    category_1: { type: ["string", "null"] },
+    category_2: { type: ["string", "null"] },
+    category_3: { type: ["string", "null"] },
+    specifications: { type: ["object", "null"] }, // Assuming JSON can be any valid JSON
+    features: { type: ["array", "null"] }, // Assuming JSON can be any valid JSON
+  },
+
+  required: [
+    "upc",
+    "name",
+    "stock",
+    "minimum_stock",
+    "standard_price",
+    "wholesale_cost",
+    "disabled",
+  ],
+} as const satisfies JSONSchema;
+
 export const repairSchema = {
   $schema: "http://json-schema.org/draft-07/schema",
   title: "Repair",

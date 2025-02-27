@@ -30,6 +30,7 @@ import {
   CreateOrderRequestsSchema,
   TransactionLogSchema,
   TransactionLogArraySchema,
+  CreatePartSchema,
 } from "./schema";
 import Ajv from "ajv";
 
@@ -50,6 +51,7 @@ export type Bike = FromSchema<typeof BikeSchema>;
 export type User = FromSchema<typeof UserSchema>;
 export type OrderRequest = FromSchema<typeof OrderRequestSchema>;
 export type CreateOrderRequests = FromSchema<typeof CreateOrderRequestsSchema>;
+export type CreatePart = FromSchema<typeof CreatePartSchema>;
 
 export type PartArray = FromSchema<typeof partArraySchema>;
 export type RepairArray = FromSchema<typeof repairArraySchema>;
@@ -418,7 +420,7 @@ class DBModel {
         throw Error("Error loading or parsing items data: " + error);
       });
 
-    public static createItem = async (item: Part) =>
+    public static createItem = async (item: CreatePart) =>
     fetch(`${hostname}/items`, {
       method: "POST",
       headers: {
