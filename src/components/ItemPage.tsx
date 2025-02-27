@@ -100,7 +100,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
 
                             <Grid2 size={4}>
                                 <Typography variant="body1">UPC:</Typography>
-                                {edit ? <TextField type="text" value={upc} onChange={(e) => setUpc(e.target.value)} required /> :
+                                {edit ? <TextField type="text" helperText="Generate for custom/used items" value={upc} onChange={(e) => setUpc(e.target.value)} required /> :
                                     <Button
                                         variant="outlined"
                                         sx={{
@@ -117,7 +117,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
                                 <Button
                                     fullWidth
                                     disabled={!edit}
-                                    sx={{ height: "80%", marginTop: "10%", opacity: edit ? 1 : 0.5 }}
+                                    sx={{ height: "60%", marginTop: "10%", opacity: edit ? 1 : 0.5 }}
                                     variant="contained"
                                     onClick={() => {
                                         const newUpc = Math.floor(Math.random() * 1000000000000).toString();
