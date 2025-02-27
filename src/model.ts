@@ -256,6 +256,31 @@ class DBModel {
         return transactionRowsPromises;
       });
 
+  public static fetchCustomers = async () =>  
+    fetch(`${hostname}/customers`, 
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    )
+    .then((response) => response.json())
+    .then((response) => {
+      if (!DBModel.validateArrayResponse(response)) {
+        throw new Error("Invalid response");
+      }
+      if (!response.success) {
+        throw new Error("Failed to load customers");
+      }
+      return response.responseObject;
+    })
+    .catch((error) => {
+      throw new Error("Error loading customers data: " + error); // More detailed error logging
+    }
+    )
+
+
   public static fetchTransaction = async (transaction_id: string) =>
     fetch(`${hostname}/transactions/${transaction_id}`, {
       method: "GET",

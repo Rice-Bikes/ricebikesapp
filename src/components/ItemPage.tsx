@@ -194,48 +194,18 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
                             </Grid2>
                             <Grid2 size={4}>
                                 <Typography variant="body1">Price:</Typography>
-                                {edit ? <TextField type="number" value={standard_price} onChange={(e) => setStandardPrice(Number.parseInt(e.target.value))} required={standard_price > 0} /> :
-                                    <Button
-                                        variant="outlined"
-                                        sx={{
-                                            color: "black",
-                                            backgroundColor: "white",
-                                            borderColor: "white",
-                                            pointerEvents: "none",
-                                        }}
-                                        fullWidth
-                                        style={{ height: "80%" }}
-                                    >{standard_price}</Button>}
+                                {edit ? <TextField type="number" slotProps={{ "htmlInput": { step: 0.01 } }} value={standard_price} onChange={(e) => setStandardPrice(Number.parseFloat(e.target.value))} required={standard_price > 0} /> :
+                                    <Button variant="outlined" fullWidth style={{ height: "80%" }} sx={{ color: "black", backgroundColor: "white", borderColor: "white", pointerEvents: "none" }}>{standard_price}</Button>}
                             </Grid2>
                             <Grid2 size={4}>
                                 <Typography variant="body1">Wholesale Cost:</Typography>
-                                {edit ? <TextField type="number" value={wholesale_cost} onChange={(e) => setWholesaleCost(Number.parseInt(e.target.value))} required={wholesale_cost > 0} /> :
-                                    <Button
-                                        variant="outlined"
-                                        sx={{
-                                            color: "black",
-                                            backgroundColor: "white",
-                                            borderColor: "white",
-                                            pointerEvents: "none",
-                                        }}
-                                        fullWidth
-                                        style={{ height: "80%" }}
-                                    >{wholesale_cost}</Button>}
+                                {edit ? <TextField type="number" value={wholesale_cost} onChange={(e) => setWholesaleCost(Number.parseFloat(e.target.value))} required={wholesale_cost > 0} />
+                                    : <Button variant="outlined" sx={{ color: "black", backgroundColor: "white", borderColor: "white", pointerEvents: "none", }} fullWidth style={{ height: "80%" }}>{wholesale_cost}</Button>}
                             </Grid2>
                             <Grid2 size={4}>
                                 <Typography variant="body1">Category 1:</Typography>
-                                {edit ? <TextField type="text" value={category_1} onChange={(e) => setCategory1(e.target.value)} /> :
-                                    <Button
-                                        variant="outlined"
-                                        sx={{
-                                            color: "black",
-                                            backgroundColor: "white",
-                                            borderColor: "white",
-                                            pointerEvents: "none",
-                                        }}
-                                        fullWidth
-                                        style={{ height: "80%" }}
-                                    >{category_1}</Button>}
+                                {edit ? <TextField type="text" value={category_1} onChange={(e) => setCategory1(e.target.value)} />
+                                    : <Button variant="outlined" sx={{ color: "black", backgroundColor: "white", borderColor: "white", pointerEvents: "none", }} fullWidth style={{ height: "80%" }}>{category_1}</Button>}
                             </Grid2>
                             <Grid2 size={4}>
                                 <Typography variant="body1">Category 2:</Typography>
@@ -243,18 +213,9 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
                             </Grid2>
                             <Grid2 size={4}>
                                 <Typography variant="body1">Category 3:</Typography>
-                                {edit ? <TextField type="text" value={category_3} onChange={(e) => setCategory3(e.target.value)} /> :
-                                    <Button
-                                        variant="outlined"
-                                        sx={{
-                                            color: "black",
-                                            backgroundColor: "white",
-                                            borderColor: "white",
-                                            pointerEvents: "none",
-                                        }}
-                                        fullWidth
-                                        style={{ height: "80%" }}
-                                    >{category_3}</Button>}
+                                {edit ?
+                                    <TextField type="text" value={category_3} onChange={(e) => setCategory3(e.target.value)} />
+                                    : <Button variant="outlined" sx={{ color: "black", backgroundColor: "white", borderColor: "white", pointerEvents: "none", }} fullWidth style={{ height: "80%" }} >{category_3}</Button>}
                             </Grid2>
                             <Grid2 size={8}>
                             </Grid2>

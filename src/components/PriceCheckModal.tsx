@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
 import {
     Dialog,
-    // DialogActions,
     DialogContent,
     DialogTitle,
-    // Button,
-    // Grid2,
     TextField,
-    //   CircularProgress,
 } from "@mui/material";
 
 import DBModel from "../model";
@@ -16,15 +12,11 @@ import { useQuery } from "@tanstack/react-query";
 type PriceCheckModalProps = {
     open: boolean;
     onClose: () => void;
-    //   transaction_id: string;
-    //   user_id: string;
 };
 
 const PriceCheckModal = ({
     open,
     onClose,
-    //   transaction_id,
-    //   user_id,
 }: PriceCheckModalProps) => {
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");

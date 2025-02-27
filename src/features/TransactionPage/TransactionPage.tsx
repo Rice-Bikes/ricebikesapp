@@ -28,6 +28,7 @@ import ErrorSharp from "@mui/icons-material/ErrorSharp";
 import TransactionsLogModal from "../../components/TransactionsLogModal";
 import CompleteTransactionDropdown from "./CompleteTransactionDropdown";
 import SetProjectsTypesDropdown from "./SetProjectsTypesDropdown";
+import DeleteTransactionsModal from "./DeleteTransactionsModal";
 
 const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
   let total = 0;
@@ -37,7 +38,7 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
     });
   if (parts)
     parts.forEach((part) => {
-      total += Math.max(part.Item.standard_price, part.Item.wholesale_cost * 2);
+      total += part.Item.standard_price;
     });
   return total;
 };
@@ -716,15 +717,10 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             <TransactionsLogModal
               transaction_id={transactionData.transaction_num}
             />
-            <Button
-              variant="contained"
-              sx={{ backgroundColor: "red", alignSelf: "center" }}
-              onClick={() =>
-                deleteTransaction.mutate(transactionData as Transaction)
-              }
-            >
-              Delete
-            </Button>
+
+            <DeleteTransactionsModal
+              handleConfirm={() => deleteTransaction.mutate(transactionData as Transaction)}
+            />
           </Grid2>
         </Grid2>
         <Item

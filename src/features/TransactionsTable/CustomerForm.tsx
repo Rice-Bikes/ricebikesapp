@@ -1,14 +1,14 @@
-import React, { useState } from "react";
-import { Dialog, TextField, Button } from "@mui/material";
-// import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Dialog, TextField, Button, FormControl, Autocomplete, CircularProgress } from "@mui/material";
 import DBModel, {
   CreateCustomer,
   CreateTransaction,
   Customer,
   Transaction,
 } from "../../model";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../app/main";
+import { toast } from "react-toastify";
 
 interface NewTransactionFormProps {
   onTransactionCreated: (newTransaction: Transaction) => void;
@@ -31,13 +31,36 @@ function NewTransactionForm({
     email: "",
     phone: "",
   });
-  // const [currentStep, setCurrentStep] = useState(1);
+  const [customers, setCustomers] = useState<Customer[]>();
+  const [autocompleted, setAutocompleted] = useState("");
   const handleTextFieldChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const { name, value } = event.target;
     setFormState((prevFormState) => ({ ...prevFormState, [name]: value }));
   };
+
+
+
+  const { status, data, error } = useQuery({
+    queryKey: ["customers"],
+    queryFn: () => {
+      return DBModel.fetchCustomers();
+    },
+    select: (data) => data as Customer[]
+  });
+
+  if (error) {
+    console.error("Error fetching customers", error);
+    toast.error("Error fetching customers");
+  }
+
+  useEffect(() => {
+    if (data && status === "success") {
+      setCustomers(data);
+    }
+    console.log("customers", data);
+  }, [data, status]);
 
   const createCustomer = useMutation({
     mutationFn: (newCustomer: CreateCustomer) => {
@@ -49,7 +72,7 @@ function NewTransactionForm({
       queryClient.invalidateQueries({
         queryKey: ["customers"],
       });
-      
+
       const submittedTransaction: CreateTransaction = {
         transaction_type: t_type,
         customer_id: data.customer_id, // TODO: need to figure this out
@@ -89,16 +112,22 @@ function NewTransactionForm({
       email: formState.email,
       phone: formState.phone,
     };
-
-    createCustomer.mutate(newCustomer);
+    if (
+      autocompleted.length > 0
+    ) {
+      const submittedTransaction: CreateTransaction = {
+        transaction_type: t_type,
+        customer_id: autocompleted,
+        is_employee: false,
+      };
+      CreateTransaction.mutate(submittedTransaction);
+    }
+    else {
+      createCustomer.mutate(newCustomer);
+    }
   };
-  // const handleNext = () => {
-  //   if (currentStep < 3) {
-  //     setCurrentStep(currentStep + 1);
-  //     console.log("incrementing step");
-  //     console.log(currentStep);
-  //   }
-  // };
+
+
   if (!isOpen) return null;
   return (
     <Dialog
@@ -106,7 +135,7 @@ function NewTransactionForm({
       fullWidth={true}
       maxWidth="lg"
       className="modal-overlay"
-      // sx={{  justifyContent: "center", alignItems: "center" }}
+    // sx={{  justifyContent: "center", alignItems: "center" }}
     >
       <div
         className="modal-container"
@@ -115,66 +144,88 @@ function NewTransactionForm({
         <button className="close-button" onClick={onClose}>
           x
         </button>
-        <form
-          onSubmit={handleSubmit}
-          style={{ width: "100%", alignSelf: "center" }}
-        >
-          <div
-            style={{
-              width: "95%",
-              display: "flex",
-              flexDirection: "column",
-              padding: "2.5%",
-            }}
+        {customers === undefined
+          ? <CircularProgress /> :
+          <form
+            onSubmit={handleSubmit}
+            style={{ width: "100%", alignSelf: "center" }}
           >
-            <h2>Customer Information</h2>
-            <label>
-              <TextField
-                type="email"
-                name="email"
-                placeholder="Email:"
-                value={formState.email}
-                onChange={handleTextFieldChange}
-                fullWidth
-              />
-            </label>
-            <br />
-            <label style={{ minWidth: "95%" }}>
-              <TextField
-                type="text"
-                name="first_name"
-                placeholder="First Name:"
-                value={formState.first_name}
-                onChange={handleTextFieldChange}
-                fullWidth
-              />
-            </label>
-            <br />
-            <label>
-              <TextField
-                type="text"
-                name="last_name"
-                placeholder="Last Name:"
-                value={formState.last_name}
-                onChange={handleTextFieldChange}
-                fullWidth
-              />
-            </label>
-            <br />
-            <label>
-              <TextField
-                type="tel"
-                name="phone"
-                placeholder="Phone:"
-                value={formState.phone}
-                onChange={handleTextFieldChange}
-                fullWidth
-              />
-            </label>
-            <br />
-            <Button type="submit" variant="contained" >Submit Transaction</Button>
-          </div>
-        </form>
+            <FormControl style={{ width: "100%", alignSelf: "center" }}>
+              <div
+                style={{
+                  width: "95%",
+                  display: "flex",
+                  flexDirection: "column",
+                  padding: "2.5%",
+                }}
+              >
+                <h2>Customer Information</h2>
+                <label>
+                  <Autocomplete
+                    renderInput={(params) => (
+                      <TextField {...params} type="email" name="email" onChange={handleTextFieldChange} placeholder="Email:" value={formState.email} />)}
+                    options={customers!.map((customer) => customer.email)}
+                    onChange={(_, value, reason) => {
+                      if (reason === "selectOption") {
+                        const customer = customers!.find(
+                          (customer) => customer.email === value
+                        );
+                        if (customer) {
+                          setFormState({
+                            first_name: customer.first_name,
+                            last_name: customer.last_name,
+                            email: customer.email,
+                            phone: customer.phone ?? '',
+                          });
+                          setAutocompleted(customer.customer_id);
+                        }
+                      }
+                      else {
+                        setAutocompleted("");
+                      }
+                    }
+                    }
+                    fullWidth
+                  />
+                </label>
+                <br />
+                <label style={{ minWidth: "95%" }}>
+                  <TextField
+                    type="text"
+                    name="first_name"
+                    placeholder="First Name:"
+                    value={formState.first_name}
+                    onChange={handleTextFieldChange}
+                    fullWidth
+                  />
+                </label>
+                <br />
+                <label>
+                  <TextField
+                    type="text"
+                    name="last_name"
+                    placeholder="Last Name:"
+                    value={formState.last_name}
+                    onChange={handleTextFieldChange}
+                    fullWidth
+                  />
+                </label>
+                <br />
+                <label>
+                  <TextField
+                    type="tel"
+                    name="phone"
+                    placeholder="Phone:"
+                    value={formState.phone}
+                    onChange={handleTextFieldChange}
+                    fullWidth
+                  />
+                </label>
+                <br />
+                <Button type="submit" variant="contained" >Submit Transaction</Button>
+              </div>
+            </FormControl>
+          </form>}
       </div>
     </Dialog>
   );
