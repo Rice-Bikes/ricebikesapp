@@ -104,7 +104,7 @@ export function TransactionsTable({
   // console.log(rowData);
   // const [pageSize, setPageSize] = useState(100);
   const onRowClicked = (e: RowClickedEvent) => {
-    queryClient.invalidateQueries({
+    queryClient.resetQueries({
       queryKey: ["user"],
     });
     navigate(
