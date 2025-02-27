@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Dialog, Box, Typography, Button, CircularProgress } from '@mui/material';
 import { useQuery } from "@tanstack/react-query";
 import DBModel, { TransactionLog } from '../model';

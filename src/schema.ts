@@ -216,7 +216,7 @@ export const TransactionSchema = {
     },
     OrderRequests: {
       type: "array",
-      // nullable: true,
+      nullable: true,
       items: OrderRequestSchema,
     },
   },
