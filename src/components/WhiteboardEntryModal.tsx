@@ -219,6 +219,7 @@ const WhiteboardEntryModal = ({
         }
       },
       cellRenderer: () => <Button type="reset"> X </Button>
+
     },
   ];
 
@@ -330,7 +331,7 @@ const WhiteboardEntryModal = ({
                 loading={orderRequestStatus === "fetching"}
                 overlayNoRowsTemplate="Add a part to the whiteboard!"
                 suppressMenuHide={true} // Disable menu completely
-              // suppressChangeDetection={true}
+                enableCellTextSelection={true}
               />
             </ErrorBoundary>
           </div>

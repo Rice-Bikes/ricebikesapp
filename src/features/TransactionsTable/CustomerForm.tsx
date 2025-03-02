@@ -181,6 +181,12 @@ function NewTransactionForm({
                         }
                       }
                       else {
+                        setFormState({
+                          first_name: "",
+                          last_name: "",
+                          email: value,
+                          phone: "",
+                        });
                         setAutocompleted("");
                       }
                     }
