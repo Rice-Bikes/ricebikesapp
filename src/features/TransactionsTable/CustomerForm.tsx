@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Dialog, TextField, Button, FormControl, Autocomplete, CircularProgress } from "@mui/material";
+import { Dialog, TextField, Button, FormControl, Autocomplete, CircularProgress, createFilterOptions } from "@mui/material";
 import DBModel, {
   CreateCustomer,
   CreateTransaction,
@@ -17,6 +17,8 @@ interface NewTransactionFormProps {
   t_type: string;
   user_id: string;
 }
+
+const filter = createFilterOptions<string>();
 
 function NewTransactionForm({
   onTransactionCreated,
@@ -184,11 +186,24 @@ function NewTransactionForm({
                         setFormState({
                           first_name: "",
                           last_name: "",
-                          email: value,
+                          email: value ?? "",
                           phone: "",
                         });
                         setAutocompleted("");
                       }
+                    }
+                    }
+                    filterOptions={(options, params) => {
+                      const filtered = filter(options, params);
+
+                      const { inputValue } = params;
+                      // Suggest the creation of a new value
+                      const isExisting = options.some((option) => inputValue === option);
+                      if (inputValue !== '' && !isExisting) {
+                        filtered.push(`${inputValue}`);
+                      }
+
+                      return filtered;
                     }
                     }
                     fullWidth
