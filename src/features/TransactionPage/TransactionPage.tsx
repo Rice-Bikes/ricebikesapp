@@ -38,7 +38,7 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], isEm
     });
   if (parts)
     parts.forEach((part) => {
-      total += isEmployee ? part.Item.standard_price : (part.Item.wholesale_cost * 1.06);
+      total += !isEmployee ? part.Item.standard_price : (part.Item.wholesale_cost * 1.06);
     });
   return total;
 };
@@ -139,7 +139,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const [isPaid, setPaid] = useState<boolean>(transactionData?.is_paid ?? false);
   const [isCompleted, setIsCompleted] = useState<boolean>();
   const [beerBike, setBeerBike] = useState<boolean>();
-  const [isEmployee, setIsEmployee] = useState<boolean>();
+  const [isEmployee, setIsEmployee] = useState<boolean>(false);
 
   // const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
   useEffect(() => {
@@ -1025,7 +1025,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                   }}
                 >
                   <span>
-                    {part.Item.name} - ${isEmployee ? part.Item.standard_price.toFixed(2) : (part.Item.wholesale_cost * 1.06).toFixed(2)}
+                    {part.Item.name} - ${!isEmployee ? part.Item.standard_price.toFixed(2) : (part.Item.wholesale_cost * 1.06).toFixed(2)}
                   </span>
                   <Stack direction="row" spacing={2} sx={{ padding: " 0 2px" }}>
                     <Button
@@ -1179,7 +1179,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                       itemDetails.map((part: ItemDetails) => (
                         <ListItem key={part.transaction_detail_id}>
                           {part.Item.name} - $
-                          {isEmployee ? part.Item.standard_price.toFixed(2) : (part.Item.wholesale_cost * 1.06).toFixed(2)}
+                          {!isEmployee ? part.Item.standard_price.toFixed(2) : (part.Item.wholesale_cost * 1.06).toFixed(2)}
                         </ListItem>
                       ))
                     )}
