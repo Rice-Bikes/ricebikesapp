@@ -1179,7 +1179,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                       itemDetails.map((part: ItemDetails) => (
                         <ListItem key={part.transaction_detail_id}>
                           {part.Item.name} - $
-                          {part.Item.standard_price.toFixed(2)}
+                          {isEmployee ? part.Item.standard_price.toFixed(2) : (part.Item.wholesale_cost * 1.06).toFixed(2)}
                         </ListItem>
                       ))
                     )}
