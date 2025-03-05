@@ -40,6 +40,7 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], isEm
     parts.forEach((part) => {
       total += !isEmployee ? part.Item.standard_price : (part.Item.wholesale_cost * 1.06);
     });
+  console.log("total cost: ", total);
   return total;
 };
 
@@ -586,7 +587,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       !repairDetailsIsFetching &&
       !itemDetailsIsFetching &&
       (repairDetails || itemDetails)
-      && isEmployee
     ) {
       setTotalPrice(
         calculateTotalCost(
