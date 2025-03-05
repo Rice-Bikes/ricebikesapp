@@ -10,7 +10,7 @@ const AdminPage: React.FC = () => {
     const mutation = useMutation(
         {
             mutationFn: (data: string) => {
-                console.log("sending file", data);
+                // console.log("sending file", data);
                 return DBModel.refreshItems(data);
             },
             onSuccess: () => {
@@ -48,7 +48,7 @@ const AdminPage: React.FC = () => {
             </Button>
             {mutation.isError && <p>Error uploading file</p>}
             {mutation.isSuccess && <p>File uploaded successfully</p>}
-            <AgGridReact/>
+            <AgGridReact />
         </div>
     );
 };

@@ -86,6 +86,8 @@ function NewTransactionForm({
       console.error("Error creating customer", error);
     },
   });
+
+
   const CreateTransaction = useMutation({
     mutationFn: (newTransaction: CreateTransaction) => {
       return DBModel.postTransaction(newTransaction);
@@ -106,7 +108,6 @@ function NewTransactionForm({
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    console.log("handle submit");
 
     const newCustomer: CreateCustomer = {
       first_name: formState.first_name,
@@ -114,6 +115,7 @@ function NewTransactionForm({
       email: formState.email,
       phone: formState.phone,
     };
+
     if (
       autocompleted.length > 0
     ) {

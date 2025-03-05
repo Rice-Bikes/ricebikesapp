@@ -30,7 +30,7 @@ import CompleteTransactionDropdown from "./CompleteTransactionDropdown";
 import SetProjectsTypesDropdown from "./SetProjectsTypesDropdown";
 import DeleteTransactionsModal from "./DeleteTransactionsModal";
 
-const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
+const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], isEmployee: boolean) => {
   let total = 0;
   if (repairs)
     repairs.forEach((repair) => {
@@ -38,7 +38,7 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[]) => {
     });
   if (parts)
     parts.forEach((part) => {
-      total += part.Item.standard_price;
+      total += isEmployee ? part.Item.standard_price : (part.Item.wholesale_cost * 1.06);
     });
   return total;
 };
@@ -139,8 +139,13 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const [isPaid, setPaid] = useState<boolean>(transactionData?.is_paid ?? false);
   const [isCompleted, setIsCompleted] = useState<boolean>();
   const [beerBike, setBeerBike] = useState<boolean>();
+  const [isEmployee, setIsEmployee] = useState<boolean>();
 
   // const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    if (transactionData?.Customer?.email)
+      checkUser.mutate(transactionData.Customer.email.split("@")[0]);
+  }, [transactionData]);
 
   const sendCheckoutEmail = useMutation({
     mutationFn: (customer: Customer) => {
@@ -216,6 +221,20 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       toast.error("error updating repair" + error);
     },
   });
+
+  const checkUser = useMutation({
+    mutationFn: (net_id: string) => {
+      return DBModel.fetchUser(net_id);
+    },
+    onSuccess: (data) => {
+      console.log("User found", data);
+      setIsEmployee(true)
+    },
+    onError: (error) => {
+      console.error("Error finding user", error);
+      setIsEmployee(false)
+    }
+  });
   useEffect(() => {
     console.log(
       "waiting on data",
@@ -246,6 +265,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         is_beer_bike: beerBike ?? false,
         is_refurb: refurb,
         is_reserved: reserved,
+        is_employee: isEmployee ?? false,
         bike_id: bike?.bike_id,
         date_completed:
           transactionData?.date_completed === null && isCompleted
@@ -283,8 +303,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   useEffect(() => {
     if (transactionData) {
-      // if (transactionData.is_refurb !== refurb) setRefurb(transactionData.is_refurb);
-      // if (transactionData.is_reserved !== reserved) setReserved(transactionData.is_reserved);
       if (transactionData.is_waiting_on_email !== waitEmail)
         setWaitEmail(transactionData.is_waiting_on_email);
       if (transactionData.is_urgent && transactionData.is_urgent !== priority)
@@ -444,6 +462,12 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     queryClient.invalidateQueries({
       queryKey: ["transactions"],
     });
+    DBModel.postTransactionLog(
+      transactionData!.transaction_num,
+      user.user_id,
+      `checked out transaction for $${totalPrice}`,
+      "transaction",
+    );
     nav("/");
   };
 
@@ -460,6 +484,10 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       queryKey: ["transactions"],
     });
   };
+
+
+
+
 
   // const updateTransaction = useMutation({});
 
@@ -558,11 +586,13 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       !repairDetailsIsFetching &&
       !itemDetailsIsFetching &&
       (repairDetails || itemDetails)
+      && isEmployee
     ) {
       setTotalPrice(
         calculateTotalCost(
           repairDetails as RepairDetails[],
-          itemDetails as ItemDetails[]
+          itemDetails as ItemDetails[],
+          isEmployee
         )
       );
     }
@@ -571,6 +601,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     repairDetailsIsFetching,
     itemDetails,
     itemDetailsIsFetching,
+    isEmployee
   ]);
 
   if (repairsLoading || partsLoading || transactionLoading) {
@@ -705,6 +736,17 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               Refurb
             </Button>
             }
+            {isEmployee && <Button
+              style={{
+                backgroundColor: "green",
+                color: "white",
+                pointerEvents: "none",
+              }}
+              variant="contained"
+              size="small"
+            >
+              Employee
+            </Button>}
           </Grid2>
           <Grid2
             size={6}
@@ -983,7 +1025,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                   }}
                 >
                   <span>
-                    {part.Item.name} - ${part.Item.standard_price.toFixed(2)}
+                    {part.Item.name} - ${isEmployee ? part.Item.standard_price.toFixed(2) : (part.Item.wholesale_cost * 1.06).toFixed(2)}
                   </span>
                   <Stack direction="row" spacing={2} sx={{ padding: " 0 2px" }}>
                     <Button
