@@ -327,17 +327,17 @@ export function TransactionsTable({
         transaction.is_completed === false) ||
       (viewType === "refurb" && transaction.is_refurb === true) ||
       (viewType === "beer bike" &&
-        transaction.is_beer_bike === true && transaction.is_paid == false) ||
+        transaction.is_beer_bike === true && !isDaysLess(364, new Date(transaction.date_created), new Date())) ||
       viewType === ""
     );
   }
 
-  function sortByTransactionNumAsc() {
-    gridApiRef.current!.api.applyColumnState({
-      state: [{ colId: "transaction_num", sort: "asc" }],
-      defaultState: { sort: null },
-    });
-  }
+  // function sortByTransactionNumAsc() {
+  //   gridApiRef.current!.api.applyColumnState({
+  //     state: [{ colId: "transaction_num", sort: "asc" }],
+  //     defaultState: { sort: null },
+  //   });
+  // }
 
   function sortByTransactionNumDesc() {
     gridApiRef.current!.api.applyColumnState({
@@ -365,7 +365,7 @@ export function TransactionsTable({
     ["paid", sortByTransactionNumDesc],
     ["employee", sortByTransactionNumDesc],
     ["refurb", sortByTransactionNumDesc],
-    ["beer bike", sortByTransactionNumAsc],
+    ["beer bike", sortByTransactionNumDesc],
     ["retrospec", sortByTransactionNumDesc]
   ]);
 
