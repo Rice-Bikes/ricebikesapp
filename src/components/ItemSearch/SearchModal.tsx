@@ -179,6 +179,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
                 noRowsOverlayComponent={
                   searchData.length > 0 && "upc" in searchData[0] ? CustomNoRowsOverlay : "Search for another repair"
                 }
+                noRowsOverlayComponentParams={{ searchTerm }}
                 quickFilterText={searchTerm}
               />
             </section>

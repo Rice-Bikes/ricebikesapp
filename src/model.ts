@@ -495,6 +495,19 @@ class DBModel {
       })
     }
 
+  public static activateItem = async (upc: string) =>
+    fetch(`${hostname}/items/${upc}`, {
+      method: "PATCH",
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to activate item");
+        }
+      })
   public static fetchRepairs = async () =>
     fetch(`${hostname}/repairs`)
       .then((response) => response.json())
