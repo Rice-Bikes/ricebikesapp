@@ -899,8 +899,9 @@ class DBModel {
         console.error("Error posting order request data: ", error);
         throw new Error("Error posting order request data: " + error); // More detailed error logging
       });
-  public static getOrderRequests = async (transaction_id: string) =>
-    fetch(`${hostname}/orderRequests/${transaction_id}`)
+
+  public static getOrderRequests = async (transaction_id?: string) =>
+    fetch(`${hostname}/orderRequests/${transaction_id? transaction_id : ""}`)
       .then((response) => response.json())
       .then((response) => {
         console.log(response);

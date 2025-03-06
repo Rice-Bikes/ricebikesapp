@@ -378,7 +378,7 @@ export function TransactionsTable({
       <header>
         <ButtonGroup id="nav-buttons">
           <CreateTransactionDropdown alertAuth={alertAuth} user={user} />
-          <Button>Whiteboard</Button>
+          <Button onClick={() => navigate("/whiteboard")}>Whiteboard</Button>
           <Button onClick={() => setShowPriceCheckModal(!showPriceCheckModal)}>Price Check</Button>
           <PriceCheckModal open={showPriceCheckModal} onClose={() => { setShowPriceCheckModal(false) }} />
         </ButtonGroup>

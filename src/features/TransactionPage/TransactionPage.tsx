@@ -626,6 +626,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     const part = event.data as Part;
     addPart.mutate(part);
   };
+  const handleAddOrderedPart = (item: Part) => {
+    addPart.mutate(item);
+  };
 
   const handleRemovePart = (part: ItemDetails) => {
     deletePart.mutate(part);
@@ -1075,6 +1078,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             parts={parts as Part[]}
             transaction_id={transaction_id}
             user_id={user.user_id}
+            handleAddOrderedPart={handleAddOrderedPart}
           />
           <Grid2
             style={{ marginBottom: "20px", color: "white", gap: "2px" }}

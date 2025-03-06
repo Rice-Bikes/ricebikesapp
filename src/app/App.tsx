@@ -9,6 +9,8 @@ import { useState } from "react";
 import AuthPrompt from "../components/AuthPrompt/AuthPrompt";
 import { User } from "../model";
 import AdminPage from "../features/AdminPage/AdminPage";
+import RetrospecTransactionsPage from "../features/RetrospecTransactions/RetrospecTransactionsPage";
+import WhiteboardPage from "../features/WhiteboardPage";
 //import {RepairItemList} from '../components/RepairItem/RepairItem';
 
 function App() {
@@ -103,6 +105,14 @@ function App() {
         <Route
           path="/admin"
           element={<AdminPage />}
+        />
+        <Route
+          path="/retrospec"
+          element={<RetrospecTransactionsPage />}
+        />
+        <Route
+          path="/whiteboard"
+          element={<WhiteboardPage user_id={user.user_id} />}
         />
       </Routes>
     </>

@@ -33,6 +33,7 @@ type WhiteboardEntryModalProps = {
   transaction_id: string;
   user_id: string;
   waitingOnParts: boolean;
+  handleAddOrderedPart: (part: Part) => void;
 };
 
 const WhiteboardEntryModal = ({
@@ -43,6 +44,7 @@ const WhiteboardEntryModal = ({
   transaction_id,
   user_id,
   waitingOnParts,
+  handleAddOrderedPart,
 
 }: WhiteboardEntryModalProps) => {
   // const [loading, setLoading] = useState(false);
@@ -203,6 +205,22 @@ const WhiteboardEntryModal = ({
           throw error; // Re-throw to be caught by error boundary
         }
       }
+    },
+    {
+      headerName: "Add to Transaction",
+      colId: "add",
+      onCellClicked: (event: CellClickedEvent<OrderRequest>) => {
+        console.log("showing add btn", event);
+        deleteOrderRequest.mutate(event.data as OrderRequest);
+        try {
+          return event.data ? handleAddOrderedPart(event.data.Item as Part) : console.error("cannot add order request to transaction", event)
+        }
+        catch (error) {
+          console.error('Error in onCellClicked:', error);
+          throw error; // Re-throw to be caught by error boundary
+        }
+      },
+      cellRenderer: () => <Button type="submit">✓</Button>
     },
     {
       headerName: "Delete",
