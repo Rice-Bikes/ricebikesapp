@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createFilterOptions, Dialog, Box, Typography, Grid2, TextField, Button, CircularProgress, Autocomplete } from '@mui/material';
 import DBModel, { Part } from '../model'
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -13,10 +13,12 @@ interface ItemPageModalProps {
 const filter = createFilterOptions<string>();
 const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) => {
     // if (!item) return};
-    const [edit, setEdit] = useState(item === undefined);
+    console.log(item ? false : true);
+    const [edit, setEdit] = useState(!!item);
+    console.log(edit);
+    console.log("item", item);
     const [isLoading, setIsLoading] = useState(false);
     const [hasBeenSubmitted, setHasBeenSubmitted] = useState(false);
-
     const [upc, setUpc] = useState<string>(item?.upc || '');
     const [name, setName] = useState<string>(item?.name || '');
     const [brand, setBrand] = useState<string>(item?.brand || '');
@@ -29,6 +31,22 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
     const [stock, setStock] = useState<number>(item?.stock || 0);
     const [minimum_stock, setMinimumStock] = useState<number>(item?.minimum_stock || 0);
 
+    useEffect(() => {
+        if (item) {
+            setUpc(item.upc);
+            setName(item.name);
+            setBrand(item.brand ?? '');
+            setDescription(item.description ?? '');
+            setStandardPrice(`${item.standard_price}`);
+            setWholesaleCost(`${item.wholesale_cost}`);
+            setCategory1(item.category_1 ?? '');
+            setCategory2(item.category_2 ?? '');
+            setCategory3(item.category_3 ?? '');
+            setStock(item.stock ?? 0);
+            setMinimumStock(item.minimum_stock ?? 0);
+        }
+
+    }, [item]);
 
     const { data: first_categories } = useQuery({
         queryKey: ['category', '1'],
@@ -220,6 +238,16 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
                                     >{description}</Button>}
                             </Grid2>
                             <Grid2 size={6}>
+                                <Typography variant="body1">Price:</Typography>
+                                {edit ? <TextField type="number" slotProps={{ "htmlInput": { step: 0.01 } }} error={hasBeenSubmitted && Number.parseFloat(standard_price) === 0} value={standard_price} onChange={(e) => setStandardPrice(e.target.value)} />
+                                    : <Button variant="outlined" fullWidth style={{ height: "80%" }} sx={{ color: "black", backgroundColor: "white", borderColor: "white", pointerEvents: "none" }}>{standard_price}</Button>}
+                            </Grid2>
+                            <Grid2 size={6}>
+                                <Typography variant="body1">Wholesale Cost:</Typography>
+                                {edit ? <TextField type="number" slotProps={{ "htmlInput": { step: 0.01 } }} value={wholesale_cost} error={hasBeenSubmitted && Number.parseFloat(wholesale_cost) === 0} onChange={(e) => setWholesaleCost(e.target.value)} />
+                                    : <Button variant="outlined" sx={{ color: "black", backgroundColor: "white", borderColor: "white", pointerEvents: "none", }} fullWidth style={{ height: "80%" }}>{wholesale_cost}</Button>}
+                            </Grid2>
+                            <Grid2 size={6}>
                                 <Typography variant="body1">Stock:</Typography>
                                 {edit ? <TextField error={hasBeenSubmitted && stock < 0} value={stock} onChange={(e) => setStock(Number.parseInt(e.target.value))} required /> :
                                     <Button
@@ -249,16 +277,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
                                         style={{ height: "80%" }}
                                     >{minimum_stock}</Button>}
                             </Grid2>
-                            <Grid2 size={6}>
-                                <Typography variant="body1">Price:</Typography>
-                                {edit ? <TextField type="number" slotProps={{ "htmlInput": { step: 0.01 } }} error={hasBeenSubmitted && Number.parseFloat(standard_price) === 0} value={standard_price} onChange={(e) => setStandardPrice(e.target.value)} />
-                                    : <Button variant="outlined" fullWidth style={{ height: "80%" }} sx={{ color: "black", backgroundColor: "white", borderColor: "white", pointerEvents: "none" }}>{standard_price}</Button>}
-                            </Grid2>
-                            <Grid2 size={6}>
-                                <Typography variant="body1">Wholesale Cost:</Typography>
-                                {edit ? <TextField type="number" slotProps={{ "htmlInput": { step: 0.01 } }} value={wholesale_cost} error={hasBeenSubmitted && Number.parseFloat(wholesale_cost) === 0} onChange={(e) => setWholesaleCost(e.target.value)} />
-                                    : <Button variant="outlined" sx={{ color: "black", backgroundColor: "white", borderColor: "white", pointerEvents: "none", }} fullWidth style={{ height: "80%" }}>{wholesale_cost}</Button>}
-                            </Grid2>
+
                             <Grid2 size={4}>
                                 <Typography variant="body1">Category 1:</Typography>
                                 {edit && first_categories ?

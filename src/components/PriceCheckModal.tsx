@@ -40,6 +40,8 @@ const PriceCheckModal = ({
     const handleCancel = () => {
         onClose();
         setSearchTerm("");
+        setShowAddItem(false);
+        setShowItemPage(false);
     };
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,17 +61,16 @@ const PriceCheckModal = ({
 
     const handleSearch = () => {
         console.log("searching for", searchTerm);
-        parts?.find((part) => {
-            if (part.upc === searchTerm) {
-                console.log("found", part);
-                setItem(part);
-                setShowItemPage(true);
-            }
-            else {
-                setShowAddItem(true);
-            }
-        }
+        const part = parts?.find((part) => part.upc === searchTerm
         );
+        if (part) {
+            console.log("found", part);
+            setItem(part);
+            setShowItemPage(true);
+        }
+        else {
+            setShowAddItem(true);
+        }
     };
     //   console.log("reqs", parts);
     return (
