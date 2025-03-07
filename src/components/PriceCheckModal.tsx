@@ -97,7 +97,7 @@ const PriceCheckModal = ({
             {showAddItem &&
                 <DialogActions>
                     <Typography> Item not found. Add new item?</Typography>
-                    <Button type="submit" variant="contained" onClick={() => setShowItemPage(false)}>Add Item</Button>
+                    <Button type="submit" variant="contained" onClick={() => setShowItemPage(true)}>Add Item</Button>
                 </DialogActions>
             }
             <DialogActions>

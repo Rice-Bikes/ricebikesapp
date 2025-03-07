@@ -14,7 +14,7 @@ const filter = createFilterOptions<string>();
 const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) => {
     // if (!item) return};
     console.log(item ? false : true);
-    const [edit, setEdit] = useState(!!item);
+    const [edit, setEdit] = useState(item === undefined);
     console.log(edit);
     console.log("item", item);
     const [isLoading, setIsLoading] = useState(false);
@@ -81,7 +81,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
 
         const wholesale_cost_num = Number.parseFloat(wholesale_cost);
         const standard_price_num = Number.parseFloat(standard_price);
-        if (wholesale_cost > standard_price) {
+        if (wholesale_cost_num > standard_price_num) {
             toast.error("Wholesale Cost must be less than or equal to Standard Price");
             return;
         }
