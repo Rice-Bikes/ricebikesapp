@@ -508,6 +508,20 @@ class DBModel {
           throw new Error("Failed to activate item");
         }
       })
+
+  public static fetchItemCategory = async (category: number) =>
+    fetch(`${hostname}/items/categories/?category=${category}`)
+  .then((response) => response.json())
+  .then((response) => {
+    if (!DBModel.validateArrayResponse(response)) {
+      throw new Error("Invalid response");
+    }
+    if (!response.success) {
+      throw new Error("Failed to load items");
+    }
+    return response.responseObject;
+  })
+  
   public static fetchRepairs = async () =>
     fetch(`${hostname}/repairs`)
       .then((response) => response.json())

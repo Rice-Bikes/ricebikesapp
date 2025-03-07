@@ -324,7 +324,7 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = (
                         </div>
                     </Grid2>
                     <Grid2 size={12}>
-                        <Typography variant="h6">Customer Orders</Typography>
+                        <Typography variant="h6">Stock Orders</Typography>
                         <div style={{ height: 400, width: '100%' }}>
                             TBD
                             {/* <AgGridReact

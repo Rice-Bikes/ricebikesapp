@@ -17,8 +17,6 @@ import type {
   RowSelectionOptions,
   ICellRendererParams,
   IRowNode,
-  // GridReadyEvent,
-  // ITooltipParams
 } from "ag-grid-community";
 import CreateTransactionDropdown from "./TransactionTypeDropdown"; // Create Transaction Dropdown Component
 import "./TransactionsTable.css"; // CSS Stylesheet
@@ -110,7 +108,7 @@ export function TransactionsTable({
   };
 
   const { status, data, error } = useQuery(
-    DBModel.getTransactionsQuery(10000000, true)
+    DBModel.getTransactionsQuery(100000000, true)
   );
 
   const {
@@ -376,12 +374,12 @@ export function TransactionsTable({
     <main style={{ width: "100vw" }}>
       <Button></Button>
       <header>
-        <ButtonGroup id="nav-buttons">
+        <ButtonGroup id="nav-buttons" variant="outlined">
           <CreateTransactionDropdown alertAuth={alertAuth} user={user} />
           <Button onClick={() => navigate("/whiteboard")}>Whiteboard</Button>
           <Button onClick={() => setShowPriceCheckModal(!showPriceCheckModal)}>Price Check</Button>
-          <PriceCheckModal open={showPriceCheckModal} onClose={() => { setShowPriceCheckModal(false) }} />
         </ButtonGroup>
+        <PriceCheckModal open={showPriceCheckModal} onClose={() => { setShowPriceCheckModal(false) }} />
         <article id="indicators">
           <Button style={{ backgroundColor: "blue" }}>
             {summaryData?.quantity_incomplete} Incomplete Bikes

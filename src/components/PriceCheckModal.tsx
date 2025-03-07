@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import {
+    Button,
     Dialog,
+    DialogActions,
     DialogContent,
     DialogTitle,
     TextField,
+    Typography,
 } from "@mui/material";
 
-import DBModel from "../model";
+import DBModel, { Part } from "../model";
 import { useQuery } from "@tanstack/react-query";
+import ItemPageModal from "./ItemPage";
 
 type PriceCheckModalProps = {
     open: boolean;
@@ -20,8 +24,11 @@ const PriceCheckModal = ({
 }: PriceCheckModalProps) => {
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [showItemPage, setShowItemPage] = useState(false);
+    const [showAddItem, setShowAddItem] = useState(false);
+    const [item, setItem] = useState<Part>();
 
-    //   const [quantity, setQuantity] = useState(1);
+
 
     const itemsQuery = useQuery(DBModel.getItemsQuery());
     const {
@@ -29,24 +36,7 @@ const PriceCheckModal = ({
         data: parts,
         error: partsError,
     } = itemsQuery;
-    // if (partsError) toast.error("parts: " + partsError);
-    //   const createOrderRequest = useMutation({
-    //     mutationFn: (req: OrderRequest) => DBModel.postOrderRequest(req),
-    //     onSuccess: () => {
-    //       queryClient.invalidateQueries({
-    //         queryKey: ["orderRequest", transaction_id],
-    //       });
-    //     },
-    //   });
 
-    //   const updateOrderRequest = useMutation({
-    //     mutationFn: (req: OrderRequest) => DBModel.putOrderRequest(req),
-    //     onSuccess: () => {
-    //       queryClient.invalidateQueries({
-    //         queryKey: ["orderRequest", transaction_id],
-    //       });
-    //     },
-    //   });
     const handleCancel = () => {
         onClose();
         setSearchTerm("");
@@ -69,17 +59,24 @@ const PriceCheckModal = ({
 
     const handleSearch = () => {
         console.log("searching for", searchTerm);
+        parts?.find((part) => {
+            if (part.upc === searchTerm) {
+                console.log("found", part);
+                setItem(part);
+                setShowItemPage(true);
+            }
+            else {
+                setShowAddItem(true);
+            }
+        }
+        );
     };
-
-
     //   console.log("reqs", parts);
-
-
     return (
-        <Dialog open={open} onClose={handleCancel} fullWidth maxWidth="md">
+        <Dialog open={open} onClose={handleCancel} fullWidth maxWidth="md" style={{ height: "fit-content" }}>
             <DialogTitle>Enter UPC</DialogTitle>
             <DialogContent>
-                <div style={{ height: 400, minHeight: 400, width: "100%" }}>
+                <div style={{ height: "10%", minHeight: "fit-content", width: "100%", marginTop: "10px" }}>
                     <TextField
                         label="Search Term"
                         value={searchTerm}
@@ -91,11 +88,44 @@ const PriceCheckModal = ({
                             }
                         }}
                         variant="outlined"
+                        fullWidth
                     />
                 </div>
+
             </DialogContent>
+            {showAddItem &&
+                <DialogActions>
+                    <Typography> Item not found. Add new item?</Typography>
+                    <Button type="submit" variant="contained" onClick={() => setShowItemPage(false)}>Add Item</Button>
+                </DialogActions>
+            }
+            <DialogActions>
+
+                <Button onClick={handleCancel}>Cancel</Button>
+            </DialogActions>
+            <ItemPageModal open={showItemPage} onClose={() => setShowItemPage(false)} item={item} />
         </Dialog>
     );
 };
 
 export default PriceCheckModal;
+
+
+// if (partsError) toast.error("parts: " + partsError);
+//   const createOrderRequest = useMutation({
+//     mutationFn: (req: OrderRequest) => DBModel.postOrderRequest(req),
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({
+//         queryKey: ["orderRequest", transaction_id],
+//       });
+//     },
+//   });
+
+//   const updateOrderRequest = useMutation({
+//     mutationFn: (req: OrderRequest) => DBModel.putOrderRequest(req),
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({
+//         queryKey: ["orderRequest", transaction_id],
+//       });
+//     },
+//   });
