@@ -99,14 +99,13 @@ const PriceCheckModal = ({
             {showAddItem &&
                 <DialogActions>
                     <Typography> Item not found. Add new item?</Typography>
-                    <Button type="submit" variant="contained" onClick={() => setShowItemPage(true)}>Add Item</Button>
+                    <CustomNoRowsOverlay searchTerm={searchTerm} />
                 </DialogActions>
             }
             <DialogActions>
 
                 <Button onClick={handleCancel}>Cancel</Button>
             </DialogActions>
-            <CustomNoRowsOverlay searchTerm={searchTerm} />
             <ItemPageModal
                 open={showItemPage}
                 onClose={() => {

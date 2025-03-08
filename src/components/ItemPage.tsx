@@ -249,7 +249,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
                             </Grid2>
                             <Grid2 size={6}>
                                 <Typography variant="body1">Stock:</Typography>
-                                {edit ? <TextField error={hasBeenSubmitted && stock < 0} value={stock} onChange={(e) => setStock(Number.parseInt(e.target.value))} required /> :
+                                {edit ? <TextField type="number" error={hasBeenSubmitted && stock < 0} value={stock} onChange={(e) => setStock(Number.parseInt(e.target.value))} required /> :
                                     <Button
                                         variant="outlined"
                                         sx={{
@@ -264,7 +264,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
                             </Grid2>
                             <Grid2 size={6}>
                                 <Typography variant="body1">Min Stock:</Typography>
-                                {edit ? <TextField required error={hasBeenSubmitted && minimum_stock < 0} value={minimum_stock} onChange={(e) => setMinimumStock(Number.parseInt(e.target.value))} /> :
+                                {edit ? <TextField type="number" required error={hasBeenSubmitted && minimum_stock < 0} value={minimum_stock} onChange={(e) => setMinimumStock(Number.parseInt(e.target.value))} /> :
                                     <Button
                                         variant="outlined"
                                         sx={{
