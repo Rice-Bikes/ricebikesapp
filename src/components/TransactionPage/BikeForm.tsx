@@ -72,7 +72,7 @@ function NewBikeForm({ onBikeCreated, isOpen, onClose }: NewBikeFormProps) {
     >
       <div
         className="modal-container"
-        style={{  padding: "10px" }}
+        style={{ padding: "10px" }}
       >
         <button className="close-button" onClick={onClose}>
           x
@@ -98,6 +98,7 @@ function NewBikeForm({ onBikeCreated, isOpen, onClose }: NewBikeFormProps) {
                 value={formState.make}
                 onChange={handleTextFieldChange}
                 fullWidth
+                required
               />
             </label>
             <br />
@@ -109,6 +110,7 @@ function NewBikeForm({ onBikeCreated, isOpen, onClose }: NewBikeFormProps) {
                 value={formState.model}
                 onChange={handleTextFieldChange}
                 fullWidth
+                required
               />
             </label>
             <br />
@@ -120,6 +122,7 @@ function NewBikeForm({ onBikeCreated, isOpen, onClose }: NewBikeFormProps) {
                 value={formState.description}
                 onChange={handleTextFieldChange}
                 fullWidth
+                required
               />
             </label>
             <br />
