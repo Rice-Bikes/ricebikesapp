@@ -521,7 +521,7 @@ class DBModel {
     }
     return response.responseObject;
   })
-  
+
   public static fetchRepairs = async () =>
     fetch(`${hostname}/repairs`)
       .then((response) => response.json())
@@ -822,6 +822,34 @@ class DBModel {
       });
   };
 
+  public static updateCustomer = async (customer: Customer) => 
+    fetch(`${hostname}/customers/${customer.customer_id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(customer),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post customer");
+        }
+        if (!DBModel.validateCustomer(response.responseObject)) {
+          throw new Error("Invalid customer response");
+        }
+        return response.responseObject;
+      }
+      )
+      .catch((error) => {
+        throw new Error("Error posting customer data: " + error); // More detailed error logging
+      });
+  
+
+
   public static createBike = async (bike: Bike) =>
     fetch(`${hostname}/bikes`, {
       method: "POST",
@@ -1022,6 +1050,7 @@ class DBModel {
       queryFn: () => this.fetchItems(),
       refetchOnWindowFocus: false,
       staleTime: 600000, // Cache products for 10 minutes
+      select: (data) =>  data as Part[],
     });
   };
   public static getRepairsQuery = () => {

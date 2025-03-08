@@ -87,6 +87,23 @@ function NewTransactionForm({
     },
   });
 
+  const updateCustomer = useMutation({
+    mutationFn: (updatedCustomer: Customer) => {
+      return DBModel.updateCustomer(updatedCustomer);
+    },
+    onSuccess: (data) => {
+      console.log("Customer updated", data);
+      queryClient.invalidateQueries({
+        queryKey: ["customers"],
+      });
+    }
+    ,
+    onError: (error) => {
+      console.error("Error updating customer", error);
+      toast.error("Error updating customer");
+    }
+  });
+
 
   const CreateTransaction = useMutation({
     mutationFn: (newTransaction: CreateTransaction) => {
@@ -119,6 +136,10 @@ function NewTransactionForm({
     if (
       autocompleted.length > 0
     ) {
+      updateCustomer.mutate({
+        customer_id: autocompleted,
+        ...newCustomer,
+      });
       const submittedTransaction: CreateTransaction = {
         transaction_type: t_type,
         customer_id: autocompleted,
@@ -167,7 +188,7 @@ function NewTransactionForm({
                 <label>
                   <Autocomplete
                     renderInput={(params) => (
-                      <TextField {...params} type="email" name="email" onChange={handleTextFieldChange} placeholder="Email:" value={formState.email} />)}
+                      <TextField {...params} type="email" name="email" onChange={handleTextFieldChange} placeholder="Email:" value={formState.email} required />)}
                     options={customers!.map((customer) => customer.email)}
                     onChange={(_, value, reason) => {
                       if (reason === "selectOption") {
@@ -220,6 +241,7 @@ function NewTransactionForm({
                     value={formState.first_name}
                     onChange={handleTextFieldChange}
                     fullWidth
+                    required
                   />
                 </label>
                 <br />
@@ -231,6 +253,7 @@ function NewTransactionForm({
                     value={formState.last_name}
                     onChange={handleTextFieldChange}
                     fullWidth
+                    required
                   />
                 </label>
                 <br />
@@ -241,7 +264,13 @@ function NewTransactionForm({
                     placeholder="Phone:"
                     value={formState.phone}
                     onChange={handleTextFieldChange}
+                    slotProps={{
+                      htmlInput: {
+                        pattern: "[0-9]{3}[0-9]{3}[0-9]{4}"
+                      }
+                    }}
                     fullWidth
+                    required
                   />
                 </label>
                 <br />
@@ -250,7 +279,7 @@ function NewTransactionForm({
             </FormControl>
           </form>}
       </div>
-    </Dialog>
+    </Dialog >
   );
 }
 

@@ -12,6 +12,7 @@ import {
 import DBModel, { Part } from "../model";
 import { useQuery } from "@tanstack/react-query";
 import ItemPageModal from "./ItemPage";
+import { CustomNoRowsOverlay } from "./ItemSearch/CreateItemModal";
 
 type PriceCheckModalProps = {
     open: boolean;
@@ -61,12 +62,13 @@ const PriceCheckModal = ({
 
     const handleSearch = () => {
         console.log("searching for", searchTerm);
-        const part = parts?.find((part) => part.upc === searchTerm
+        const part = parts!.find((part) => part.upc === searchTerm
         );
         if (part) {
             console.log("found", part);
             setItem(part);
             setShowItemPage(true);
+            setShowAddItem(false);
         }
         else {
             setShowAddItem(true);
@@ -104,7 +106,14 @@ const PriceCheckModal = ({
 
                 <Button onClick={handleCancel}>Cancel</Button>
             </DialogActions>
-            <ItemPageModal open={showItemPage} onClose={() => setShowItemPage(false)} item={item} />
+            <CustomNoRowsOverlay searchTerm={searchTerm} />
+            <ItemPageModal
+                open={showItemPage}
+                onClose={() => {
+                    setShowItemPage(false)
+                    onClose();
+                }} item={item}
+            />
         </Dialog>
     );
 };
