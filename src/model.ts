@@ -69,6 +69,18 @@ export type ObjectResponse = FromSchema<typeof ObjectResponseSchema>;
 
 type TransactionDetailType = "item" | "repair";
 
+export interface ExtractedRow {
+    lineNumber: string;
+    quantity: string;
+    ordered: string;
+    partNumber: string;
+    description: string;
+    unit: string;
+    price: string;
+    discount: string;
+    total: string;
+}
+
 // const queryError = (error: Error) => {
 //   console.error("Error in React Query server response: ", error); // More detailed error logging
 // }
@@ -968,7 +980,7 @@ class DBModel {
             throw new Error("Invalid order request data" + orderRequest);
           }
         }
-        return orderRequests;
+        return orderRequests as OrderRequest[];
       })
       .catch((error) => {
         throw new Error("Error loading order requests data: " + error); // More detailed error logging
@@ -1073,6 +1085,19 @@ class DBModel {
       staleTime: 60000, // Cache products for 10 minutes
     });
   };
+
+  static async processPdf(formData: FormData): Promise<ExtractedRow[]> {
+    const response = await fetch(`${hostname}/orderRequests/process-pdf`, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to process PDF');
+    }
+    
+    return response.json();
+  }
 }
 
 DBModel.initialize();

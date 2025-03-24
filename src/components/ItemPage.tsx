@@ -14,7 +14,7 @@ const filter = createFilterOptions<string>();
 const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) => {
     // if (!item) return};
     console.log(item ? false : true);
-    const [edit, setEdit] = useState(item === undefined);
+    const [edit, setEdit] = useState(item === null);
     console.log(edit);
     console.log("item", item);
     const [isLoading, setIsLoading] = useState(false);

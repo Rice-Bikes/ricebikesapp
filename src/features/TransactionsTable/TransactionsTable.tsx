@@ -313,7 +313,8 @@ export function TransactionsTable({
         transaction.is_paid === false &&
         transaction.is_completed === true
         && transaction.is_refurb === false
-        && !isDaysLess(183, new Date(transaction.date_created), new Date())) ||
+        && !isDaysLess(183, new Date(transaction.date_created), new Date())
+      ) ||
       (viewType === "paid" && transaction.is_paid === true) ||
       (viewType === "main" &&
         transaction.is_completed === false &&
@@ -323,7 +324,7 @@ export function TransactionsTable({
       (viewType === "employee" &&
         transaction.is_employee === true &&
         transaction.is_completed === false) ||
-      (viewType === "refurb" && transaction.is_refurb === true) ||
+      (viewType === "refurb" && transaction.is_refurb === true && transaction.is_paid === false && transaction.is_completed === false) ||
       (viewType === "beer bike" &&
         transaction.is_beer_bike === true && !isDaysLess(364, new Date(transaction.date_created), new Date())) ||
       viewType === ""

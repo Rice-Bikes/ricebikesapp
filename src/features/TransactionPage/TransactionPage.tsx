@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { Button, Stack, List, ListItem, Grid2 } from "@mui/material";
-import { User } from "../../model";
+import { OrderRequest, User } from "../../model";
 import { useNavigate } from "react-router-dom";
 import Item from "../../components/TransactionPage/HeaderItem";
 import Notes from "../../components/TransactionPage/Notes";
@@ -16,7 +16,7 @@ import DBModel, {
   Bike,
   Customer
 } from "../../model";
-import { useMutation, useQueries } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../app/main";
 import { ToastContainer, toast } from "react-toastify";
 import SearchModal from "../../components/ItemSearch/SearchModal";
@@ -30,7 +30,7 @@ import CompleteTransactionDropdown from "./CompleteTransactionDropdown";
 import SetProjectsTypesDropdown from "./SetProjectsTypesDropdown";
 import DeleteTransactionsModal from "./DeleteTransactionsModal";
 
-const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], isEmployee: boolean) => {
+const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], orderRequest: Part[], isEmployee: boolean) => {
   let total = 0;
   if (repairs)
     repairs.forEach((repair) => {
@@ -40,6 +40,11 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], isEm
     parts.forEach((part) => {
       total += !isEmployee ? part.Item.standard_price : (part.Item.wholesale_cost * 1.06);
     });
+  if (orderRequest)
+    console.log("calculating order request cost: ", orderRequest, total);
+  orderRequest.forEach((part) => {
+    total += !isEmployee ? part.standard_price : (part.wholesale_cost * 1.06);
+  });
   console.log("total cost: ", total);
   return total;
 };
@@ -100,7 +105,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const {
     isFetching: itemDetailsIsFetching,
     isLoading: itemDetailsLoading,
-    // status: itemDetailsStatus,
     data: queriedItemDetails,
     error: itemDetailsError,
   } = itemDetailsQuery;
@@ -114,7 +118,18 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   } = transactionQuery;
   if (transactionError) toast.error("transaction: " + transactionError);
 
-  // const queriedUser: User | undefined = queryClient.getQueryData(["user"]);
+  const { data: orderRequestData, error: orderRequestError, isLoading: orderRequestLoading, isFetching: orderRequestIsFetching } = useQuery({
+    queryKey: ["orderRequest", transaction_id],
+    queryFn: () => {
+      return DBModel.getOrderRequests(transaction_id);
+    },
+    select: (data: OrderRequest[]) => {
+      console.log("converting incoming data", data);
+      return data.map((dataItem: OrderRequest) => dataItem.Item) as Part[] ?? Array<Part>()
+    },
+  });
+  if (orderRequestError) toast.error("orderRequest: " + orderRequestError);
+
 
   const [bike, setBike] = useState<Bike>();
   const user: User = propUser; //queriedUser ?? { user_id: "1" };
@@ -486,17 +501,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     });
   };
 
-
-
-
-
-  // const updateTransaction = useMutation({});
-
-  // const handleCompleteT = () => {
-  //   // TODO: need to close transaction and go back to home page
-  //   setIsCompleted(!isCompleted);
-  // };
-
   const handleWaitEmail = () => {
     setWaitEmail(!waitEmail);
     queryClient.invalidateQueries({
@@ -509,13 +513,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const handleWaitPartClick = () => {
     setShowWaitingParts(!showWaitingParts);
-    // setWaitPart(!waitPart);
-    // queryClient.invalidateQueries({
-    //   queryKey: ["transaction", transaction_id],
-    // });
-    // queryClient.invalidateQueries({
-    //   queryKey: ["transactions"],
-    // });
   };
 
   const handlePriority = () => {
@@ -586,12 +583,14 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     if (
       !repairDetailsIsFetching &&
       !itemDetailsIsFetching &&
-      (repairDetails || itemDetails)
+      !orderRequestIsFetching &&
+      (repairDetails || itemDetails || orderRequestData)
     ) {
       setTotalPrice(
         calculateTotalCost(
           repairDetails as RepairDetails[],
           itemDetails as ItemDetails[],
+          orderRequestData as Part[],
           isEmployee
         )
       );
@@ -601,6 +600,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     repairDetailsIsFetching,
     itemDetails,
     itemDetailsIsFetching,
+    orderRequestData,
+    orderRequestIsFetching,
     isEmployee
   ]);
 
@@ -654,10 +655,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   if (transactionData.Customer === null) {
     return <p>Customer not found</p>;
   }
-
-
-
-  // console.log("current transaction cost ", transactionData?.total_cost);
   return (
     <div
       style={{
@@ -855,25 +852,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 filter: true,
                 tooltipField: "description",
                 headerTooltip: "Name of repairs",
-                //   cellRenderer: (params: ITooltipParams) => {
-                //     return (
-                //       <div
-                //         style={{
-                //           display: "flex",
-                //           flexDirection: "row",
-                //           alignItems: "center",
-                //           justifyContent: "space-between",
-                //           fontSize: "0.vw",
-                //         }}
-                //       >
-                //         <p>
-                //           <b>{params.value}</b>
-                //         </p>
-                //         <i className="fa-solid fa-circle-info"></i>
-                //       </div>
-                //     );
-                //   },
-                // },
               },
               { field: "price", headerName: "Price", width: 200 },
             ]}
@@ -897,25 +875,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 wrapText: true,
                 flex: 2,
                 filter: true,
-                // tooltipField: "name",
-                // headerTooltip: "Name of items",
-                // cellRenderer: (params: ITooltipParams) => {
-                //   return (
-                //     <div
-                //       style={{
-                //         display: "flex",
-                //         flexDirection: "row",
-                //         alignItems: "center",
-                //         justifyContent: "space-between",
-                //       }}
-                //     >
-                //       <p>
-                //         <b>{params.value}</b>
-                //       </p>
-                //       <i className="fa-solid fa-circle-info"></i>
-                //     </div>
-                //   );
-                // },
               },
               { field: "description", headerName: "Description" },
               { field: "brand", headerName: "Brand" },
@@ -947,7 +906,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           <List sx={{ width: "100%", bgcolor: "background.paper" }}>
             {!repairDetailsLoading && repairDetails ? (
               repairDetails.map((transactionDetail: RepairDetails) => (
-                // const repair = transactionDetail.Repair;
                 <ListItem
                   key={transactionDetail.transaction_detail_id}
                   style={{
@@ -1042,6 +1000,41 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                         backgroundColor: "red",
                         color: "white",
                       }}
+                      size="medium"
+                    >
+                      Delete
+                    </Button>
+                  </Stack>
+                </ListItem>
+              ))
+            ) : (
+              <p> loading...</p>
+            )}
+
+            {!orderRequestLoading && orderRequestData ? (
+              (orderRequestData).map((part: Part) => (
+                <ListItem
+                  key={part.item_id}
+                  style={{
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "10px",
+                    opacity: 0.5,
+                  }}
+                >
+                  <span>
+                    {part.name} - ${!isEmployee ? part.standard_price.toFixed(2) : (part.wholesale_cost * 1.06).toFixed(2)}
+                  </span>
+                  <Stack direction="row" spacing={2} sx={{ padding: " 0 2px" }}>
+                    <Button
+                      style={{
+                        marginLeft: "10px",
+                        cursor: "pointer",
+                        border: "white",
+                        backgroundColor: "red",
+                        color: "white",
+                      }}
+                      disabled
                       size="medium"
                     >
                       Delete
@@ -1159,12 +1152,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             {showCheckout && (
               <div className="checkout">
                 <div className="checkout-content">
-                  {/* 
-                  <Grid2 container sx={{ height: "80%" }}>
-                    <Grid2 size={6}> */}
-
                   <h2>Repairs</h2>
-
                   <ul>
                     {repairDetails.map((repair: RepairDetails) => (
                       <ListItem key={repair.transaction_detail_id}>
@@ -1172,9 +1160,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                       </ListItem>
                     ))}
                   </ul>
-                  {/* </Grid2>
-                    <Grid2 size={6}> */}
-
                   <h2>Parts</h2>
                   <ul>
                     {itemDetails === undefined ? (
@@ -1188,10 +1173,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                       ))
                     )}
                   </ul>
-                  {/* </Grid2>
-
-                  </Grid2> */}
-                  {/* <Grid2 container sx={{ height: "20%", width: "60%", margin: "0 20%", display: "flex" }}> */}
                   <h3>
                     ${(totalPrice * 1.0825).toFixed(2)}
                   </h3>
@@ -1268,18 +1249,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             </Button>
 
             }
-            {/* {showMarkDone && (
-              <div className="markDone">
-                <div className="markDone-content">
-                  <p>
-                    Are you sure you want to mark this transaction as complete?
-                    You <strong>MUST</strong> checkout first.
-                  </p>
-                  <Button onClick={handleCompleteT}>Complete</Button>
-                  <Button onClick={handleMarkDoneClose}>Go Back</Button>
-                </div>
-              </div>
-            )} */}
+
             <style>
               {`
                 .markDone {
