@@ -482,6 +482,49 @@ class DBModel {
         throw new Error("Error posting item data: " + error); // More detailed error logging
       });
 
+  public static updateItem = async (item: Part) =>
+    fetch(`${hostname}/items/${item.item_id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(item),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to update item");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error posting item data: " + error); // More detailed error logging
+      });
+
+      public static deleteItem = async (item_id: string) =>
+        fetch(`${hostname}/items/${item_id}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => response.json())
+          .then((response) => {
+            if (!DBModel.validateObjectResponse(response)) {
+              throw new Error("Invalid response");
+            }
+            if (!response.success) {
+              throw new Error("Failed to delete item");
+            }
+            return response.responseObject;
+          })
+          .catch((error) => {
+            throw new Error("Error deleting item data: " + error); // More detailed error logging
+          });
+
   public static refreshItems = async (csv: string) =>{
 
     console.log("sending file in dbModel", csv);
@@ -565,6 +608,70 @@ class DBModel {
         throw new Error("Error loading server data: " + error); // More detailed error logging
       });
 
+  public static createRepair = async (repair: Repair) =>
+    fetch(`${hostname}/repairs`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(repair),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post repair");
+        }
+        // if (!DBModel.validateRepair(response.responseObject)) {
+        //   throw new Error("Invalid repair response");
+        // }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error posting repair data: " + error); // More detailed error logging
+      });
+  public static updateRepair = async (repair: Repair) =>
+    fetch(`${hostname}/repairs/${repair.repair_id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(repair),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to update repair");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error patching repair data: " + error); // More detailed error logging
+      });
+  public static deleteRepair = async (repair_id: string) =>
+    fetch(`${hostname}/repairs/${repair_id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to delete repair");
+        }
+      })
+      .catch((error) => {
+        throw new Error("Error deleting repair data: " + error); // More detailed error logging
+      });
   public static fetchUser = async (netid: string) =>
     fetch(`${hostname}/users/${netid}`)
       .then((response) => response.json())

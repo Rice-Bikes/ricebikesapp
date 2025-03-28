@@ -42,7 +42,7 @@ function NewTransactionForm({
     setFormState((prevFormState) => ({ ...prevFormState, [name]: value }));
   };
 
-
+  console.log(t_type)
 
   const { status, data, error } = useQuery({
     queryKey: ["customers"],
@@ -214,7 +214,7 @@ function NewTransactionForm({
                         });
                         setAutocompleted("");
                       }
-                      if(reason === "blur"){
+                      if (reason === "blur") {
                         setAutocompleted("");
                       }
                     }
@@ -246,35 +246,40 @@ function NewTransactionForm({
                   />
                 </label>
                 <br />
-                <label>
-                  <TextField
-                    type="text"
-                    name="last_name"
-                    placeholder="Last Name:"
-                    value={formState.last_name}
-                    onChange={handleTextFieldChange}
-                    fullWidth
-                    required
-                  />
-                </label>
-                <br />
-                <label>
-                  <TextField
-                    type="tel"
-                    name="phone"
-                    placeholder="Phone:"
-                    value={formState.phone}
-                    onChange={handleTextFieldChange}
-                    slotProps={{
-                      htmlInput: {
-                        pattern: "[0-9]{3}[0-9]{3}[0-9]{4}"
-                      }
-                    }}
-                    fullWidth
-                    required
-                  />
-                </label>
-                <br />
+                <>
+                  <label>
+                    <TextField
+                      type="text"
+                      name="last_name"
+                      placeholder="Last Name:"
+                      value={formState.last_name}
+                      onChange={handleTextFieldChange}
+                      fullWidth
+                      required
+                    />
+                  </label>
+                  <br />
+                </>
+                {t_type !== "Merch" ? (
+                  <>
+                    <label>
+                      <TextField
+                        type="tel"
+                        name="phone"
+                        placeholder="Phone:"
+                        value={formState.phone}
+                        onChange={handleTextFieldChange}
+                        slotProps={{
+                          htmlInput: {
+                            pattern: "[0-9]{3}[0-9]{3}[0-9]{4}"
+                          }
+                        }}
+                        fullWidth
+                      />
+                    </label>
+                    <br />
+                  </>)
+                  : <></>}
                 <Button type="submit" variant="contained" >Submit Transaction</Button>
               </div>
             </FormControl>

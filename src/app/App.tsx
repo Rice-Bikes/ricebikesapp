@@ -11,6 +11,7 @@ import { User } from "../model";
 import AdminPage from "../features/AdminPage/AdminPage";
 import RetrospecTransactionsPage from "../features/RetrospecTransactions/RetrospecTransactionsPage";
 import WhiteboardPage from "../features/WhiteboardPage";
+import { ToastContainer } from "react-toastify";
 //import {RepairItemList} from '../components/RepairItem/RepairItem';
 
 function App() {
@@ -61,6 +62,7 @@ function App() {
 
   return (
     <>
+      <ToastContainer />
       <header id="taskbar">
         <Link to="/">
           <img src={RiceBikesIcon} alt="Rice Bikes Icon" />

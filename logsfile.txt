@@ -1,0 +1,2 @@
+Cannot connect to Podman. Please verify your connection to the Linux system using `podman system connection list`, or try `podman machine init` and `podman machine start` to manage a new Linux VM
+Error: unable to connect to Podman socket: Get "http://d/v5.3.2/libpod/_ping": dial unix /var/folders/r6/bh81r89d6yq046dgk8n3pqmw0000gn/T/storage-run-501/podman/podman.sock: connect: no such file or directory
