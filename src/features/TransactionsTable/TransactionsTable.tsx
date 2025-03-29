@@ -119,6 +119,7 @@ export function TransactionsTable({
     queryKey: ["transactionSummary"],
     queryFn: () => DBModel.fetchTransactionSummary(),
   });
+  console.error("summary error", summaryError);
 
   useEffect(() => {
     if (status === "success") {
@@ -385,13 +386,16 @@ export function TransactionsTable({
           <Button style={{ backgroundColor: "blue" }}>
             {summaryData?.quantity_incomplete} Incomplete Bikes
           </Button>
+          <Button style={{ backgroundColor: "turquoise", color: "black" }}>
+            {summaryData?.quantity_beer_bike_incomplete} Incomplete Beer Bikes
+          </Button>
           <Button style={{ backgroundColor: "green" }}>
-            {summaryData?.quantity_waiting_on_pickup} Bikes Awaiting Pickup
+            {summaryData?.quantity_waiting_on_pickup} Bikes For Pickup
           </Button>
-          <Button style={{ backgroundColor: "orange" }}>
-            {summaryData?.quantity_waiting_on_safety_check} Bikes Awaiting
+          {/* <Button style={{ backgroundColor: "orange" }}>
+            {summaryData?.quantity_waiting_on_safety_check} Bikes To
             Safety Check
-          </Button>
+          </Button> */}
         </article>
       </header>
       <section

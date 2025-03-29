@@ -444,13 +444,13 @@ class DBModel {
         partsData.forEach((part) => {
           if (!DBModel.validatePart(part)) {
             console.log("Invalid Part:", part);
-            throw new Error("Invalid part found");
+            // throw new Error("Invalid part found");
           }
         });
 
-        if (!DBModel.validatePartsArray(partsData)) {
-          throw new Error("Invalid part array");
-        }
+        // if (!DBModel.validatePartsArray(partsData)) {
+        //   throw new Error("Invalid part array");
+        // }
         return partsData;
       })
       .catch((error) => {

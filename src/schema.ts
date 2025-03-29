@@ -434,12 +434,14 @@ export const TransactionSummarySchema = {
   type: "object",
   properties: {
     quantity_incomplete: { type: "number" },
+    quantity_beer_bike_incomplete : { type: "number" },
     quantity_waiting_on_pickup: { type: "number" },
     quantity_waiting_on_safety_check: { type: "number" },
     additionalProperties: false,
   },
   required: [
     "quantity_incomplete",
+    "quantity_beer_bike_incomplete",
     "quantity_waiting_on_pickup",
     "quantity_waiting_on_safety_check",
   ],
