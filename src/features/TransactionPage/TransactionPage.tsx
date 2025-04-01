@@ -517,7 +517,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const handlePriority = () => {
     console.log("priority: ", priority);
-    setPriority(!priority);
+
+    if (user.firstname !== "Renee") setPriority(!priority);
     queryClient.invalidateQueries({
       queryKey: ["transaction", transaction_id],
     });
