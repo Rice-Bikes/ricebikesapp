@@ -170,6 +170,20 @@ export const BikeSchema = {
   additionalProperties: false,
 } as const satisfies JSONSchema;
 
+export const RoleSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "Role",
+  type: "object",
+  properties: {
+    role_id: { type: "string"},
+    user_id: { type: "string"},
+    name: { type: "string" },
+    disabled: { type: "boolean" },
+    description: { type: "string" },
+  },
+  required: ["role_id", "user_id", "name", "disabled"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
 
 export const UserSchema = {
   $schema: "http://json-schema.org/draft-07/schema",
@@ -181,6 +195,7 @@ export const UserSchema = {
     firstname: { type: "string" },
     lastname: { type: "string" },
     active: { type: "boolean" },
+    Role: {items: RoleSchema, type: "array"},
   },
   required: ["user_id", "username", "firstname", "lastname", "active"],
   additionalProperties: false,
@@ -447,10 +462,6 @@ export const TransactionSummarySchema = {
   ],
   additionalProperties: false,
 } as const satisfies JSONSchema;
-
-
-
-
 
 export const CreateOrderRequestsSchema = {
   $id: "CreateOrderRequestsSchema.json",

@@ -76,19 +76,22 @@ interface TransactionTableProps {
   alertAuth: () => void;
   user: User;
 }
+// const model = new TransactionTableModel();
+// Row Data: The data to be displayed.
 
+// const itemsQuery = useQuery(
+//   DBModel.getItemsQuery(),
+// );
+
+// if (partsError) toast.error("parts: " + partsError);
+// const [savedSort, setSavedSort] = useState<SortConfig[]>();
+// console.log(rowData);
+// const [pageSize, setPageSize] = useState(100);
 export function TransactionsTable({
   alertAuth,
   user,
 }: TransactionTableProps): JSX.Element {
-  // const model = new TransactionTableModel();
-  // Row Data: The data to be displayed.
 
-  // const itemsQuery = useQuery(
-  //   DBModel.getItemsQuery(),
-  // );
-
-  // if (partsError) toast.error("parts: " + partsError);
 
   const navigate = useNavigate();
   const currDate: Date = new Date();
@@ -97,11 +100,8 @@ export function TransactionsTable({
   const [, setRowData] = useState<IRow[]>([]);
   const [summaryData, setSummaryData] = useState<TransactionSummary>();
   const [showPriceCheckModal, setShowPriceCheckModal] = useState(false);
-  // const [savedSort, setSavedSort] = useState<SortConfig[]>();
-  // console.log(rowData);
-  // const [pageSize, setPageSize] = useState(100);
-  const onRowClicked = (e: RowClickedEvent) => {
 
+  const onRowClicked = (e: RowClickedEvent) => {
     navigate(
       `/transaction-details/${e.data.Transaction.transaction_id}?type=${e.data.Transaction.transaction_type}`
     );
@@ -131,7 +131,6 @@ export function TransactionsTable({
   }, [status, data, error, summaryStatus, summaryQueryData, summaryError]);
   console.log(status, data, error);
 
-  // Column Definitions: Defines & controls grid columns.
   const [colDefs] = useState<ColDef<IRow>[]>([
     {
       headerName: "#",
@@ -257,19 +256,45 @@ export function TransactionsTable({
       },
     },
     {
-      headerName: "Submitted",
+      headerName: "Created",
       colId: "submitted",
       valueGetter: (params) => {
-
         if (
           !params.data?.Transaction ||
           params.data?.Transaction.date_created === ""
         ) {
           return "";
         }
-        return params.data.Transaction.date_completed ? timeAgo(new Date(params.data?.Transaction.date_completed)) : timeAgo(new Date(params.data?.Transaction.date_created));
+
+        return timeAgo(new Date(params.data?.Transaction.date_created));
       },
     },
+    {
+      headerName: "Time Since Completion",
+      colId: "time_since_completion",
+      valueGetter: (params) => {
+        if (
+          !params.data?.Transaction ||
+          params.data?.Transaction.date_completed === undefined ||
+          params.data?.Transaction.date_completed === null
+        ) {
+          return "";
+        }
+
+        return (new Date(params.data?.Transaction.date_completed));
+      },
+      cellRenderer: (params: ICellRendererParams) => {
+        if (
+          !params.data?.Transaction ||
+          params.data?.Transaction.date_completed === undefined ||
+          params.data?.Transaction.date_completed === null
+        ) {
+          return "";
+        }
+
+        return timeAgo(new Date(params.data?.Transaction.date_completed));
+      },
+    }
   ]);
 
   const defaultColDef: ColDef = {
@@ -294,6 +319,19 @@ export function TransactionsTable({
       console.log("new alignment", newAlignment);
       setViewType(newAlignment);
       const sortFunc = sortMap.get(newAlignment) ?? clearSort;
+      if (newAlignment === "paid" || newAlignment === "pickup") {
+        gridApiRef.current!.api.applyColumnState({
+          state: [{ colId: "time_since_completion", hide: false }, { colId: "submitted", hide: true }],
+          defaultState: { hide: null },
+        });
+      }
+      else {
+        gridApiRef.current!.api.applyColumnState({
+          state: [{ colId: "time_since_completion", hide: true }, { colId: "submitted", hide: false }],
+          defaultState: { hide: null },
+
+        });
+      }
       sortFunc();
     }
     // gridApiRef.current?.onFilterChanged();
@@ -348,7 +386,7 @@ export function TransactionsTable({
 
   function sortByDateAsc() {
     gridApiRef.current!.api.applyColumnState({
-      state: [{ colId: "submitted", sort: "asc" }],
+      state: [{ colId: "time_since_completion", sort: "desc" }],
       defaultState: { sort: null },
     });
   }
@@ -371,7 +409,6 @@ export function TransactionsTable({
 
 
 
-  // Container: Defines the grid's theme & dimensions.
   return (
     <main style={{ width: "100vw" }}>
       <Button></Button>
@@ -436,11 +473,7 @@ export function TransactionsTable({
               if (transaction.is_completed === false &&
                 transaction.transaction_type !== "retrospec" &&
                 transaction.is_employee === false &&
-                transaction.is_refurb === false ||
-                transaction.is_paid === false &&
-                transaction.is_completed === true
-                && transaction.is_refurb === false
-              )
+                transaction.is_refurb === false) {
                 if (
                   isDaysLess(
                     5,
@@ -458,11 +491,43 @@ export function TransactionsTable({
                 ) {
                   return { backgroundColor: "lightyellow" };
                 } else return { backgroundColor: "white" };
-            }}
+              }
+              else if (
+                transaction.is_paid === false &&
+                transaction.is_completed === true
+                && transaction.is_refurb === false && transaction.date_completed !== null && transaction.date_completed !== undefined) {
+                if (
+                  isDaysLess(
+                    5,
+                    currDate,
+                    new Date(transaction.date_completed)
+                  )
+                ) {
+                  return { backgroundColor: "lightcoral" };
+                } else if (
+                  isDaysLess(
+                    2,
+                    currDate,
+                    new Date(transaction.date_completed)
+                  )
+                ) {
+                  return { backgroundColor: "lightyellow" };
+                } else return { backgroundColor: "white" };
+              }
+
+            }
+            }
             isExternalFilterPresent={isExternalFilterPresent}
             doesExternalFilterPass={doesExternalFilterPass}
             domLayout="autoHeight"
             pagination={viewType === "paid"}
+            onGridReady={(params) => {
+              params.api.sizeColumnsToFit();
+              gridApiRef.current!.api.applyColumnState({
+                state: [{ colId: "time_since_completion", hide: true }, { colId: "submitted", hide: false }],
+                defaultState: { sort: null },
+              });
+            }}
           // paginationPageSize={true}
           />
         </>

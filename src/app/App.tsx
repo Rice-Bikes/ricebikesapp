@@ -23,6 +23,7 @@ function App() {
   // setUser(null);
   // const nav = useNavigate();
 
+
   if (!user) {
     return (
       <>
@@ -88,11 +89,11 @@ function App() {
           </h2>{" "}
         </Button>
       </header>
-      <AuthPrompt
-        expediteAuth={expediteAuth}
-        setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
-        setUser={(user: User) => setUser(user)}
-      />
+        <AuthPrompt
+          expediteAuth={expediteAuth}
+          setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
+          setUser={(user: User) => setUser(user)}
+        />
       <Routes>
         <Route
           path="/"

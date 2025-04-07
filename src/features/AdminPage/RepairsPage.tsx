@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AgGridReact } from "ag-grid-react";
 import { ColDef, ICellRendererParams } from "ag-grid-community";
-import { Repair } from "../model";
+import { Repair } from "../../model"
 import {
     Box,
     Button,
@@ -13,8 +13,8 @@ import {
 } from "@mui/material";
 import { toast } from "react-toastify";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import DBModel from "../model";
-import { queryClient } from "../app/main";
+import DBModel from "../../model";
+import { queryClient } from "../../app/main";
 
 const RepairsPage: React.FC = () => {
     const [repairs, setRepairs] = useState<Repair[]>([]);

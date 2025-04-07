@@ -6,11 +6,13 @@ import {
   DialogActions,
   Button,
   TextField,
+  Grid2,
 } from "@mui/material";
 import DBModel, { User } from "../../model";
 
 import { queryClient } from "../../app/main";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 interface AuthPromptProps {
   expediteAuth: boolean;
@@ -88,25 +90,41 @@ const AuthPrompt = ({
   if (data) {
     setUser(data);
   }
+  const nav = useNavigate();
 
 
   return (
     <>
-      <Button
-        onClick={() => {
-          setOpen(true);
-          queryClient.removeQueries({
-            queryKey: ["user"],
-          });
-        }}
-        variant="contained"
-        sx={{
-          marginLeft: "70vw",
-        }}
-      >
-        {"Current User: " +
-          (data ? data.firstname + " " + data.lastname : "None")}
-      </Button>
+      <Grid2 container spacing={2} sx={{ margin: "0 15vw" }}>
+        <Grid2 size={6}>
+          <Button
+            onClick={() => {
+              nav("/admin");
+            }}
+            variant="contained"
+            hidden
+          >
+            Admin Page
+          </Button>
+        </Grid2>
+        <Grid2 size={2} />
+        <Grid2 size={4} justifyItems={"flex-end"}>
+          <Button
+            onClick={() => {
+              setOpen(true);
+              queryClient.removeQueries({
+                queryKey: ["user"],
+              });
+            }}
+            variant="contained"
+
+          >
+            {"Current User: " +
+              (data ? data.firstname + " " + data.lastname : "None")}
+          </Button>
+        </Grid2>
+      </Grid2>
+
       <Dialog open={open}>
         <DialogTitle>Enter your NetID</DialogTitle>
         <DialogContent>

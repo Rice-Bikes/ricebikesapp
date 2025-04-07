@@ -4,8 +4,9 @@ import { Button, Grid2 } from '@mui/material';
 import DBModel from '../../model';
 import { ToastContainer, toast } from 'react-toastify';
 // import PdfViewer from '../../components/PdfViewer';
-import RepairsPage from '../RepairsPage';
-import ItemsTable from '../ItemCataloguePage';
+import RepairsPage from './RepairsPage';
+import ItemsTable from './ItemCataloguePage';
+import UsersPage from './UsersPage';
 
 const AdminPage: React.FC = () => {
     const [fileContent, setFileContent] = useState<string>('');
@@ -59,14 +60,19 @@ const AdminPage: React.FC = () => {
                 onChange={handlePdfUpload}
             />
             <PdfViewer file={pdfContent} /> */}
-            <Grid2 sx={{ backgroundColor: 'white', padding: '2rem', borderRadius: '1rem', marginBottom: '2rem' }}>
-                <h2>QBP Catalog Refresh</h2>
-                <input type="file" accept=".txt,.csv" onChange={handleFileUpload} />
-                <Button onClick={handleSubmit} disabled={mutation.isPending} type='submit' variant='outlined'>
-                    Upload
-                </Button>
-                {mutation.isError && <p>Error uploading file</p>}
-                {mutation.isSuccess && <p>File uploaded successfully</p>}
+            <Grid2 sx={{ backgroundColor: 'white', padding: '2rem', borderRadius: '1rem', marginBottom: '2rem', height: '100%' }} container spacing={2}>
+                <Grid2 size={4}>
+                    <h2>QBP Catalog Refresh</h2>
+                    <input type="file" accept=".txt,.csv" onChange={handleFileUpload} />
+                    <Button onClick={handleSubmit} disabled={mutation.isPending} type='submit' variant='outlined'>
+                        Upload
+                    </Button>
+                    {mutation.isError && <p>Error uploading file</p>}
+                    {mutation.isSuccess && <p>File uploaded successfully</p>}
+                </Grid2>
+                <Grid2 size={8}>
+                    <UsersPage />
+                </Grid2>
             </Grid2>
             <Grid2 container >
                 <Grid2 size={6} >

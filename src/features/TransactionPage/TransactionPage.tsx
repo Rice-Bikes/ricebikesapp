@@ -30,7 +30,7 @@ import CompleteTransactionDropdown from "./CompleteTransactionDropdown";
 import SetProjectsTypesDropdown from "./SetProjectsTypesDropdown";
 import DeleteTransactionsModal from "./DeleteTransactionsModal";
 
-const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], orderRequest: Part[], isEmployee: boolean) => {
+const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], orderRequest: Part[], isEmployee: boolean, isBeerBike: boolean) => {
   let total = 0;
   if (repairs)
     repairs.forEach((repair) => {
@@ -38,12 +38,12 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], orde
     });
   if (parts)
     parts.forEach((part) => {
-      total += !isEmployee ? part.Item.standard_price : (part.Item.wholesale_cost * 1.06);
+      total += !isEmployee || isBeerBike ? part.Item.standard_price : (part.Item.wholesale_cost * 1.06);
     });
   if (orderRequest)
     console.log("calculating order request cost: ", orderRequest, total);
   orderRequest.forEach((part) => {
-    total += !isEmployee ? part.standard_price : (part.wholesale_cost * 1.06);
+    total += !isEmployee || isBeerBike ? part.standard_price : (part.wholesale_cost * 1.06);
   });
   console.log("total cost: ", total);
   return total;
@@ -283,10 +283,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         is_reserved: reserved,
         is_employee: isEmployee ?? false,
         bike_id: bike?.bike_id,
-        date_completed:
-          transactionData?.date_completed === null && isCompleted
-            ? new Date().toISOString()
-            : transactionData?.date_completed,
+        date_completed: !isCompleted ? null : transactionData?.date_completed === null && isCompleted
+          ? new Date().toISOString()
+          : transactionData?.date_completed,
       } as UpdateTransaction;
 
       // console.log("description after update", updatedTransaction.description);
@@ -592,7 +591,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           repairDetails as RepairDetails[],
           itemDetails as ItemDetails[],
           orderRequestData as Part[],
-          isEmployee
+          isEmployee,
+          beerBike ?? false
         )
       );
     }
@@ -603,7 +603,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     itemDetailsIsFetching,
     orderRequestData,
     orderRequestIsFetching,
-    isEmployee
+    isEmployee,
+    beerBike
   ]);
 
   if (repairsLoading || partsLoading || transactionLoading) {
@@ -987,7 +988,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                   }}
                 >
                   <span>
-                    {part.Item.name} - ${!isEmployee ? part.Item.standard_price.toFixed(2) : (part.Item.wholesale_cost * 1.06).toFixed(2)}
+                    {part.Item.name} - ${!isEmployee || beerBike ? part.Item.standard_price.toFixed(2) : (part.Item.wholesale_cost * 1.06).toFixed(2)}
                   </span>
                   <Stack direction="row" spacing={2} sx={{ padding: " 0 2px" }}>
                     <Button
@@ -1024,7 +1025,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                   }}
                 >
                   <span>
-                    {part.name} - ${!isEmployee ? part.standard_price.toFixed(2) : (part.wholesale_cost * 1.06).toFixed(2)}
+                    {part.name} - ${!isEmployee || beerBike ? part.standard_price.toFixed(2) : (part.wholesale_cost * 1.06).toFixed(2)}
                   </span>
                   <Stack direction="row" spacing={2} sx={{ padding: " 0 2px" }}>
                     <Button
@@ -1169,7 +1170,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                       itemDetails.map((part: ItemDetails) => (
                         <ListItem key={part.transaction_detail_id}>
                           {part.Item.name} - $
-                          {!isEmployee ? part.Item.standard_price.toFixed(2) : (part.Item.wholesale_cost * 1.06).toFixed(2)}
+                          {!isEmployee || beerBike ? part.Item.standard_price.toFixed(2) : (part.Item.wholesale_cost * 1.06).toFixed(2)}
                         </ListItem>
                       ))
                     )}
@@ -1226,12 +1227,13 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             {!isCompleted ? (
               <CompleteTransactionDropdown
                 sendEmail={() => handleMarkDone(true)}
-                disabled={!allRepairsDone() || repairDetails && repairDetails.length === 0 && searchParams.get("type") !== "Merch"}
+                disabled={!allRepairsDone() || repairDetails && repairDetails.length === 0 && (searchParams.get("type") !== "Merch" || searchParams.get("type") !== "Refurb")}
                 completeTransaction={() => handleMarkDone(false)}
               />
             ) : <Button
               onClick={() => {
                 setIsCompleted(false)
+
                 queryClient.invalidateQueries({
                   queryKey: ["transaction", transaction_id],
                 });

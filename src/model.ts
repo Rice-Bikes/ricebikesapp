@@ -676,7 +676,7 @@ class DBModel {
     fetch(`${hostname}/users/${netid}`)
       .then((response) => response.json())
       .then((itemsData: unknown) => {
-        // console.log("Raw users Data:", itemsData);
+        console.log("Raw users Data:", itemsData);
         if (!DBModel.validateObjectResponse(itemsData)) {
           throw new Error("Invalid user response");
         }
@@ -696,6 +696,94 @@ class DBModel {
       })
       .catch((error) => {
         throw new Error("Error loading server data: " + error); // More detailed error logging
+      });
+  public static fetchUsers = async () =>
+    fetch(`${hostname}/users`)
+      .then((response) => response.json())
+      .then((itemsData: unknown) => {
+        console.log("Raw users Data:", itemsData);
+        if (!DBModel.validateArrayResponse(itemsData)) {
+          throw new Error("Invalid user response");
+        }
+        if (!itemsData.success) {
+          throw new Error("Failed to load users");
+        }
+        // console.log("users Array Data:", itemsData.responseObject);
+        return itemsData.responseObject;
+      })
+      .then((usersData: unknown[]) => {
+        console.log("Mapped users Data:", usersData);
+        usersData.forEach((part) => {
+          if (!DBModel.validateUser(part)) {
+            console.log("Invalid user:", part);
+            throw new Error("Invalid user found");
+          }
+        });
+        return usersData as User[];
+      })
+      .catch((error) => {
+        throw new Error("Error loading server data: " + error); // More detailed error logging
+      });
+  public static createUser = async (user: User) =>
+    fetch(`${hostname}/users`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(user),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post user");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error posting user data: " + error); // More detailed error logging
+      });
+  public static updateUser = async (user: User) =>
+    fetch(`${hostname}/users/${user.user_id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(user),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to update user");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error patching user data: " + error); // More detailed error logging
+      });
+  public static deleteUser = async (netid: string) =>
+    fetch(`${hostname}/users/${netid}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to delete user");
+        }
+      })
+      .catch((error) => {
+        throw new Error("Error deleting user data: " + error); // More detailed error logging
       });
 
   public static fetchTransactionDetails = async (

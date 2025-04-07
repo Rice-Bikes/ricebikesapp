@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AgGridReact } from "ag-grid-react";
 import { ColDef, ICellRendererParams } from "ag-grid-community";
-import { Part } from "../model";
+import { Part } from "../../model";
 import {
     Box,
     Button,
@@ -11,9 +11,9 @@ import {
 } from "@mui/material";
 import { toast } from "react-toastify";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import DBModel from "../model";
-import { queryClient } from "../app/main";
-import ItemPageModal from "../components/ItemPage";
+import DBModel from "../../model";
+import { queryClient } from "../../app/main";
+import ItemPageModal from "../../components/ItemPage";
 
 const ItemsTable: React.FC = () => {
     const [items, setItems] = useState<Part[]>([]);
