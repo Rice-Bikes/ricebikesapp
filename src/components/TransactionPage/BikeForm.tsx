@@ -5,19 +5,61 @@ import DBModel, { Bike } from "../../model";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../app/main";
 
+interface FormBike {
+  bike_id?: string | null | undefined;
+  date_created?: string | null;
+  make: string;
+  model: string;
+  description: string;
+}
 interface NewBikeFormProps {
   onBikeCreated: (newBike: Bike) => void;
   isOpen: boolean;
   onClose: () => void;
+  bike: FormBike;
 }
 
-function NewBikeForm({ onBikeCreated, isOpen, onClose }: NewBikeFormProps) {
-  const [formState, setFormState] = useState({
-    make: "",
-    model: "",
-    description: "",
+interface BikeFormState {
+  make: string;
+  model: string;
+  description: string;
+}
+
+const compareBikes = (bike1: FormBike, bike2: FormBike) => {
+  return bike1.bike_id === bike2.bike_id &&
+    bike1.date_created === bike2.date_created &&
+    bike1.make === bike2.make &&
+    bike1.model === bike2.model &&
+    bike1.description === bike2.description;
+}
+
+function NewBikeForm({ onBikeCreated, isOpen, onClose, bike = {
+  bike_id: "",
+  date_created: "",
+  make: "",
+  model: "",
+  description: "",
+} }: NewBikeFormProps) {
+
+
+  const [formState, setFormState] = useState<BikeFormState>({
+    make: bike.make,
+    model: bike.model,
+    description: bike.description,
   });
-  // const [currentStep, setCurrentStep] = useState(1);
+
+  const [currBike, setCurrBike] = useState<FormBike>(bike);
+  if (!compareBikes(bike, currBike)) {
+    console.log("tracking prop change", bike, currBike, bike === currBike, typeof bike, typeof currBike);
+    setCurrBike(() => bike);
+    setFormState(formState => ({
+      ...formState,
+      make: bike.make,
+      model: bike.model,
+      description: bike.description,
+    }));
+  }
+  console.log(bike, formState);
   const handleTextFieldChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -54,13 +96,6 @@ function NewBikeForm({ onBikeCreated, isOpen, onClose }: NewBikeFormProps) {
 
     createBike.mutate(newCustomer);
   };
-  // const handleNext = () => {
-  //   if (currentStep < 3) {
-  //     setCurrentStep(currentStep + 1);
-  //     console.log("incrementing step");
-  //     console.log(currentStep);
-  //   }
-  // };
   if (!isOpen) return null;
   return (
     <Dialog

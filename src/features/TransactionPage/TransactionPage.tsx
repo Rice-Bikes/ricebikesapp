@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { Button, Stack, List, ListItem, Grid2 } from "@mui/material";
+import { Button, Stack, List, ListItem, Grid2, Skeleton } from "@mui/material";
 import { OrderRequest, User } from "../../model";
 import { useNavigate } from "react-router-dom";
 import Item from "../../components/TransactionPage/HeaderItem";
 import Notes from "../../components/TransactionPage/Notes";
 import { RowClickedEvent } from "ag-grid-community";
+import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import DBModel, {
   ItemDetails,
   Part,
@@ -29,6 +30,7 @@ import TransactionsLogModal from "../../components/TransactionsLogModal";
 import CompleteTransactionDropdown from "./CompleteTransactionDropdown";
 import SetProjectsTypesDropdown from "./SetProjectsTypesDropdown";
 import DeleteTransactionsModal from "./DeleteTransactionsModal";
+import CheckoutModal from "./CheckoutModal";
 
 const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], orderRequest: Part[], isEmployee: boolean, isBeerBike: boolean) => {
   let total = 0;
@@ -48,6 +50,22 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], orde
   console.log("total cost: ", total);
   return total;
 };
+
+const checkStatusOfRetrospec = (transaction: Transaction) => {
+
+  if (transaction.is_urgent) {
+    return 1;
+  }
+  else if (transaction.is_waiting_on_email) {
+    return 2;
+  }
+  else if (transaction.is_completed) {
+    return 3;
+  }
+  return 0;
+}
+
+//["Arrived", "Building", "Completed", "For Sale"]
 
 interface TransactionDetailProps {
   propUser: User;
@@ -131,7 +149,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   if (orderRequestError) toast.error("orderRequest: " + orderRequestError);
 
 
-  const [bike, setBike] = useState<Bike>();
+  const [bike, setBike] = useState<Bike>(null);
   const user: User = propUser; //queriedUser ?? { user_id: "1" };
   // const [customer, setCustomer] = useState(transaction?.Customer);
   const [transactionType, setTransactionType] = useState<string>(
@@ -160,7 +178,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   // const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
   useEffect(() => {
     if (transactionData?.Customer?.email)
-      checkUser.mutate(transactionData.Customer.email.split("@")[0]);
+      if (transactionType !== "Retrospec") checkUser.mutate(transactionData.Customer.email.split("@")[0]);
   }, [transactionData]);
 
   const sendCheckoutEmail = useMutation({
@@ -486,6 +504,34 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     nav("/");
   };
 
+  const handleRetrospecStatusChange = (newStatus: string) => {
+    switch (newStatus) {
+      case "Building":
+        setIsRefurb(true);
+
+        break;
+      case "Completed":
+        setIsRefurb(false);
+        setWaitEmail(true);
+        break;
+      case "For Sale":
+        setWaitEmail(false);
+        setIsCompleted(true);
+        break;
+      default:
+        setIsCompleted(false);
+        setWaitEmail(false);
+        setIsRefurb(false);
+        break;
+    }
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["transactions"],
+    });
+  }
+
   const handleTransactionTypeChange = (newTransactionType: string) => {
     setSearchParams((params) => {
       params.set("type", newTransactionType);
@@ -517,7 +563,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const handlePriority = () => {
     console.log("priority: ", priority);
 
-    if (user.firstname !== "Renee") setPriority(!priority);
+    setPriority(!priority);
     queryClient.invalidateQueries({
       queryKey: ["transaction", transaction_id],
     });
@@ -560,8 +606,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     });
 
   }
-
-
 
   const handleCheckout = () => {
     setShowCheckout(true);
@@ -608,7 +652,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   ]);
 
   if (repairsLoading || partsLoading || transactionLoading) {
-    return <p>Loading data...</p>;
+    return <Skeleton />;
   }
 
   if (repairError || partsError || transactionError) {
@@ -651,7 +695,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   };
 
   if (transactionData === undefined || transactionData.Customer === undefined) {
-    return <p>Loading...</p>;
+    return <Skeleton />;
   }
 
   if (transactionData.Customer === null) {
@@ -659,39 +703,16 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   }
   return (
     <div
-      style={{
-        padding: "0 10vw",
-        marginBottom: "20px",
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        width: "90%%",
-      }}
+      className="transaction-container"
     >
       <Stack
-        style={{
-          marginBottom: "20px",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "flex-start",
-          // borderBottom: "1px solid black",
-          paddingBottom: "20px",
-          backgroundColor: "white",
-          padding: "20px",
-          borderRadius: "10px",
-          marginTop: "20px",
-        }}
+        className="transaction-header"
       >
         {/* <h2>Transaction Details</h2> */}
         <Grid2 container>
           <Grid2
             size={6}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              gap: "10px",
-            }}
+            className="transaction-options-container"
           >
             <h2
               style={{
@@ -705,12 +726,20 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               {transactionData.Customer.last_name}
             </h2>
             <TransactionOptionDropdown
-              options={["Inpatient", "Outpatient", "Merch"]}
+              options={["Inpatient", "Outpatient", "Merch", "Retrospec"]}
+              colors={["green", "blue", "gray", "orange"]}
               setTransactionType={handleTransactionTypeChange}
-              initialOption={["inpatient", "outpatient", "merch"].indexOf(
+              initialOption={["inpatient", "outpatient", "merch", "retrospec"].indexOf(
                 transactionType.toLowerCase()
               )}
             />
+            {transactionType.toLowerCase() === "retrospec" &&
+              <TransactionOptionDropdown
+                options={["Arrived", "Building", "Completed", "For Sale"]}
+                colors={["gray"]}
+                setTransactionType={handleRetrospecStatusChange}
+                initialOption={checkStatusOfRetrospec(transactionData)}
+              />}
             {beerBike && <Button
               style={{
                 backgroundColor: "turquoise",
@@ -726,7 +755,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             > Beer Bike</Button>
             }
 
-            {refurb && <Button
+            {(refurb && transactionType !== "retrospec") && <Button
               style={{
                 backgroundColor: "beige",
                 color: "black",
@@ -756,6 +785,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               display: "flex",
               alignItems: "center",
               justifyContent: "flex-end",
+              gap: "5px"
             }}
           >
             <TransactionsLogModal
@@ -799,12 +829,55 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         <Item style={{ color: "black" }}>
           {" "}
           {transactionData.Bike ? (
-            <>
-              <h2>
-                {transactionData.Bike.make + " " + transactionData.Bike.model}
-              </h2>
-              <h2>{transactionData.Bike.description}</h2>
-            </>
+            <Grid2 container>
+              <Grid2 size={2} sx={{ display: "flex", justifyContent: "flex-start", margin: "30px 0" }}>
+                <Button
+                  variant="contained"
+                  sx={{
+                    backgroundColor: "gray",
+                    marginLeft: "10px",
+                  }}
+                  onClick={() => {
+                    setBike({
+                      ...bike,
+                      description: transactionData.Bike?.description ?? "",
+                      make: transactionData.Bike?.make ?? "",
+                      model: transactionData.Bike?.model ?? "",
+                    });
+                    setShowBikeForm(true);
+                  }}
+                >
+                  <ModeEditIcon />
+                </Button>
+              </Grid2>
+              <Grid2 size={8}>
+                <h2>
+                  {transactionData.Bike.make + " " + transactionData.Bike.model}
+                </h2>
+                <h2>{transactionData.Bike.description}</h2>
+              </Grid2>
+              <Grid2 size={2} sx={{ display: "flex", justifyContent: "flex-end", margin: "30px 0" }}>
+                {/* <Button
+                  variant="contained"
+                  sx={{
+                    backgroundColor: "gray",
+                    marginRight: "10px",
+                  }}
+                  onClick={() => {
+                    setBike({
+                      ...bike,
+                      description: transactionData.Bike?.description ?? "",
+                      make: transactionData.Bike?.make ?? "",
+                      model: transactionData.Bike?.model ?? "",
+                    });
+                    setShowBikeForm(true);
+                  }}
+                >
+                  <ModeEditIcon />
+                </Button> */}
+              </Grid2>
+
+            </Grid2>
           ) : (
             <Button
               color="primary"
@@ -826,6 +899,11 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               queryKey: ["transactions"],
             });
           }}
+          bike={bike === null ? {
+            make: "",
+            model: "",
+            description: "",
+          } : bike}
         />
       </Stack>
       <hr />
@@ -969,8 +1047,11 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 </ListItem>
               ))
             ) : (
-              <p> loading..</p>
-            )}
+              <Skeleton
+                variant="rectangular"
+                animation="wave"
+                style={{ marginBottom: "10px", opacity: 0.5 }}
+              />)}
           </List>
         </Grid2>
 
@@ -1010,7 +1091,11 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 </ListItem>
               ))
             ) : (
-              <p> loading...</p>
+              <Skeleton
+                variant="rectangular"
+                animation="wave"
+                style={{ marginBottom: "10px", opacity: 0.5 }}
+              />
             )}
 
             {!orderRequestLoading && orderRequestData ? (
@@ -1045,7 +1130,11 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 </ListItem>
               ))
             ) : (
-              <p> loading...</p>
+              <Skeleton
+                variant="rectangular"
+                animation="wave"
+                style={{ marginBottom: "10px", opacity: 0.5 }}
+              />
             )}
           </List>
         </Grid2>
@@ -1151,79 +1240,17 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             >
               Checkout
             </Button>
-            {showCheckout && (
-              <div className="checkout">
-                <div className="checkout-content">
-                  <h2>Repairs</h2>
-                  <ul>
-                    {repairDetails.map((repair: RepairDetails) => (
-                      <ListItem key={repair.transaction_detail_id}>
-                        {repair.Repair.name} - ${repair.Repair.price.toFixed(2)}
-                      </ListItem>
-                    ))}
-                  </ul>
-                  <h2>Parts</h2>
-                  <ul>
-                    {itemDetails === undefined ? (
-                      <></>
-                    ) : (
-                      itemDetails.map((part: ItemDetails) => (
-                        <ListItem key={part.transaction_detail_id}>
-                          {part.Item.name} - $
-                          {!isEmployee || beerBike ? part.Item.standard_price.toFixed(2) : (part.Item.wholesale_cost * 1.06).toFixed(2)}
-                        </ListItem>
-                      ))
-                    )}
-                  </ul>
-                  <h3>
-                    ${(totalPrice * 1.0825).toFixed(2)}
-                  </h3>
-                  <Button
-                    onClick={handlePaid}
-                    style={{
-                      backgroundColor: "green",
-                      cursor: "pointer",
-                      color: "white",
-                      height: "5vh"
-                    }}
-                  >
-                    Finish
-                  </Button>
-                  <Button onClick={closeCheckout}>Back</Button>
-                  {/* </Grid2> */}
-
-                </div>
-              </div>
-            )}
-            <style>
-              {`
-                .checkout {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background-color: rgba(116, 114, 114, 0.7);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 100;
-                }
-                .checkout-content {
-                    background-color: white;
-                    padding: 20px;
-                    border-radius: 5px;
-                    text-align: center;
-                }
-                button {
-                    padding: 10px 20px;
-                    font-size: 16px;
-                    cursor: pointer;
-                    color: white
-                }
-                `}
-            </style>
-
+            {showCheckout &&
+              <CheckoutModal
+                repairDetails={repairDetails as RepairDetails[]}
+                itemDetails={itemDetails as ItemDetails[]}
+                totalPrice={totalPrice}
+                isEmployee={isEmployee}
+                beerBike={beerBike ?? false}
+                handlePaid={handlePaid}
+                closeCheckout={closeCheckout}
+              />
+            }
             {!isCompleted ? (
               <CompleteTransactionDropdown
                 sendEmail={() => handleMarkDone(true)}
@@ -1232,8 +1259,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               />
             ) : <Button
               onClick={() => {
-                setIsCompleted(false)
-
+                setIsCompleted(false);
+                setPaid(false);
                 queryClient.invalidateQueries({
                   queryKey: ["transaction", transaction_id],
                 });
@@ -1252,33 +1279,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             </Button>
 
             }
-
-            <style>
-              {`
-                .markDone {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background-color: rgba(0, 0, 0, 0.5);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                }
-                .markDone-content {
-                    background-color: grey;
-                    padding: 20px;
-                    border-radius: 5px;
-                    text-align: center;
-                }
-                Button {
-                    padding: 10px 20px;
-                    font-size: 16px;
-                    cursor: pointer;
-                }
-                `}
-            </style>
           </Grid2>
         </Grid2>
       </Grid2>

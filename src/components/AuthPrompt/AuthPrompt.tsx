@@ -1,15 +1,6 @@
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Grid2,
-} from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Grid2 } from "@mui/material";
 import DBModel, { User } from "../../model";
-
 import { queryClient } from "../../app/main";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -102,7 +93,7 @@ const AuthPrompt = ({
               nav("/admin");
             }}
             variant="contained"
-            hidden
+            style={{ display: "none" }}
           >
             Admin Page
           </Button>
