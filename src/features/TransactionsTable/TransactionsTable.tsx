@@ -522,11 +522,11 @@ export function TransactionsTable({
             domLayout="autoHeight"
             pagination={viewType === "paid"}
             onGridReady={(params) => {
-              params.api.sizeColumnsToFit();
               gridApiRef.current!.api.applyColumnState({
                 state: [{ colId: "time_since_completion", hide: true }, { colId: "submitted", hide: false }],
                 defaultState: { sort: null },
               });
+              params.api.sizeColumnsToFit();
             }}
           // paginationPageSize={true}
           />

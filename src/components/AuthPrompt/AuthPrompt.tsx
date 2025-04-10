@@ -103,6 +103,7 @@ const AuthPrompt = ({
             }}
             variant="contained"
             hidden
+            sx={{ display: "none" }}
           >
             Admin Page
           </Button>
