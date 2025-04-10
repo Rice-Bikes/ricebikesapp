@@ -64,29 +64,6 @@ function NewRetrospecForm({
         console.log("customers", data);
     }, [data, status]);
 
-    //   const createCustomer = useMutation({
-    //     mutationFn: (newCustomer: CreateCustomer) => {
-    //       return DBModel.createCustomer(newCustomer);
-    //     },
-
-    //     onSuccess: (data: Customer) => {
-    //       console.log("Customer created", data);
-    //       queryClient.invalidateQueries({
-    //         queryKey: ["customers"],
-    //       });
-
-    //       const submittedTransaction: CreateTransaction = {
-    //         transaction_type: t_type,
-    //         customer_id: data.customer_id, // TODO: need to figure this out
-    //         is_employee: false, // TODO: should be based on if custy is recognized as employee
-    //       };
-    //       CreateTransaction.mutate(submittedTransaction);
-    //     },
-    //     onError: (error) => {
-    //       console.error("Error creating customer", error);
-    //     },
-    //   });
-
 
     const CreateTransaction = useMutation({
         mutationFn: (newTransaction: CreateTransaction) => {

@@ -32,6 +32,8 @@ import SetProjectsTypesDropdown from "./SetProjectsTypesDropdown";
 import DeleteTransactionsModal from "./DeleteTransactionsModal";
 import CheckoutModal from "./CheckoutModal";
 
+const debug: boolean = import.meta.env.VITE_DEBUG
+
 const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], orderRequest: Part[], isEmployee: boolean, isBeerBike: boolean) => {
   let total = 0;
   if (repairs)
@@ -43,11 +45,11 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], orde
       total += !isEmployee || isBeerBike ? part.Item.standard_price : (part.Item.wholesale_cost * 1.06);
     });
   if (orderRequest)
-    console.log("calculating order request cost: ", orderRequest, total);
+    if (debug) console.log("calculating order request cost: ", orderRequest, total);
   orderRequest.forEach((part) => {
     total += !isEmployee || isBeerBike ? part.standard_price : (part.wholesale_cost * 1.06);
   });
-  console.log("total cost: ", total);
+  if (debug) console.log("total cost: ", total);
   return total;
 };
 
@@ -142,7 +144,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       return DBModel.getOrderRequests(transaction_id);
     },
     select: (data: OrderRequest[]) => {
-      console.log("converting incoming data", data);
+      if (debug) console.log("converting incoming data", data);
       return data.map((dataItem: OrderRequest) => dataItem.Item) as Part[] ?? Array<Part>()
     },
   });
@@ -212,14 +214,14 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       transaction_id: string;
       transaction: UpdateTransaction;
     }) => {
-      console.log("calling update transaction on dbmodel");
+      if (debug) console.log("calling update transaction on dbmodel");
       return DBModel.updateTransaction(input.transaction_id, input.transaction);
     },
     onSuccess: (data: Transaction) => {
       queryClient.invalidateQueries({
         queryKey: ["transaction", transaction_id],
       });
-      console.log("transaction updated", data);
+      if (debug) console.log("transaction updated", data);
     },
     onError: (error) => {
       toast.error("error updating transaction" + error);
@@ -242,14 +244,14 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       queryClient.removeQueries({
         queryKey: ["transactionLogs", transactionData?.transaction_num],
       });
-      console.log("calling update transaction on dbmodel", input.status);
+      if (debug) console.log("calling update transaction on dbmodel", input.status);
       return DBModel.updateTransactionDetails(input.transaction_detail_id, input.status);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: ["transactionDetails", transaction_id, "repair"],
       });
-      console.log("repair updated", data);
+      if (debug) console.log("repair updated", data);
     },
     onError: (error) => {
       toast.error("error updating repair" + error);
@@ -261,7 +263,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       return DBModel.fetchUser(net_id);
     },
     onSuccess: (data) => {
-      console.log("User found", data);
+      if (debug) console.log("User found", data);
       setIsEmployee(true)
     },
     onError: (error) => {
@@ -270,7 +272,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     }
   });
   useEffect(() => {
-    console.log(
+    if (debug) console.log(
       "waiting on data",
       transactionStatus,
       description === "",
@@ -284,7 +286,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       isCompleted !== undefined
 
     ) {
-      // console.log("description before update: ", description);
+      // if (debug) console.log("description before update: ", description);
 
 
       const updatedTransaction = {
@@ -306,12 +308,12 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           : transactionData?.date_completed,
       } as UpdateTransaction;
 
-      // console.log("description after update", updatedTransaction.description);
+      // if (debug) console.log("description after update", updatedTransaction.description);
       updateTransaction.mutate({
         transaction_id: transaction_id,
         transaction: updatedTransaction,
       });
-      console.log("submitted update");
+      if (debug) console.log("submitted update");
       // setCurrentTransaction({
       //   ...transactionData,
       //   Transaction: transactionData,
@@ -380,7 +382,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       queryClient.invalidateQueries({
         queryKey: ["transactionDetails", transaction_id, "repair"],
       });
-      console.log("repair added");
+      if (debug) console.log("repair added");
     },
   });
 
@@ -403,7 +405,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       queryClient.invalidateQueries({
         queryKey: ["transactionDetails", transaction_id, "repair"],
       });
-      console.log("repair deleted");
+      if (debug) console.log("repair deleted");
     },
   });
 
@@ -431,7 +433,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       queryClient.invalidateQueries({
         queryKey: ["transactionDetails", transaction_id, "item"],
       });
-      console.log("repair added");
+      if (debug) console.log("repair added");
     },
   });
 
@@ -454,7 +456,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       queryClient.invalidateQueries({
         queryKey: ["transactionDetails", transaction_id, "item"],
       });
-      console.log("part deleted");
+      if (debug) console.log("part deleted");
     },
   });
 
@@ -478,7 +480,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       queryClient.invalidateQueries({
         queryKey: ["transactions"],
       });
-      console.log("transaction deleted");
+      if (debug) console.log("transaction deleted");
       nav("/");
     },
   });
@@ -560,7 +562,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   };
 
   const handlePriority = () => {
-    console.log("priority: ", priority);
+    if (debug) console.log("priority: ", priority);
 
     setPriority(!priority);
     queryClient.invalidateQueries({
@@ -572,7 +574,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   };
 
   const handleNuclear = () => {
-    console.log("nuclear: ", nuclear);
+    if (debug) console.log("nuclear: ", nuclear);
     setNuclear(!nuclear);
     queryClient.invalidateQueries({
       queryKey: ["transaction", transaction_id],
@@ -615,7 +617,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   };
 
   const handleSaveNotes = (newNotes: string) => {
-    console.log("new notes: ", newNotes);
+    if (debug) console.log("new notes: ", newNotes);
     queryClient.resetQueries({
       queryKey: ["transactionLogs", transaction_id],
     });
@@ -660,7 +662,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const handleAddRepair = (event: RowClickedEvent) => {
     const repair = event.data as Repair;
-    console.log("handle add repair");
+    if (debug) console.log("handle add repair");
     addRepair.mutate(repair);
   };
 
@@ -687,10 +689,10 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   };
 
-  const allRepairsDone = () => {
+  const blockCompletion = () => {
     if (!repairDetails) return false;
-    if (repairDetails.length === 0 && (searchParams.get("type") === "Merch" || searchParams.get("type") === "Refurb")) return false;
-    console.log("repair details: ", repairDetails);
+    if (repairDetails.length === 0 && (searchParams.get("type") === "Merch" || refurb)) return false;
+    if (debug) console.log("repair details: ", repairDetails);
     return repairDetails.every((repair: RepairDetails) => repair.completed);
   };
 
@@ -755,7 +757,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             > Beer Bike</Button>
             }
 
-            {(refurb && transactionType !== "retrospec") && <Button
+            {(refurb && transactionType.toLowerCase() !== "retrospec") && <Button
               style={{
                 backgroundColor: "beige",
                 color: "black",
@@ -1254,7 +1256,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             {!isCompleted ? (
               <CompleteTransactionDropdown
                 sendEmail={() => handleMarkDone(true)}
-                disabled={!allRepairsDone() || repairDetails && repairDetails.length === 0 && (searchParams.get("type") !== "Merch" || searchParams.get("type") !== "Refurb")}
+                disabled={blockCompletion()}
                 completeTransaction={() => handleMarkDone(false)}
               />
             ) : <Button

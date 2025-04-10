@@ -84,6 +84,8 @@ interface TransactionTableProps {
   user: User;
 }
 
+const debug: boolean = import.meta.env.VITE_DEBUG
+
 export function TransactionsTable({
   alertAuth,
   user,
@@ -126,7 +128,7 @@ export function TransactionsTable({
       setSummaryData(summaryQueryData as TransactionSummary);
     }
   }, [status, data, error, summaryStatus, summaryQueryData, summaryError]);
-  console.log(status, data, error);
+  if (debug) console.log(status, data, error);
 
   const [colDefs] = useState<ColDef<IRow>[]>([
     {
@@ -172,7 +174,6 @@ export function TransactionsTable({
           refurb,
         } = params.value;
 
-        console.log("viewType", viewType);
         if (transaction_type.toLowerCase() !== "retrospec") {
           return (
             <Stack
@@ -349,7 +350,7 @@ export function TransactionsTable({
     newAlignment: string
   ) => {
     if (newAlignment !== null) {
-      console.log("new alignment", newAlignment);
+      if (debug) console.log("new alignment", newAlignment);
       setViewType(newAlignment);
       const sortFunc = sortMap.get(newAlignment) ?? clearSort;
       if (newAlignment === "paid" || newAlignment === "pickup") {
@@ -376,10 +377,10 @@ export function TransactionsTable({
   }
 
   function doesExternalFilterPass(node: IRowNode) {
-    // console.log(node);
+    // if (debug) console.log(node);
     const transaction = node.data.Transaction as Transaction;
     if (transaction.transaction_num === 16279) {
-      console.log("transaction", transaction);
+      if (debug) console.log("transaction", transaction);
     }
     return (
       (viewType === "retrospec" &&

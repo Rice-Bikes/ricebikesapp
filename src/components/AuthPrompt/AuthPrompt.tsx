@@ -11,6 +11,8 @@ interface AuthPromptProps {
   setUser: (user: User) => void;
 }
 
+const debug: boolean = import.meta.env.VITE_DEBUG
+
 const AuthPrompt = ({
   expediteAuth,
   setExpediteAuth: setExpeditAuth,
@@ -54,9 +56,9 @@ const AuthPrompt = ({
   });
 
   useEffect(() => {
-    console.log(data);
+    if (debug) console.log(data);
     if (!error && status !== "pending" && data) {
-      console.log("current user is submitted, closing dialog");
+      if (debug) console.log("current user is submitted, closing dialog");
       setOpen(false);
     }
   }, [netId, data, status, error]);
