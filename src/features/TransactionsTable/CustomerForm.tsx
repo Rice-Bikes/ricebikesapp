@@ -107,7 +107,10 @@ function NewTransactionForm({
 
   const CreateTransaction = useMutation({
     mutationFn: (newTransaction: CreateTransaction) => {
-      return DBModel.postTransaction(newTransaction);
+      return DBModel.postTransaction(newTransaction).then((data) => {
+        console.log("Transaction created", data);
+        return data;
+      });
     },
     onSuccess: (data) => {
       onTransactionCreated(data);
@@ -115,6 +118,7 @@ function NewTransactionForm({
       queryClient.invalidateQueries({
         queryKey: ["transactions"],
       });
+
       // onTransactionCreated(data);
       onClose();
     },

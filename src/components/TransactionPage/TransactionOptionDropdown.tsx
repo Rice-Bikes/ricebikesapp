@@ -12,6 +12,7 @@ import {
 
 interface TransactionOptionDropdownProps {
   options: string[];
+  colors: string[];
   setTransactionType: (type: string) => void;
   initialOption: number;
 }
@@ -20,6 +21,7 @@ const TransactionOptionDropdown: React.FC<TransactionOptionDropdownProps> = ({
   options,
   setTransactionType,
   initialOption,
+  colors,
 }) => {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
@@ -69,11 +71,7 @@ const TransactionOptionDropdown: React.FC<TransactionOptionDropdownProps> = ({
           onClick={handleToggle}
           sx={{
             backgroundColor:
-              selectedIndex === 0
-                ? "green"
-                : selectedIndex === 1
-                ? "blue"
-                : "gray",
+              colors[selectedIndex] ?? "gray",
           }}
         >
           {options[selectedIndex]}

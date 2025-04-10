@@ -18,16 +18,12 @@ import type {
   ICellRendererParams,
   IRowNode,
 } from "ag-grid-community";
-import CreateTransactionDropdown from "./TransactionTypeDropdown"; // Create Transaction Dropdown Component
-import "./TransactionsTable.css"; // CSS Stylesheet
+import CreateTransactionDropdown from "./TransactionTypeDropdown";
+import "./TransactionsTable.css";
 import { Transaction, Bike, Customer, TransactionSummary, OrderRequest, User } from "../../model";
 import { useNavigate } from "react-router-dom";
 import DBModel from "../../model";
 import PriceCheckModal from "../../components/PriceCheckModal";
-// import { queryClient } from "../../app/main";
-// import SearchModal from "../../components/TransactionPage/SearchModal";
-
-// Row Data Interface
 export interface IRow {
   Transaction: Transaction;
   Customer: Customer;
@@ -35,14 +31,6 @@ export interface IRow {
   Bike?: Bike;
 }
 
-// interface SortConfig {
-//   colId: string;
-//   sort: "asc" | "desc" | null | undefined;
-//   sortIndex: number | null | undefined;
-
-// }
-
-// Creating new transaction
 
 const isDaysLess = (numDays: number, date1: Date, date2: Date): boolean => {
   const twoDaysInMillis = numDays * 24 * 60 * 60 * 1000; // Two days in milliseconds
@@ -76,17 +64,7 @@ interface TransactionTableProps {
   alertAuth: () => void;
   user: User;
 }
-// const model = new TransactionTableModel();
-// Row Data: The data to be displayed.
 
-// const itemsQuery = useQuery(
-//   DBModel.getItemsQuery(),
-// );
-
-// if (partsError) toast.error("parts: " + partsError);
-// const [savedSort, setSavedSort] = useState<SortConfig[]>();
-// console.log(rowData);
-// const [pageSize, setPageSize] = useState(100);
 export function TransactionsTable({
   alertAuth,
   user,
@@ -96,7 +74,7 @@ export function TransactionsTable({
   const navigate = useNavigate();
   const currDate: Date = new Date();
   const [viewType, setViewType] = useState("main");
-  const gridApiRef = useRef<AgGridReact>(null); // <= defined useRef for gridApi
+  const gridApiRef = useRef<AgGridReact>(null);
   const [, setRowData] = useState<IRow[]>([]);
   const [summaryData, setSummaryData] = useState<TransactionSummary>();
   const [showPriceCheckModal, setShowPriceCheckModal] = useState(false);
@@ -333,6 +311,7 @@ export function TransactionsTable({
         });
       }
       sortFunc();
+      gridApiRef.current!.api.sizeColumnsToFit();
     }
     // gridApiRef.current?.onFilterChanged();
   };
@@ -352,6 +331,7 @@ export function TransactionsTable({
         transaction.is_paid === false &&
         transaction.is_completed === true
         && transaction.is_refurb === false
+        && transaction.transaction_type !== "retrospec"
         && !isDaysLess(183, new Date(transaction.date_created), new Date())
       ) ||
       (viewType === "paid" && transaction.is_paid === true) ||
@@ -359,7 +339,7 @@ export function TransactionsTable({
         transaction.is_completed === false &&
         transaction.transaction_type !== "retrospec" &&
         transaction.is_employee === false &&
-        transaction.is_refurb === false) ||
+        transaction.is_refurb === false || transaction.transaction_type === "retrospec" && transaction.is_refurb) ||
       (viewType === "employee" &&
         transaction.is_employee === true &&
         transaction.is_completed === false) ||
@@ -370,12 +350,6 @@ export function TransactionsTable({
     );
   }
 
-  // function sortByTransactionNumAsc() {
-  //   gridApiRef.current!.api.applyColumnState({
-  //     state: [{ colId: "transaction_num", sort: "asc" }],
-  //     defaultState: { sort: null },
-  //   });
-  // }
 
   function sortByTransactionNumDesc() {
     gridApiRef.current!.api.applyColumnState({
@@ -386,7 +360,7 @@ export function TransactionsTable({
 
   function sortByDateAsc() {
     gridApiRef.current!.api.applyColumnState({
-      state: [{ colId: "time_since_completion", sort: "desc" }],
+      state: viewType !== "main" ? [{ colId: "time_since_completion", sort: "desc" }] : [{ colId: "submitted", sort: "desc" }],
       defaultState: { sort: null },
     });
   }
@@ -399,6 +373,7 @@ export function TransactionsTable({
   }
 
   const sortMap: Map<string, () => void> = new Map([
+    ["main", sortByDateAsc],
     ["pickup", sortByDateAsc],
     ["paid", sortByTransactionNumDesc],
     ["employee", sortByTransactionNumDesc],
@@ -412,7 +387,7 @@ export function TransactionsTable({
   return (
     <main style={{ width: "100vw" }}>
       <Button></Button>
-      <header>
+      <header style={{ display: "flex", justifyContent: "space-between" }}>
         <ButtonGroup id="nav-buttons" variant="outlined">
           <CreateTransactionDropdown alertAuth={alertAuth} user={user} />
           <Button onClick={() => navigate("/whiteboard")}>Whiteboard</Button>
@@ -436,14 +411,8 @@ export function TransactionsTable({
         </article>
       </header>
       <section
-        // className={status === "pending" ? "lds-dual-ring" : ""}
         id="transactions-table"
       >
-        {/* {status === "pending" ? (
-          "Loading..."
-        ) : status === "error" ? (
-          "Error loading data"
-        ) : ( */}
         <>
           <ToggleButtonGroup
             value={viewType}
@@ -528,7 +497,6 @@ export function TransactionsTable({
               });
               params.api.sizeColumnsToFit();
             }}
-          // paginationPageSize={true}
           />
         </>
 

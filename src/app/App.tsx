@@ -9,7 +9,6 @@ import { useState } from "react";
 import AuthPrompt from "../components/AuthPrompt/AuthPrompt";
 import { User } from "../model";
 import AdminPage from "../features/AdminPage/AdminPage";
-import RetrospecTransactionsPage from "../features/RetrospecTransactions/RetrospecTransactionsPage";
 import WhiteboardPage from "../features/WhiteboardPage";
 import { ToastContainer } from "react-toastify";
 //import {RepairItemList} from '../components/RepairItem/RepairItem';
@@ -89,11 +88,11 @@ function App() {
           </h2>{" "}
         </Button>
       </header>
-        <AuthPrompt
-          expediteAuth={expediteAuth}
-          setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
-          setUser={(user: User) => setUser(user)}
-        />
+      <AuthPrompt
+        expediteAuth={expediteAuth}
+        setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
+        setUser={(user: User) => setUser(user)}
+      />
       <Routes>
         <Route
           path="/"
@@ -108,10 +107,6 @@ function App() {
         <Route
           path="/admin"
           element={<AdminPage />}
-        />
-        <Route
-          path="/retrospec"
-          element={<RetrospecTransactionsPage />}
         />
         <Route
           path="/whiteboard"
