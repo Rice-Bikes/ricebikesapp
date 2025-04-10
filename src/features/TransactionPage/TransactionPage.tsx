@@ -53,7 +53,7 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], orde
 
 const checkStatusOfRetrospec = (transaction: Transaction) => {
 
-  if (transaction.is_urgent) {
+  if (transaction.is_refurb) {
     return 1;
   }
   else if (transaction.is_waiting_on_email) {
@@ -508,7 +508,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     switch (newStatus) {
       case "Building":
         setIsRefurb(true);
-
         break;
       case "Completed":
         setIsRefurb(false);
@@ -690,6 +689,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const allRepairsDone = () => {
     if (!repairDetails) return false;
+    if (repairDetails.length === 0 && (searchParams.get("type") === "Merch" || searchParams.get("type") === "Refurb")) return false;
     console.log("repair details: ", repairDetails);
     return repairDetails.every((repair: RepairDetails) => repair.completed);
   };

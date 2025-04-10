@@ -24,6 +24,10 @@ import { Transaction, Bike, Customer, TransactionSummary, OrderRequest, User } f
 import { useNavigate } from "react-router-dom";
 import DBModel from "../../model";
 import PriceCheckModal from "../../components/PriceCheckModal";
+import ConstructionIcon from '@mui/icons-material/Construction';
+import PanToolIcon from '@mui/icons-material/PanTool';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 export interface IRow {
   Transaction: Transaction;
   Customer: Customer;
@@ -60,6 +64,21 @@ function timeAgo(input: Date) {
   }
 }
 
+const checkStatusOfRetrospec = (refurb: boolean, email: boolean, completed: boolean) => {
+
+  if (refurb) {
+    return <ConstructionIcon style={{ color: "gold" }} />;
+  }
+  else if (email) {
+    return <PanToolIcon style={{ color: "red" }} />;
+  }
+  else if (completed) {
+    return <MonetizationOnIcon style={{ color: "green" }} />;
+  }
+  return <LocalShippingIcon style={{ color: "blue" }} />;
+}
+
+
 interface TransactionTableProps {
   alertAuth: () => void;
   user: User;
@@ -70,10 +89,10 @@ export function TransactionsTable({
   user,
 }: TransactionTableProps): JSX.Element {
 
-
+  //TODO: sell view
   const navigate = useNavigate();
   const currDate: Date = new Date();
-  const [viewType, setViewType] = useState("main");
+  const [viewType, setViewType] = useState<string>("main");
   const gridApiRef = useRef<AgGridReact>(null);
   const [, setRowData] = useState<IRow[]>([]);
   const [summaryData, setSummaryData] = useState<TransactionSummary>();
@@ -127,52 +146,117 @@ export function TransactionsTable({
         const transaction_type = params.data?.Transaction.transaction_type;
         const isWaitingOnParts = (params.data?.OrderRequests?.length ?? 0) > 0;
         const is_completed = params.data?.Transaction.is_completed;
+        const refurb = params.data?.Transaction.is_refurb;
 
-        return (
-          <Stack
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              padding: "5px",
-            }}
-            direction={"row"}
-          >
-            {transaction_type?.toLowerCase() === "inpatient" && (
-              <Chip
-                label="Inpatient"
-                sx={{
-                  margin: "0 0.5vw",
-                  backgroundColor: "green",
-                  color: "white",
-                }}
-              />
-            )}
+        // Return the data to be rendered by the cellRenderer
+        return {
+          isWaitEmail,
+          isUrgent,
+          isNuclear,
+          isBeerBike,
+          transaction_type,
+          isWaitingOnParts,
+          is_completed,
+          refurb,
+        };
+      },
+      cellRenderer: (params: ICellRendererParams) => {
+        const {
+          isWaitEmail,
+          isUrgent,
+          isNuclear,
+          isBeerBike,
+          transaction_type,
+          isWaitingOnParts,
+          is_completed,
+          refurb,
+        } = params.value;
 
-            {transaction_type?.toLowerCase() === "outpatient" && (
-              <Chip
-                label="Outpatient"
-                sx={{
-                  margin: "0 0.5vw",
-                  backgroundColor: "blue",
-                  color: "white",
-                }}
-              />
-            )}
+        console.log("viewType", viewType);
+        if (transaction_type.toLowerCase() !== "retrospec") {
+          return (
+            <Stack
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                padding: "5px",
+              }}
+              direction={"row"}
+            >
+              {transaction_type?.toLowerCase() === "inpatient" && (
+                <Chip
+                  label="Inpatient"
+                  sx={{
+                    margin: "0 0.5vw",
+                    backgroundColor: "green",
+                    color: "white",
+                  }}
+                />
+              )}
 
-            {transaction_type?.toLowerCase() === "merch" && (
-              <Chip
-                label="Merch"
-                sx={{
-                  margin: "0 0.5vw",
-                  backgroundColor: "gray",
-                  color: "white",
-                }}
-              />
-            )}
+              {transaction_type?.toLowerCase() === "outpatient" && (
+                <Chip
+                  label="Outpatient"
+                  sx={{
+                    margin: "0 0.5vw",
+                    backgroundColor: "blue",
+                    color: "white",
+                  }}
+                />
+              )}
 
-            {transaction_type?.toLowerCase() === "retrospec" && (
-              <Chip
+              {transaction_type?.toLowerCase() === "merch" && (
+                <Chip
+                  label="Merch"
+                  sx={{
+                    margin: "0 0.5vw",
+                    backgroundColor: "gray",
+                    color: "white",
+                  }}
+                />
+              )}
+              {isBeerBike && (
+                <Chip
+                  label="Beer Bike"
+                  sx={{
+                    margin: "0 0.5vw",
+                    backgroundColor: "turquoise",
+                    color: "black",
+                  }}
+                />
+              )}
+              {isUrgent && !is_completed && (
+                <ErrorSharp style={{ color: "red", marginRight: "5px" }} />
+
+              )}
+              {isWaitingOnParts && !is_completed && (
+                <i
+                  className="fas fa-wrench"
+                  style={{ color: "orange", marginRight: "5px" }}
+                />
+              )}
+              {isNuclear && !is_completed && (
+                <i
+                  className="fas fa-radiation"
+                  style={{ color: "red", marginRight: "5px" }}
+                ></i>
+              )}
+              {isWaitEmail && <EmailOutlinedIcon style={{ color: "red" }} />}
+            </Stack>
+          );
+        } else {
+          return (
+
+            <Stack
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                padding: "5px",
+              }}
+              direction={"row"}
+            ><Chip
                 label="Retrospec"
                 sx={{
                   margin: "0 0.5vw",
@@ -180,40 +264,11 @@ export function TransactionsTable({
                   color: "white",
                 }}
               />
-            )}
-            {isBeerBike && (
-              <Chip
-                label="Beer Bike"
-                sx={{
-                  margin: "0 0.5vw",
-                  backgroundColor: "turquoise",
-                  color: "black",
-                }}
-              />
-            )}
-            {isUrgent && !is_completed && (
-              <ErrorSharp style={{ color: "red", marginRight: "5px" }} />
-
-            )}
-            {isWaitingOnParts && !is_completed && (
-              <i
-                className="fas fa-wrench"
-                style={{ color: "orange", marginRight: "5px" }}
-              />
-            )}
-            {isNuclear && !is_completed && (
-              <i
-                className="fas fa-radiation"
-                style={{ color: "red", marginRight: "5px" }}
-              ></i>
-            )}
-            {isWaitEmail && <EmailOutlinedIcon style={{ color: "red" }} />}
-          </Stack>
-        );
-      },
-      cellRenderer: (params: ICellRendererParams) => {
-        return params.value;
-      },
+              <span> {checkStatusOfRetrospec(refurb, isWaitEmail, is_completed)} </span>
+            </Stack>
+          )
+        };
+      }
     },
     {
       headerName: "Name",
@@ -323,6 +378,9 @@ export function TransactionsTable({
   function doesExternalFilterPass(node: IRowNode) {
     // console.log(node);
     const transaction = node.data.Transaction as Transaction;
+    if (transaction.transaction_num === 16279) {
+      console.log("transaction", transaction);
+    }
     return (
       (viewType === "retrospec" &&
         transaction.transaction_type === "retrospec" &&
@@ -331,23 +389,21 @@ export function TransactionsTable({
         transaction.is_paid === false &&
         transaction.is_completed === true
         && transaction.is_refurb === false
-        && transaction.transaction_type !== "retrospec"
+        && transaction.transaction_type.toLowerCase() !== "retrospec"
         && !isDaysLess(183, new Date(transaction.date_created), new Date())
       ) ||
       (viewType === "paid" && transaction.is_paid === true) ||
       (viewType === "main" &&
         transaction.is_completed === false &&
-        transaction.transaction_type !== "retrospec" &&
+        transaction.transaction_type.toLowerCase() !== "retrospec" &&
         transaction.is_employee === false &&
-        transaction.is_refurb === false || transaction.transaction_type === "retrospec" && transaction.is_refurb) ||
+        transaction.is_refurb === false || transaction.transaction_type.toLowerCase() === "retrospec" && transaction.is_refurb) ||
       (viewType === "employee" &&
         transaction.is_employee === true &&
         transaction.is_completed === false) ||
       (viewType === "refurb" && transaction.is_refurb === true && transaction.is_paid === false && transaction.is_completed === false) ||
       (viewType === "beer bike" &&
-        transaction.is_beer_bike === true && !isDaysLess(364, new Date(transaction.date_created), new Date())) ||
-      viewType === ""
-    );
+        transaction.is_beer_bike === true && !isDaysLess(364, new Date(transaction.date_created), new Date())));
   }
 
 
@@ -429,6 +485,7 @@ export function TransactionsTable({
             <ToggleButton value="refurb"> Refurbs </ToggleButton>
             <ToggleButton value="beer bike"> Beer Bike </ToggleButton>
           </ToggleButtonGroup>
+
           <AgGridReact
             ref={gridApiRef}
             loading={status !== "success"}

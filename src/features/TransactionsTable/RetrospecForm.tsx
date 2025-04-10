@@ -19,7 +19,6 @@ interface NewRetrospecFormProps {
     onTransactionCreated: (newTransaction: Transaction) => void;
     isOpen: boolean;
     onClose: () => void;
-    t_type: string;
     user_id: string;
 }
 
@@ -28,7 +27,6 @@ function NewRetrospecForm({
     onTransactionCreated,
     isOpen,
     onClose,
-    t_type,
     // user_id,
 }: NewRetrospecFormProps) {
     const [formState, setFormState] = useState({
@@ -45,7 +43,6 @@ function NewRetrospecForm({
         setFormState((prevFormState) => ({ ...prevFormState, [name]: value }));
     };
 
-    console.log(t_type)
 
     const { status, data, error } = useQuery({
         queryKey: ["customers"],
@@ -160,7 +157,7 @@ function NewRetrospecForm({
                                     padding: "2.5%",
                                 }}
                             >
-                                <h2>Customer Information</h2>
+                                <h2>Retrospec Information</h2>
                                 <label style={{ minWidth: "95%" }}>
                                     <TextField
                                         type="text"
@@ -187,26 +184,6 @@ function NewRetrospecForm({
                                     </label>
                                     <br />
                                 </>
-                                {t_type !== "Merch" ? (
-                                    <>
-                                        <label>
-                                            <TextField
-                                                type="tel"
-                                                name="phone"
-                                                placeholder="Phone:"
-                                                value={formState.phone}
-                                                onChange={handleTextFieldChange}
-                                                slotProps={{
-                                                    htmlInput: {
-                                                        pattern: "[0-9]{3}[0-9]{3}[0-9]{4}"
-                                                    }
-                                                }}
-                                                fullWidth
-                                            />
-                                        </label>
-                                        <br />
-                                    </>)
-                                    : <></>}
                                 <Button type="submit" variant="contained" >Submit Transaction</Button>
                             </div>
                         </FormControl>
