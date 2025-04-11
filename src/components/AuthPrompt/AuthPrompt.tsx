@@ -95,7 +95,8 @@ const AuthPrompt = ({
               nav("/admin");
             }}
             variant="contained"
-            style={{ display: "none" }}
+            hidden
+            sx={{ display: "none" }}
           >
             Admin Page
           </Button>
