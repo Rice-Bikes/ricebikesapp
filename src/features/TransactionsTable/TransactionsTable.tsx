@@ -434,12 +434,6 @@ export function TransactionsTable({
     });
   }
 
-  // function sortBySubmittedDateAsc() {
-  //   return gridApiRef.current!.api.applyColumnState({
-  //     state: [{ colId: "submitted", sort: "desc" }],
-  //     defaultState: { sort: null },
-  //   });
-  // }
 
   function clearSort() {
     gridApiRef.current!.api.applyColumnState({
@@ -473,16 +467,15 @@ export function TransactionsTable({
           <Button style={{ backgroundColor: "blue" }}>
             {summaryData?.quantity_incomplete} Incomplete Bikes
           </Button>
-          <Button style={{ backgroundColor: "turquoise", color: "black" }}>
+          {summaryData?.quantity_beer_bike_incomplete !== 0 && <Button style={{ backgroundColor: "turquoise", color: "black" }}>
             {summaryData?.quantity_beer_bike_incomplete} Incomplete Beer Bikes
-          </Button>
+          </Button>}
           <Button style={{ backgroundColor: "green" }}>
             {summaryData?.quantity_waiting_on_pickup} Bikes For Pickup
           </Button>
-          {/* <Button style={{ backgroundColor: "orange" }}>
-            {summaryData?.quantity_waiting_on_safety_check} Bikes To
-            Safety Check
-          </Button> */}
+          <Button style={{ backgroundColor: "orange" }}>
+             Bikes to Safety Check
+          </Button>
         </article>
       </header>
       <section

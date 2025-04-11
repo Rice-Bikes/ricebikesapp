@@ -218,7 +218,7 @@ const UsersPage: React.FC = () => {
                     domLayout="autoHeight"
                     pagination
                     paginationPageSize={10}
-                    paginationPageSizeSelector={[10, 20, 50]}
+                    paginationPageSizeSelector={[10]}
                 />
             </Box>
             <Dialog open={dialogVisible} onClose={handleCancel}>

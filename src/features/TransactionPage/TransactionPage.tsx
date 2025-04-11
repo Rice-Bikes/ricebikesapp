@@ -693,7 +693,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     if (!repairDetails) return false;
     if (repairDetails.length === 0 && (searchParams.get("type") === "Merch" || refurb)) return false;
     if (debug) console.log("repair details: ", repairDetails);
-    return repairDetails.every((repair: RepairDetails) => repair.completed);
+    return !repairDetails.every((repair: RepairDetails) => repair.completed);
   };
 
   if (transactionData === undefined || transactionData.Customer === undefined) {
