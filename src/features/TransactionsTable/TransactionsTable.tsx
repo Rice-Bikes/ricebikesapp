@@ -415,13 +415,19 @@ export function TransactionsTable({
     });
   }
 
-  function sortByDateAsc() {
-    gridApiRef.current!.api.applyColumnState({
-      state: viewType !== "main" ? [{ colId: "time_since_completion", sort: "desc" }] : [{ colId: "submitted", sort: "desc" }],
+  function sortByCompletionDateAsc() {
+    return gridApiRef.current!.api.applyColumnState({
+      state: [{ colId: "time_since_completion", sort: "desc" }],
       defaultState: { sort: null },
     });
   }
 
+  function sortBySubmittedDateAsc() {
+    return gridApiRef.current!.api.applyColumnState({
+      state: [{ colId: "submitted", sort: "desc" }],
+      defaultState: { sort: null },
+    });
+  }
 
   function clearSort() {
     gridApiRef.current!.api.applyColumnState({
@@ -430,8 +436,8 @@ export function TransactionsTable({
   }
 
   const sortMap: Map<string, () => void> = new Map([
-    ["main", sortByDateAsc],
-    ["pickup", sortByDateAsc],
+    ["main", sortBySubmittedDateAsc],
+    ["pickup", sortByCompletionDateAsc],
     ["paid", sortByTransactionNumDesc],
     ["employee", sortByTransactionNumDesc],
     ["refurb", sortByTransactionNumDesc],
