@@ -295,7 +295,19 @@ export function TransactionsTable({
       valueGetter: (params) => {
         if (
           !params.data?.Transaction ||
-          params.data?.Transaction.date_created === ""
+          params.data?.Transaction.date_created === undefined ||
+          params.data?.Transaction.date_created === null
+        ) {
+          return "";
+        }
+
+        return (new Date(params.data?.Transaction.date_created));
+      },
+      cellRenderer: (params: ICellRendererParams) => {
+        if (
+          !params.data?.Transaction ||
+          params.data?.Transaction.date_created === undefined ||
+          params.data?.Transaction.date_created === null
         ) {
           return "";
         }
@@ -422,12 +434,12 @@ export function TransactionsTable({
     });
   }
 
-  function sortBySubmittedDateAsc() {
-    return gridApiRef.current!.api.applyColumnState({
-      state: [{ colId: "submitted", sort: "desc" }],
-      defaultState: { sort: null },
-    });
-  }
+  // function sortBySubmittedDateAsc() {
+  //   return gridApiRef.current!.api.applyColumnState({
+  //     state: [{ colId: "submitted", sort: "desc" }],
+  //     defaultState: { sort: null },
+  //   });
+  // }
 
   function clearSort() {
     gridApiRef.current!.api.applyColumnState({
@@ -436,7 +448,7 @@ export function TransactionsTable({
   }
 
   const sortMap: Map<string, () => void> = new Map([
-    ["main", sortBySubmittedDateAsc],
+    // ["main", sortBySubmittedDateAsc],
     ["pickup", sortByCompletionDateAsc],
     ["paid", sortByTransactionNumDesc],
     ["employee", sortByTransactionNumDesc],
