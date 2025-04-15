@@ -80,14 +80,12 @@ const checkStatusOfRetrospec = (refurb: boolean, email: boolean, completed: bool
 
 
 interface TransactionTableProps {
-  alertAuth: () => void;
   user: User;
 }
 
 const debug: boolean = import.meta.env.VITE_DEBUG
 
 export function TransactionsTable({
-  alertAuth,
   user,
 }: TransactionTableProps): JSX.Element {
 
@@ -118,7 +116,7 @@ export function TransactionsTable({
     queryKey: ["transactionSummary"],
     queryFn: () => DBModel.fetchTransactionSummary(),
   });
-  console.error("summary error", summaryError);
+  if (summaryError) console.error("summary error", summaryError);
 
   useEffect(() => {
     if (status === "success") {
@@ -458,7 +456,7 @@ export function TransactionsTable({
       <Button></Button>
       <header style={{ display: "flex", justifyContent: "space-between" }}>
         <ButtonGroup id="nav-buttons" variant="outlined">
-          <CreateTransactionDropdown alertAuth={alertAuth} user={user} />
+          <CreateTransactionDropdown user={user} />
           <Button onClick={() => navigate("/whiteboard")}>Whiteboard</Button>
           <Button onClick={() => setShowPriceCheckModal(!showPriceCheckModal)}>Price Check</Button>
         </ButtonGroup>
@@ -473,9 +471,9 @@ export function TransactionsTable({
           <Button style={{ backgroundColor: "green" }}>
             {summaryData?.quantity_waiting_on_pickup} Bikes For Pickup
           </Button>
-          <Button style={{ backgroundColor: "orange" }}>
-             Bikes to Safety Check
-          </Button>
+          {summaryData?.quantity_waiting_on_safety_check !== 0 && <Button style={{ backgroundColor: "orange" }}>
+            {summaryData?.quantity_waiting_on_safety_check} Bikes to Safety Check
+          </Button>}
         </article>
       </header>
       <section
@@ -508,10 +506,13 @@ export function TransactionsTable({
             onRowClicked={onRowClicked}
             getRowStyle={({ data }) => {
               const transaction = data?.Transaction as Transaction;
-              if (transaction.is_completed === false &&
-                transaction.transaction_type !== "retrospec" &&
-                transaction.is_employee === false &&
-                transaction.is_refurb === false) {
+              if (transaction.is_completed === false
+                && transaction.transaction_type !== "retrospec"
+                && transaction.is_employee === false
+                && transaction.is_refurb === false ||
+                transaction.is_beer_bike === true
+                && transaction.is_completed === false
+              ) {
                 if (
                   isDaysLess(
                     5,
@@ -531,9 +532,16 @@ export function TransactionsTable({
                 } else return { backgroundColor: "white" };
               }
               else if (
-                transaction.is_paid === false &&
-                transaction.is_completed === true
-                && transaction.is_refurb === false && transaction.date_completed !== null && transaction.date_completed !== undefined) {
+                transaction.date_completed !== null
+                && transaction.date_completed !== undefined
+                && (transaction.is_paid === false
+                  && transaction.is_completed === true
+                  && transaction.is_refurb === false
+                  && transaction.transaction_type.toLowerCase() !== "retrospec" ||
+                  transaction.is_beer_bike === true
+                  && transaction.is_completed === true
+                  && transaction.is_paid === false
+                )) {
                 if (
                   isDaysLess(
                     5,

@@ -7,6 +7,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import RepairsPage from './RepairsPage';
 import ItemsTable from './ItemCataloguePage';
 import UsersPage from './UsersPage';
+import PermissionsPage from './ManagePermissions';
+import RolesPage from './ManageRoles';
 
 const AdminPage: React.FC = () => {
     const [fileContent, setFileContent] = useState<string>('');
@@ -73,8 +75,16 @@ const AdminPage: React.FC = () => {
                 <Grid2 size={8}>
                     <UsersPage />
                 </Grid2>
+                {/* <Grid2> */}
+                <Grid2 size={6} >
+                    <PermissionsPage />
+                </Grid2>
+                <Grid2 size={6} >
+                    <RolesPage />
+                </Grid2>
+                {/* </Grid2> */}
             </Grid2>
-            <Grid2 container >
+            <Grid2 container sx={{ height: 'fit-content' }} >
                 <Grid2 size={6} >
                     <RepairsPage />
                 </Grid2>
@@ -82,6 +92,7 @@ const AdminPage: React.FC = () => {
                     <ItemsTable />
                 </Grid2>
             </Grid2>
+
         </div>
     );
 };

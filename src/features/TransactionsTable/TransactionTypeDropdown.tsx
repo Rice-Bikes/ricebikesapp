@@ -16,13 +16,11 @@ import DBModel, { Transaction, User } from "../../model";
 import NewTransactionForm from "./CustomerForm";
 
 interface TransactionDropdownProps {
-  alertAuth: () => void;
   user: User
 }
 
 const options = ["Inpatient", "Outpatient", "Merch", "Retrospec"]; // list of actions
 export default function CreateTransactionDropdown({
-  alertAuth,
   user,
 }: TransactionDropdownProps): JSX.Element {
   const [open, setOpen] = useState(false);
@@ -43,7 +41,6 @@ export default function CreateTransactionDropdown({
     console.info(`You clicked ${options[index]} with ${event}`);
     setSelectedIndex(index);
     setOpen(false);
-    alertAuth();
     setShowForm(true);
   };
 

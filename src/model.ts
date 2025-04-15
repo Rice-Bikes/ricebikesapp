@@ -31,6 +31,8 @@ import {
   TransactionLogSchema,
   TransactionLogArraySchema,
   CreatePartSchema,
+  RoleSchema,
+  PermissionsSchema,
 } from "./schema";
 import Ajv from "ajv";
 
@@ -49,6 +51,8 @@ export type Customer = FromSchema<typeof CustomerSchema>;
 export type CreateCustomer = FromSchema<typeof CreateCustomerSchema>;
 export type Bike = FromSchema<typeof BikeSchema>;
 export type User = FromSchema<typeof UserSchema>;
+export type Role = FromSchema<typeof RoleSchema>;
+export type Permission = FromSchema<typeof PermissionsSchema>;
 export type OrderRequest = FromSchema<typeof OrderRequestSchema>;
 export type CreateOrderRequests = FromSchema<typeof CreateOrderRequestsSchema>;
 export type CreatePart = FromSchema<typeof CreatePartSchema>;
@@ -56,9 +60,7 @@ export type CreatePart = FromSchema<typeof CreatePartSchema>;
 export type PartArray = FromSchema<typeof partArraySchema>;
 export type RepairArray = FromSchema<typeof repairArraySchema>;
 export type TransactionArray = FromSchema<typeof TransactionArraySchema>;
-export type TransactionDetailsArray = FromSchema<
-  typeof TransactionDetailsArraySchema
->;
+export type TransactionDetailsArray = FromSchema<typeof TransactionDetailsArraySchema>;
 export type TransactionLogArray = FromSchema< typeof TransactionLogArraySchema>;
 export type TransactionLog = FromSchema<typeof TransactionLogSchema>;
 
@@ -81,11 +83,7 @@ export interface ExtractedRow {
     total: string;
 }
 
-// const queryError = (error: Error) => {
-//   console.error("Error in React Query server response: ", error); // More detailed error logging
-// }
-
-/**2
+/**
  * The `DBModel` class provides methods for fetching and validating data from the server.
  * It includes methods for fetching transactions, items, and repairs, as well as methods for validating
  * the structure of the data received from the server.
@@ -131,13 +129,12 @@ class DBModel {
   static validatePart: (data: unknown) => data is Part;
   static validateRepair: (data: unknown) => data is Repair;
   static validateOrderRequest: (data: unknown) => data is OrderRequest;
-  static validateTransactionDetails: (
-    data: unknown
-  ) => data is TransactionDetails;
+  static validateTransactionDetails: (data: unknown) => data is TransactionDetails;
   public static validateRepairDetails: (data: unknown) => data is RepairDetails;
   public static validateItemDetails: (data: unknown) => data is ItemDetails;
   public static validateUser: (data: unknown) => data is User;
   public static validateTransactionLog: (data: unknown) => data is TransactionLog;
+  public static validateRole: (data: unknown) => data is Role;
 
   // ARRAY VERIFICATION METHODS
   static validatePartsArray: (data: unknown) => data is Part[];
@@ -175,6 +172,7 @@ class DBModel {
     DBModel.validateUser = compile(UserSchema);
     DBModel.validateOrderRequest = compile(OrderRequestSchema);
     DBModel.validateTransactionLog = compile(TransactionLogSchema);
+    DBModel.validateRole = compile(RoleSchema);
 
     // ARRAY VERIFICATION METHODS
     DBModel.validateTransactionsArray = compile(TransactionArraySchema);
@@ -267,6 +265,207 @@ class DBModel {
         });
         return transactionRowsPromises;
       });
+
+  public static fetchRoles = async () =>
+    fetch(`${hostname}/roles`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (response.status === 404) {
+          console.error("Permissions not found");
+          return [];
+        }
+        if (!DBModel.validateArrayResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        for (const role of response.responseObject) {
+          if (!DBModel.validateRole(role)) {
+            console.error("Invalid role:", role);
+            throw new Error("Invalid role found");
+          }
+        }
+        if (!response.success) {
+          throw new Error("Failed to load roles");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error loading roles data: " + error); // More detailed error logging
+      });
+  public static deleteRole = async (role_id: string) =>
+    fetch(`${hostname}/roles/${role_id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to delete role");
+        }
+      })
+      .catch((error) => {
+        throw new Error("Error deleting role data: " + error); // More detailed error logging
+      });
+
+  public static createRole = async (role: Role) =>
+    fetch(`${hostname}/roles`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(role),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post role");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error posting role data: " + error); // More detailed error logging
+      });
+  public static updateRole = async (role: Role) =>
+    fetch(`${hostname}/roles/${role.role_id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(role),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to update role");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error updating role data: " + error); // More detailed error logging
+      });
+  public static attachRole = async (user_id: string, role_id: string) =>
+    fetch(`${hostname}/users/roles/`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ role_id: role_id, user_id }),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to attach role");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error attaching role data: " + error); // More detailed error logging
+      });
+  public static fetchPermissions = async () =>
+    fetch(`${hostname}/permissions`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (response.status === 404) {
+          console.error("Permissions not found");
+          return [];
+        }
+        if (!DBModel.validateArrayResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to load permissions");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error loading permissions data: " + error); // More detailed error logging
+      });
+  public static deletePermission = async (permission_id: string) =>
+    fetch(`${hostname}/permissions/${permission_id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to delete permission");
+        }
+      })
+      .catch((error) => {
+        throw new Error("Error deleting permission data: " + error); // More detailed error logging
+      });
+  public static createPermission = async (permission: Permission) =>
+    fetch(`${hostname}/permissions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(permission),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post permission");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error posting permission data: " + error); // More detailed error logging
+      });
+  public static updatePermission = async (permission: Permission) =>
+    fetch(`${hostname}/permissions/${permission.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(permission),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to update permission");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error updating permission data: " + error); // More detailed error logging
+      });
+
+  
 
   public static fetchCustomers = async () =>  
     fetch(`${hostname}/customers`, 
@@ -1280,6 +1479,23 @@ class DBModel {
       staleTime: 60000, // Cache products for 10 minutes
     });
   };
+
+  public static getRolesQuery = () => {
+    return queryOptions({
+      queryKey: ["roles"],
+      queryFn: () => this.fetchRoles(),
+      refetchOnWindowFocus: false,
+      staleTime: 600000, // Cache products for 10 minutes
+    });
+  };
+  public static getPermissionsQuery = () => {
+    return queryOptions({
+      queryKey: ["permissions"],
+      queryFn: () => this.fetchPermissions(),
+      refetchOnWindowFocus: false,
+      staleTime: 600000, // Cache products for 10 minutes
+    });
+  }
 
   static async processPdf(formData: FormData): Promise<ExtractedRow[]> {
     const response = await fetch(`${hostname}/orderRequests/process-pdf`, {

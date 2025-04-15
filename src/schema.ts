@@ -175,13 +175,56 @@ export const RoleSchema = {
   title: "Role",
   type: "object",
   properties: {
-    role_id: { type: "string"},
-    user_id: { type: "string"},
-    name: { type: "string" },
+    role_id: { type: "string" },
+    name: { type: ["string", "null"] },
     disabled: { type: "boolean" },
-    description: { type: "string" },
+    description: { type: ["string", "null"] },
+    UserRoles: { type: ["array", "null"] },
+    RolePermissions: { type: ["array", "null"] }
   },
-  required: ["role_id", "user_id", "name", "disabled"],
+  required: ["role_id", "disabled"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+export const UserRolesSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "UserRoles",
+  type: "object",
+  properties: {
+    user_id: { type: "string" },
+    role_id: { type: "string" },
+    User: { type: "object" },
+    Role: RoleSchema
+  },
+  required: ["user_id", "role_id"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+export const PermissionsSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "Permissions",
+  type: "object",
+  properties: {
+    id: { type: "integer" },
+    name: { type: "string" },
+    description: { type: ["string"] },
+    RolePermissions: { type: ["array", "null"] }
+  },
+  required: ["id", "name"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+export const RolePermissionsSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "RolePermissions",
+  type: "object",
+  properties: {
+    role_id: { type: "string" },
+    permission_id: { type: "integer" },
+    Role: RoleSchema,
+    Permission: PermissionsSchema
+  },
+  required: ["role_id", "permission_id"],
   additionalProperties: false,
 } as const satisfies JSONSchema;
 

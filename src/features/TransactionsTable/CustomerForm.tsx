@@ -154,6 +154,9 @@ function NewTransactionForm({
     else {
       createCustomer.mutate(newCustomer);
     }
+    queryClient.removeQueries({
+      queryKey: ["user"],
+    });
   };
 
 

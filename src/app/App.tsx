@@ -11,54 +11,14 @@ import { User } from "../model";
 import AdminPage from "../features/AdminPage/AdminPage";
 import WhiteboardPage from "../features/WhiteboardPage";
 import { ToastContainer } from "react-toastify";
-//import {RepairItemList} from '../components/RepairItem/RepairItem';
+import { queryClient } from "./main";
 
 function App() {
-  // const loggedInUser = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<User>();
-  // const [user, setUser] = useState(null);
-  const [expediteAuth, setExpediteAuth] = useState(false);
-  // setUser(null);
-  // const nav = useNavigate();
+  const [user, setNewUser] = useState<User>({} as User);
 
-
-  if (!user) {
-    return (
-      <>
-        <header id="taskbar">
-          <Link to="/">
-            <img src={RiceBikesIcon} alt="Rice Bikes Icon" />
-          </Link>
-          <h2>Rice Bikes App</h2>
-          <Button
-            id="logout"
-            variant="contained"
-            style={{ backgroundColor: "black" }}
-            onClick={() => {
-              setIsLoggedIn(!isLoggedIn);
-            }}
-          >
-            {" "}
-            <h2>
-              {isLoggedIn ? (
-                <Link to="https://idp.rice.edu/idp/profile/cas/login?service=https://ricebikesapp.rice.edu/auth">
-                  {"Login"}
-                </Link>
-              ) : (
-                "Logout"
-              )}
-            </h2>{" "}
-          </Button>
-        </header>
-        <AuthPrompt
-          expediteAuth={true}
-          setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
-          setUser={(user: User) => setUser(user)}
-        />
-      </>
-    );
-  }
+  const onUserChange = (user: User) => {
+    setNewUser(user);
+  };
 
   return (
     <>
@@ -73,12 +33,12 @@ function App() {
           variant="contained"
           style={{ backgroundColor: "black" }}
           onClick={() => {
-            setIsLoggedIn(!isLoggedIn);
+            queryClient.removeQueries({ queryKey: ["user"] });
           }}
         >
           {" "}
           <h2>
-            {isLoggedIn ? (
+            {user === null ? (
               <Link to="https://idp.rice.edu/idp/profile/cas/login?service=https://ricebikesapp.rice.edu/auth">
                 {"Login"}
               </Link>
@@ -89,20 +49,18 @@ function App() {
         </Button>
       </header>
       <AuthPrompt
-        expediteAuth={expediteAuth}
-        setExpediteAuth={(state: boolean) => setExpediteAuth(state)}
-        setUser={(user: User) => setUser(user)}
+        setUser={onUserChange}
       />
       <Routes>
         <Route
           path="/"
           element={
-            <TransactionsTable user={user} alertAuth={() => setExpediteAuth(true)} />
+            <TransactionsTable user={user} />
           }
         />
         <Route
           path="/transaction-details/:transaction_id"
-          element={<TransactionDetail alertAuth={() => setExpediteAuth(true)} propUser={user} />}
+          element={<TransactionDetail propUser={user} />}
         />
         <Route
           path="/admin"

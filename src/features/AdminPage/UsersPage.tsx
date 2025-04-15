@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AgGridReact } from "ag-grid-react";
 import { ColDef, ICellRendererParams } from "ag-grid-community";
-import { User } from "../../model"
+import { Role, User } from "../../model"
 import {
     Box,
     Button,
@@ -26,12 +26,13 @@ const UsersPage: React.FC = () => {
     const [editedLastName, setEditedLastName] = useState("");
     const [editedNetId, setEditedNetId] = useState("");
     const [editedActive, setEditedActive] = useState(false);
-    const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+    const [roles, setRoles] = useState<Role[]>([]);
+    const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
+    // const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
 
-    const handleRoleChange = (event: SelectChangeEvent<string[]>) => {
+    const handleRoleChange = (event: SelectChangeEvent<Role[]>) => {
         const { value } = event.target;
-        setSelectedRoles(typeof value === "string" ? value.split(",") : value);
-
+        setSelectedRoles(Array.isArray(value) ? value : []);
     };
 
 
@@ -43,6 +44,15 @@ const UsersPage: React.FC = () => {
         },
         select: (data) => data as User[]
     })
+    const { data: roleData, error: roleError, isLoading: roleLoading } = useQuery({
+        queryKey: ['roles'],
+        queryFn: () => {
+            return DBModel.fetchRoles();
+        },
+        select: (data) => data as Role[]
+    })
+
+
     const deleteUser = useMutation({
         mutationFn: (id: string) => DBModel.deleteUser(id),
         onSuccess: () => {
@@ -56,15 +66,33 @@ const UsersPage: React.FC = () => {
             toast.error("Error deleting user");
         },
     });
+    // type AttachRoleParams = {
+    //     role_id: string;
+    //     userId: string;
+    // };
+    // // const attachUserToRole = useMutation({
+    // //     mutationFn: ({ role_id, userId }: AttachRoleParams) => DBModel.attachRole(userId, role_id),
+    // //     onSuccess: () => {
+    // //         queryClient.invalidateQueries({
+    // //             queryKey: ['users'],
+    // //         });
+    // //         toast.success("User attached to role successfully");
+    // //     }
+    // // });
     if (userError) {
         toast.error("Error fetching users");
+    }
+    if (roleError) {
+        toast.error("Error fetching roles");
     }
     useEffect(() => {
         if (userData && !usersLoading) {
             setUsers(userData);
         }
-    }
-        , [userData, usersLoading]);
+        if (roleData && !roleLoading) {
+            setRoles(roleData);
+        }
+    }, [userData, usersLoading, roleData, roleLoading]);
     const columnDefs: ColDef[] = [
         { colId: "name", headerName: "Name", sortable: true, filter: true, flex: 0.4, valueGetter: (params) => `${params.data.firstname} ${params.data.lastname}` },
         { field: "username", headerName: "Net Id", sortable: true, filter: true, flex: 0.2 },
@@ -253,11 +281,11 @@ const UsersPage: React.FC = () => {
                                 multiple
                                 value={selectedRoles}
                                 onChange={handleRoleChange}
-                                renderValue={(selected) => (selected as string[]).join(", ")}
+
                             >
-                                {["Projects", "Operations", "General Manager", "Logistics", "Head Mechanic", "Finance", "Personnel", "SRB Director"].map((role) => (
-                                    <MenuItem key={role} value={role}>
-                                        {selectedRoles.includes(role) ? "✓ " : ""}{role}
+                                {roles.map((role) => (
+                                    <MenuItem key={role.role_id} >
+                                        {role.name}
                                     </MenuItem>
                                 ))}
                             </Select>

@@ -71,7 +71,6 @@ const checkStatusOfRetrospec = (transaction: Transaction) => {
 
 interface TransactionDetailProps {
   propUser: User;
-  alertAuth: () => void;
 }
 
 const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
@@ -181,6 +180,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   useEffect(() => {
     if (transactionData?.Customer?.email)
       if (transactionType !== "Retrospec") checkUser.mutate(transactionData.Customer.email.split("@")[0]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactionData]);
 
   const sendCheckoutEmail = useMutation({
@@ -319,6 +319,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       //   Transaction: transactionData,
       // });
     }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isPaid,
     transactionData,
@@ -357,6 +358,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       if (transactionData.is_refurb !== refurb)
         setIsRefurb(transactionData.is_refurb);
     }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactionData]);
 
   const addRepair = useMutation({

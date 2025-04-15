@@ -6,40 +6,21 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
 interface AuthPromptProps {
-  expediteAuth: boolean;
-  setExpediteAuth: (value: boolean) => void;
   setUser: (user: User) => void;
 }
 
 const debug: boolean = import.meta.env.VITE_DEBUG
 
 const AuthPrompt = ({
-  expediteAuth,
-  setExpediteAuth: setExpeditAuth,
   setUser,
 }: AuthPromptProps) => {
   const [open, setOpen] = useState<boolean>(false);
   const [netId, setNetId] = useState<string>("");
   const [currentNetId, setCurrentNetId] = useState<string>("");
+  const timerDuration = 5 * 60;
+  const [, setTimer] = useState<number>(timerDuration);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeout((prevTimer: number) => {
-        if (prevTimer <= 1) {
-          setOpen(true);
-          return 15 * 60; // Reset timer to 15 minutes
-        }
-        return prevTimer - 1;
-      });
-    }, 1000); // Update every second
 
-    if (expediteAuth) {
-      // setNetId("test");
-      setOpen(true);
-      setExpeditAuth(false);
-    }
-    return () => clearInterval(interval);
-  }, []);
 
 
 
@@ -54,6 +35,26 @@ const AuthPrompt = ({
     retry: false,
     enabled: netId !== "" && open,
   });
+
+
+  useEffect(() => {
+    setInterval(() => {
+      setTimer(prevTimer => {
+        if (prevTimer <= 1) {
+          queryClient.removeQueries({
+            queryKey: ["user"],
+          });
+          return timerDuration; // Reset timer to 5
+        }
+        return prevTimer - 1;
+      });
+    }, 1000)
+
+    if (!data) {
+      // setNetId("test");
+      setOpen(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (debug) console.log(data);
@@ -75,20 +76,21 @@ const AuthPrompt = ({
     if (!data) {
       setOpen(true);
     }
+    else {
+      setUser(data);
+    }
 
-  }, [data]);
+  }, [data, setUser, setOpen]);
 
 
 
-  if (data) {
-    setUser(data);
-  }
+
   const nav = useNavigate();
 
 
   return (
     <>
-      <Grid2 container spacing={2} sx={{ margin: "0 15vw" }}>
+      <Grid2 container spacing={2} >
         <Grid2 size={6}>
           <Button
             onClick={() => {
@@ -102,7 +104,7 @@ const AuthPrompt = ({
           </Button>
         </Grid2>
         <Grid2 size={2} />
-        <Grid2 size={4} justifyItems={"flex-end"}>
+        <Grid2 size={4} justifyItems={"flex-start"}>
           <Button
             onClick={() => {
               setOpen(true);
