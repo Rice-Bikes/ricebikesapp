@@ -4,6 +4,7 @@ import DBModel, { User } from "../../model";
 import { queryClient } from "../../app/main";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 interface AuthPromptProps {
   setUser: (user: User) => void;
@@ -58,6 +59,10 @@ const AuthPrompt = ({
 
   useEffect(() => {
     if (debug) console.log(data);
+    if (error) {
+      toast.error("Error fetching user: " + error);
+      setOpen(true);
+    }
     if (!error && status !== "pending" && data) {
       if (debug) console.log("current user is submitted, closing dialog");
       setOpen(false);

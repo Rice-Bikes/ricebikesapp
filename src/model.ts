@@ -135,6 +135,7 @@ class DBModel {
   public static validateUser: (data: unknown) => data is User;
   public static validateTransactionLog: (data: unknown) => data is TransactionLog;
   public static validateRole: (data: unknown) => data is Role;
+  public static validatePermissions: (data: unknown) => data is Permission;
 
   // ARRAY VERIFICATION METHODS
   static validatePartsArray: (data: unknown) => data is Part[];
@@ -173,6 +174,7 @@ class DBModel {
     DBModel.validateOrderRequest = compile(OrderRequestSchema);
     DBModel.validateTransactionLog = compile(TransactionLogSchema);
     DBModel.validateRole = compile(RoleSchema);
+    DBModel.validatePermissions = compile(PermissionsSchema);
 
     // ARRAY VERIFICATION METHODS
     DBModel.validateTransactionsArray = compile(TransactionArraySchema);
@@ -516,6 +518,75 @@ class DBModel {
       })
       .catch((error) => {
         throw new Error("Error updating permission data: " + error); // More detailed error logging
+      });
+
+  public static attachPermission = async (permission_id: number, role_id: string) =>
+    fetch(`${hostname}/roles/permission`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ permission_id, role_id }),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to attach permission");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error attaching permission data: " + error); // More detailed error logging
+      });
+
+    public static detachPermission = async (permission_id: number, role_id: string) =>
+    fetch(`${hostname}/roles/permission`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ permission_id, role_id }),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to detach permission");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error detaching permission data: " + error); // More detailed error logging
+      });
+
+      public static fetchPermissionsForRole = async (role_id: string) =>
+    fetch(`${hostname}/permissions/role/${role_id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (response.statusCode === 404) {
+          console.error("Permissions not found");
+          return [];
+        }
+        if (!DBModel.validateArrayResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to load permissions");
+        }
+        return response.responseObject as Permission[];
+      })
+      .catch((error) => {
+        throw new Error("Error loading permissions data: " + error); // More detailed error logging
       });
 
   
@@ -941,7 +1012,7 @@ class DBModel {
       })
       .then((usersData: unknown) => {
         if (!DBModel.validateUser(usersData)) {
-          throw new Error("Invalid user data");
+          throw new Error("Invalid user data: " + JSON.stringify(usersData));
         }
 
         return usersData;

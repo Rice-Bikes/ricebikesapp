@@ -15,6 +15,8 @@ interface TransactionOptionDropdownProps {
   colors: string[];
   setTransactionType: (type: string) => void;
   initialOption: number;
+  isAllowed: (option: string) => boolean;
+  disabled?: boolean;
 }
 
 const TransactionOptionDropdown: React.FC<TransactionOptionDropdownProps> = ({
@@ -22,6 +24,8 @@ const TransactionOptionDropdown: React.FC<TransactionOptionDropdownProps> = ({
   setTransactionType,
   initialOption,
   colors,
+  isAllowed,
+  disabled,
 }) => {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
@@ -77,42 +81,43 @@ const TransactionOptionDropdown: React.FC<TransactionOptionDropdownProps> = ({
           {options[selectedIndex]}
         </Button>
       </ButtonGroup>
-      <Popper
-        sx={{ zIndex: 100 }}
-        open={open}
-        anchorEl={anchorRef.current}
-        role={undefined}
-        transition
-        disablePortal
-      >
-        {({ TransitionProps, placement }) => (
-          <Grow
-            {...TransitionProps}
-            style={{
-              transformOrigin:
-                placement === "bottom" ? "center top" : "center bottom",
-            }}
-          >
-            <Paper>
-              <ClickAwayListener onClickAway={handleClose}>
-                <MenuList id="split-button-menu" autoFocusItem>
-                  <MenuItem disabled={true}>Choose a transaction type</MenuItem>
-                  {options.map((option, index) => (
-                    <MenuItem
-                      key={option.toUpperCase()}
-                      // disabled={index === 2}
-                      selected={index === selectedIndex}
-                      onClick={(event) => handleMenuItemClick(event, index)}
-                    >
-                      {option}
-                    </MenuItem>
-                  ))}
-                </MenuList>
-              </ClickAwayListener>
-            </Paper>
-          </Grow>
-        )}
-      </Popper>
+      {!disabled && (
+        <Popper
+          sx={{ zIndex: 100 }}
+          open={open}
+          anchorEl={anchorRef.current}
+          role={undefined}
+          transition
+          disablePortal
+        >
+          {({ TransitionProps, placement }) => (
+            <Grow
+              {...TransitionProps}
+              style={{
+                transformOrigin:
+                  placement === "bottom" ? "center top" : "center bottom",
+              }}
+            >
+              <Paper>
+                <ClickAwayListener onClickAway={handleClose}>
+                  <MenuList id="split-button-menu" autoFocusItem>
+                    <MenuItem disabled={true}>Choose a transaction type</MenuItem>
+                    {options.filter(option => isAllowed(option)).map((option, index) => (
+                      <MenuItem
+                        key={option.toUpperCase()}
+                        // disabled={index === 2}
+                        selected={index === selectedIndex}
+                        onClick={(event) => handleMenuItemClick(event, index)}
+                      >
+                        {option}
+                      </MenuItem>
+                    ))}
+                  </MenuList>
+                </ClickAwayListener>
+              </Paper>
+            </Grow>
+          )}
+        </Popper>)}
     </>
   );
 };

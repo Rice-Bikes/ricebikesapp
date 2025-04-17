@@ -29,10 +29,53 @@ const RolesPage: React.FC = () => {
     const [description, setEditedDescription] = useState("");
     const [disabled, setDisabled] = useState(false);
     const [permissions, setPermissions] = useState<Permission[]>([]);
-    // const [selectedPermissions, setSelectedPermissions] = useState<Permission[]>([]);
+    const [rolePermissions, setRolePermissions] = useState<Permission[]>([]);
+    const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
 
 
+    useEffect(() => {
+        console.log("Role permissions:", rolePermissions);
+        if (rolePermissions.length > 0) {
+            // Extract just the role IDs from the userRoles array
+            setSelectedPermissionIds(rolePermissions.map(permission => permission.id));
+        } else {
+            setSelectedPermissionIds([]);
+        }
+    }
+        , [rolePermissions]);
 
+    const handlePermissionChange = (event: SelectChangeEvent<number[]>) => {
+        const idArray: number[] = Array.isArray(event.target.value) ? event.target.value as number[] : [event.target.value as unknown as number];
+
+
+        if (!roleId) return;
+
+        // Find roles to add (new selections)
+        const permissionsToAdd = idArray.filter(
+            permissionId => !rolePermissions.some(permission => permission.id === permissionId)
+        );
+
+        // Find roles to remove (unselected)
+        const permissionsToRemove = rolePermissions
+            .filter(permission => !idArray.includes(permission.id))
+            .map(permission => permission.id);
+
+        // Process additions
+        for (const permissionId of permissionsToAdd) {
+            attachPermissionToRole.mutate({
+                role_id: roleId,
+                permission_id: permissionId
+            });
+        }
+
+        // Process removals
+        for (const permissionId of permissionsToRemove) {
+            detachPermissionToRole.mutate({
+                role_id: roleId,
+                permission_id: permissionId
+            });
+        }
+    }
     const gridApiRef = useRef<AgGridReact>(null);
     const { data: roleData, error: roleError, isLoading: rolesLoading } = useQuery({
         queryKey: ['roles'],
@@ -50,7 +93,50 @@ const RolesPage: React.FC = () => {
         select: (data) => data as Permission[]
     })
 
-    // const {data: rolePermissionData, error: permissionError, isLoading: permissionsLoading} = useQuery({
+    const checkRolePermissions = useMutation({
+        mutationKey: ['checkRolePermissions'],
+        mutationFn: (role_id: string) => DBModel.fetchPermissionsForRole(role_id),
+        onSuccess: (data: Permission[]) => {
+            console.log("User roles:", data);
+            setRolePermissions(data);
+        },
+        onError: (error) => {
+            console.error("Error fetching user roles:", error);
+            toast.error("Error fetching user roles");
+        },
+    });
+    type AttachPermissionParams = {
+        role_id: string;
+        permission_id: number;
+    };
+    const attachPermissionToRole = useMutation({
+            mutationFn: ({ role_id, permission_id }: AttachPermissionParams) => DBModel.attachPermission( permission_id, role_id),
+            onSuccess: () => {
+                queryClient.invalidateQueries({
+                    queryKey: ['roles'],
+                });
+                checkRolePermissions.mutate(roleId || "");
+                toast.success("Permission attached to role successfully");
+            },
+            onError: (error) => {
+                toast.error("Error attaching permission to role" + error);
+            }
+        });
+        const detachPermissionToRole = useMutation({
+            mutationFn: ({ role_id, permission_id }: AttachPermissionParams) => DBModel.detachPermission( permission_id, role_id),
+            onSuccess: () => {
+                queryClient.invalidateQueries({
+                    queryKey: ['roles'],
+                });
+                checkRolePermissions.mutate(roleId || "");
+                toast.success("Permission detached to role successfully");
+            },
+            onError: (error) => {
+                toast.error("Error detaching permission to role" + error);
+            }
+        });
+
+
     useEffect(() => {
         if (permissionError) {
             toast.error("Error fetching permissions " + permissionError);
@@ -134,8 +220,10 @@ const RolesPage: React.FC = () => {
     ];
 
     const handleEdit = (role: Role) => {
+        checkRolePermissions.mutate(role.role_id);
         setRoleId(role.role_id);
         setEditedRoleName(role.name || "");
+        setEditedDescription(role.description || "");
         setDisabled(role.disabled);
         setDialogVisible(true);
     };
@@ -188,26 +276,6 @@ const RolesPage: React.FC = () => {
     const handleCancel = () => {
         setDialogVisible(false);
     };
-
-    // const attachPermissionsToRole = useMutation({
-    //     mutationFn: (roleId: string, permissionIds: number[]) => DBModel.attachRole(roleId, permissionIds),
-    //     onSuccess: () => {
-    //         queryClient.invalidateQueries({
-    //             queryKey: ['roles'],
-    //         });
-    //         toast.success("Permissions updated successfully");
-    //     },
-    //     onError: (error) => {
-    //         console.error("Error updating permissions:", error);
-    //         toast.error("Error updating permissions");
-    //     },
-    // });
-
-    function handlePermissionChange(event: SelectChangeEvent<number[]>): void {
-        toast.info(`Permissions updated ${event}`);
-
-        throw new Error("Function not implemented.");
-    }
 
     return (
         <Box sx={{ padding: "2%" }}>
@@ -263,8 +331,14 @@ const RolesPage: React.FC = () => {
                             <Select
                                 labelId="roles-label"
                                 multiple
-                                value={permissions.map(p => p.id)}
+                                value={selectedPermissionIds}
                                 onChange={handlePermissionChange}
+                                renderValue={(selected) => {
+                                    const selectedPermissions = permissions.filter((permission) =>
+                                        selected.includes(permission.id)
+                                    );
+                                    return selectedPermissions.map((permission) => permission.name).join(", ");
+                                }}
                             >
                                 {permissions.map((role) => (
                                     <MenuItem key={role.id} value={role.id}>

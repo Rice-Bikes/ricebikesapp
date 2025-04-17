@@ -89,6 +89,7 @@ const PermissionsPage: React.FC = () => {
     const handleEdit = (permission: Permission) => {
         setPermissionId(permission.id);
         setEditedPermissionName(permission.name);
+        setEditedDescription(permission.description ?? "");
         setDialogVisible(true);
     };
 

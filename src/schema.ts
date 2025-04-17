@@ -238,7 +238,7 @@ export const UserSchema = {
     firstname: { type: "string" },
     lastname: { type: "string" },
     active: { type: "boolean" },
-    Role: {items: RoleSchema, type: "array"},
+    permissions: { type: "array", items: PermissionsSchema },
   },
   required: ["user_id", "username", "firstname", "lastname", "active"],
   additionalProperties: false,

@@ -166,21 +166,6 @@ const UsersPage: React.FC = () => {
         { colId: "name", headerName: "Name", sortable: true, filter: true, flex: 0.4, valueGetter: (params) => `${params.data.firstname} ${params.data.lastname}` },
         { field: "username", headerName: "Net Id", sortable: true, filter: true, flex: 0.2 },
         {
-            field: "roles", headerName: "Roles", flex: 0.3, valueGetter: (params) => params.data.roles ? params.data.roles.join(", ") : "", cellRenderer: (params: ICellRendererParams) => (
-                <Stack direction="row" spacing={1}>
-                    {params.data && params.data.roles && params.data.roles.map((role: string) => (
-                        <Button
-                            key={role}
-                            variant="outlined"
-                            size="small"
-                        >
-                            {role}
-                        </Button>
-                    ))}
-                </Stack>
-            )
-        },
-        {
             field: "active", headerName: "Active", flex: 0.2, valueGetter: (params) => params.data.active ? "Yes" : "No", cellRenderer: (params: ICellRendererParams) => (
                 <Stack direction="row" spacing={1}>
                     <Button
@@ -235,6 +220,7 @@ const UsersPage: React.FC = () => {
         setEditedFirstName(user.firstname);
         setEditedLastName(user.lastname);
         setEditedNetId(user.username);
+        setEditedActive(user.active);
         setDialogVisible(true);
 
     };

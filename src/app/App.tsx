@@ -64,7 +64,7 @@ function App() {
         />
         <Route
           path="/admin"
-          element={<AdminPage />}
+          element={<AdminPage user={user} />}
         />
         <Route
           path="/whiteboard"

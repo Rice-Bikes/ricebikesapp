@@ -67,6 +67,12 @@ const checkStatusOfRetrospec = (transaction: Transaction) => {
   return 0;
 }
 
+const checkUserPermissions = (user: User, permissionName: string): boolean => {
+  if (debug) console.log("checking permission: ", permissionName);
+  const permissions = user.permissions?.find((perm) => perm.name === permissionName);
+  return permissions ? true : false;
+}
+
 //["Arrived", "Building", "Completed", "For Sale"]
 
 interface TransactionDetailProps {
@@ -180,7 +186,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   useEffect(() => {
     if (transactionData?.Customer?.email)
       if (transactionType !== "Retrospec") checkUser.mutate(transactionData.Customer.email.split("@")[0]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactionData]);
 
   const sendCheckoutEmail = useMutation({
@@ -358,7 +364,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       if (transactionData.is_refurb !== refurb)
         setIsRefurb(transactionData.is_refurb);
     }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactionData]);
 
   const addRepair = useMutation({
@@ -518,6 +524,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         setWaitEmail(true);
         break;
       case "For Sale":
+        if (!checkUserPermissions(user, "safetyCheckBikes")) {
+          return;
+        }
         setWaitEmail(false);
         setIsCompleted(true);
         break;
@@ -736,6 +745,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               initialOption={["inpatient", "outpatient", "merch", "retrospec"].indexOf(
                 transactionType.toLowerCase()
               )}
+              disabled={!checkUserPermissions(user, "createRetrospecTransaction")}
+              isAllowed={(index: string) => index === "Retrospec" ? checkUserPermissions(user, "createRetrospecTransaction") : true}
             />
             {transactionType.toLowerCase() === "retrospec" &&
               <TransactionOptionDropdown
@@ -743,6 +754,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 colors={["gray"]}
                 setTransactionType={handleRetrospecStatusChange}
                 initialOption={checkStatusOfRetrospec(transactionData)}
+                isAllowed={(option: string) => ["For Sale", "Arrived"].includes(option) ? checkUserPermissions(user, "safetyCheckBikes") : true}
               />}
             {beerBike && <Button
               style={{
@@ -796,9 +808,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               transaction_id={transactionData.transaction_num}
             />
 
-            <DeleteTransactionsModal
+            {transactionType.toLowerCase() !== "retrospec" || transactionType.toLowerCase() === "retrospec" && checkUserPermissions(user, "createRetrospecTransaction") && <DeleteTransactionsModal
               handleConfirm={() => deleteTransaction.mutate(transactionData as Transaction)}
-            />
+            />}
           </Grid2>
         </Grid2>
         <Item
@@ -861,24 +873,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 <h2>{transactionData.Bike.description}</h2>
               </Grid2>
               <Grid2 size={2} sx={{ display: "flex", justifyContent: "flex-end", margin: "30px 0" }}>
-                {/* <Button
-                  variant="contained"
-                  sx={{
-                    backgroundColor: "gray",
-                    marginRight: "10px",
-                  }}
-                  onClick={() => {
-                    setBike({
-                      ...bike,
-                      description: transactionData.Bike?.description ?? "",
-                      make: transactionData.Bike?.make ?? "",
-                      model: transactionData.Bike?.model ?? "",
-                    });
-                    setShowBikeForm(true);
-                  }}
-                >
-                  <ModeEditIcon />
-                </Button> */}
               </Grid2>
 
             </Grid2>
@@ -1215,6 +1209,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 color: nuclear ? "red" : "white",
                 width: "fit-content",
               }}
+              disabled={checkUserPermissions(user, "setAtomic")}
               variant="contained"
             >
               {nuclear ? <i
