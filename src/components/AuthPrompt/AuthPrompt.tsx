@@ -12,14 +12,14 @@ interface AuthPromptProps {
 
 const debug: boolean = import.meta.env.VITE_DEBUG
 
-const AuthPrompt = ({
+const AuthPrompt: React.FC<AuthPromptProps> = ({
   setUser,
 }: AuthPromptProps) => {
   const [open, setOpen] = useState<boolean>(false);
   const [netId, setNetId] = useState<string>("");
   const [currentNetId, setCurrentNetId] = useState<string>("");
-  const timerDuration = 5 * 60;
-  const [, setTimer] = useState<number>(timerDuration);
+  const timerDuration = 7 * 60;
+  const [timer, setTimer] = useState<number>(timerDuration);
 
 
 
@@ -39,7 +39,7 @@ const AuthPrompt = ({
 
 
   useEffect(() => {
-    setInterval(() => {
+    const interval = setInterval(() => {
       setTimer(prevTimer => {
         if (prevTimer <= 1) {
           queryClient.removeQueries({
@@ -55,6 +55,8 @@ const AuthPrompt = ({
       // setNetId("test");
       setOpen(true);
     }
+
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -83,6 +85,7 @@ const AuthPrompt = ({
     }
     else {
       setUser(data);
+      setTimer(timerDuration);
     }
 
   }, [data, setUser, setOpen]);
@@ -108,7 +111,9 @@ const AuthPrompt = ({
             Admin Page
           </Button>
         </Grid2>
-        <Grid2 size={2} />
+        <Grid2 size={2} >
+          <Button sx={{ pointerEvents: "none" }}>Session expires in {Math.floor(timer / 60)}:{timer % 60 < 10 ? "0" : ""}{timer % 60}</Button>
+        </Grid2>
         <Grid2 size={4} justifyItems={"flex-start"}>
           <Button
             onClick={() => {
