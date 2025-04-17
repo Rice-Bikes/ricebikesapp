@@ -275,8 +275,8 @@ class DBModel {
     })
       .then((response) => response.json())
       .then((response) => {
-        if (response.status === 404) {
-          console.error("Permissions not found");
+        if (response.statusCode === 404) {
+          console.error("Role not found");
           return [];
         }
         if (!DBModel.validateArrayResponse(response)) {
@@ -358,9 +358,41 @@ class DBModel {
       .catch((error) => {
         throw new Error("Error updating role data: " + error); // More detailed error logging
       });
+
+  public static fetchRolesForUser = async (user_id: string) =>
+    fetch(`${hostname}/roles/${user_id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (response.statusCode === 404) {
+          console.error("Role not found");
+          return [];
+        }
+        if (!DBModel.validateArrayResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to load roles");
+        }
+        for (const role of response.responseObject) {
+          if (!DBModel.validateRole(role)) {
+            console.error("Invalid role:", role);
+            throw new Error("Invalid role found");
+          }
+        }
+
+        return response.responseObject as Role[];
+      })
+      .catch((error) => {
+        throw new Error("Error loading roles data: " + error); // More detailed error logging
+      });
   public static attachRole = async (user_id: string, role_id: string) =>
     fetch(`${hostname}/users/roles/`, {
-      method: "PATCH",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
@@ -379,6 +411,27 @@ class DBModel {
       .catch((error) => {
         throw new Error("Error attaching role data: " + error); // More detailed error logging
       });
+      public static detachRole = async (user_id: string, role_id: string) =>
+        fetch(`${hostname}/users/roles/`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ role_id, user_id }),
+        })
+          .then((response) => response.json())
+          .then((response) => {
+            if (!DBModel.validateObjectResponse(response)) {
+              throw new Error("Invalid response");
+            }
+            if (!response.success) {
+              throw new Error("Failed to attach role");
+            }
+            return response.responseObject;
+          })
+          .catch((error) => {
+            throw new Error("Error attaching role data: " + error); // More detailed error logging
+          });
   public static fetchPermissions = async () =>
     fetch(`${hostname}/permissions`, {
       method: "GET",
@@ -388,7 +441,7 @@ class DBModel {
     })
       .then((response) => response.json())
       .then((response) => {
-        if (response.status === 404) {
+        if (response.statusCode === 404) {
           console.error("Permissions not found");
           return [];
         }
@@ -1353,7 +1406,7 @@ class DBModel {
       .then((response) => response.json())
       .then((response) => {
         console.log(response);
-        if (response.statusCode === 404) {
+        if (response.statusCode === 400) {
           return [];
         }
         if (!DBModel.validateArrayResponse(response)) {

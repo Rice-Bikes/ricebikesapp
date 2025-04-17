@@ -51,9 +51,11 @@ const RolesPage: React.FC = () => {
     })
 
     // const {data: rolePermissionData, error: permissionError, isLoading: permissionsLoading} = useQuery({
-    if (permissionError) {
-        toast.error("Error fetching permissions");
-    }
+    useEffect(() => {
+        if (permissionError) {
+            toast.error("Error fetching permissions " + permissionError);
+        }
+    }, [permissionError]);
     const deleteRole = useMutation({
         mutationFn: (id: string) => DBModel.deleteRole(id),
         onSuccess: () => {
@@ -67,10 +69,11 @@ const RolesPage: React.FC = () => {
             toast.error("Error deleting role");
         },
     });
-
-    if (roleError) {
-        toast.error("Error fetching roles");
-    }
+    useEffect(() => {
+        if (roleError) {
+            toast.error("Error fetching roles" + roleError);
+        }
+    }, [roleError]);
     useEffect(() => {
         if (roleData && !rolesLoading) {
             setRoles(roleData);
@@ -202,7 +205,7 @@ const RolesPage: React.FC = () => {
 
     function handlePermissionChange(event: SelectChangeEvent<number[]>): void {
         toast.info(`Permissions updated ${event}`);
-        
+
         throw new Error("Function not implemented.");
     }
 

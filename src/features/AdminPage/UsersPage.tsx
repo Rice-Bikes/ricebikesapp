@@ -27,13 +27,49 @@ const UsersPage: React.FC = () => {
     const [editedNetId, setEditedNetId] = useState("");
     const [editedActive, setEditedActive] = useState(false);
     const [roles, setRoles] = useState<Role[]>([]);
-    const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
+    const [userRoles, setUserRoles] = useState<Role[]>([]);
+    const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
     // const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+    useEffect(() => {
+        if (userRoles.length > 0) {
+            // Extract just the role IDs from the userRoles array
+            setSelectedRoleIds(userRoles.map(role => role.role_id));
+        } else {
+            setSelectedRoleIds([]);
+        }
+    }, [userRoles]);
+    const handleRoleChange: (event: SelectChangeEvent<string[]>) => void = (event) => {
+        const idArray = Array.isArray(event.target.value) ? event.target.value : [event.target.value];
 
-    const handleRoleChange = (event: SelectChangeEvent<Role[]>) => {
-        const { value } = event.target;
-        setSelectedRoles(Array.isArray(value) ? value : []);
-    };
+
+        if (!userId) return;
+
+        // Find roles to add (new selections)
+        const rolesToAdd = idArray.filter(
+            roleId => !userRoles.some(role => role.role_id === roleId)
+        );
+
+        // Find roles to remove (unselected)
+        const rolesToRemove = userRoles
+            .filter(role => !idArray.includes(role.role_id))
+            .map(role => role.role_id);
+
+        // Process additions
+        for (const roleId of rolesToAdd) {
+            attachUserToRole.mutate({
+                role_id: roleId,
+                userId: userId
+            });
+        }
+
+        // Process removals
+        for (const roleId of rolesToRemove) {
+            detachUserFromRole.mutate({
+                role_id: roleId,
+                userId: userId
+            });
+        }
+    }
 
 
     const gridApiRef = useRef<AgGridReact>(null);
@@ -51,6 +87,18 @@ const UsersPage: React.FC = () => {
         },
         select: (data) => data as Role[]
     })
+    const checkUserRoles = useMutation({
+        mutationKey: ['checkUserRoles'],
+        mutationFn: (userId: string) => DBModel.fetchRolesForUser(userId),
+        onSuccess: (data: Role[]) => {
+            console.log("User roles:", data);
+            setUserRoles(data);
+        },
+        onError: (error) => {
+            console.error("Error fetching user roles:", error);
+            toast.error("Error fetching user roles");
+        },
+    });
 
 
     const deleteUser = useMutation({
@@ -66,25 +114,46 @@ const UsersPage: React.FC = () => {
             toast.error("Error deleting user");
         },
     });
-    // type AttachRoleParams = {
-    //     role_id: string;
-    //     userId: string;
-    // };
-    // // const attachUserToRole = useMutation({
-    // //     mutationFn: ({ role_id, userId }: AttachRoleParams) => DBModel.attachRole(userId, role_id),
-    // //     onSuccess: () => {
-    // //         queryClient.invalidateQueries({
-    // //             queryKey: ['users'],
-    // //         });
-    // //         toast.success("User attached to role successfully");
-    // //     }
-    // // });
-    if (userError) {
-        toast.error("Error fetching users");
+    type AttachRoleParams = {
+        role_id: string;
+        userId: string;
+    };
+    const attachUserToRole = useMutation({
+        mutationFn: ({ role_id, userId }: AttachRoleParams) => DBModel.attachRole(userId, role_id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ['users'],
+            });
+            checkUserRoles.mutate(userId || "");
+            toast.success("User attached to role successfully");
+        },
+        onError: (error) => {
+            toast.error("Error attaching user to role" + error);
+        }
+    });
+    const detachUserFromRole = useMutation({
+        mutationFn: ({ role_id, userId }: AttachRoleParams) => DBModel.detachRole(userId, role_id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ['users'],
+            });
+            checkUserRoles.mutate(userId || "");
+            toast.success("User detached from role successfully");
+        },
+        onError: (error) => {
+            toast.error("Error detaching user from role" + error);
+        }
+    });
+    useEffect(() => {
+        if (userError) {
+            toast.error("Error fetching users");
+        }
     }
-    if (roleError) {
-        toast.error("Error fetching roles");
-    }
+        , [userError]);
+    useEffect(() => {
+        if (roleError) { toast.error("Error fetching roles"); }
+
+    }, [roleError]);
     useEffect(() => {
         if (userData && !usersLoading) {
             setUsers(userData);
@@ -161,11 +230,13 @@ const UsersPage: React.FC = () => {
     ];
 
     const handleEdit = (user: User) => {
+        checkUserRoles.mutate(user.user_id);
         setUserId(user.user_id);
         setEditedFirstName(user.firstname);
         setEditedLastName(user.lastname);
         setEditedNetId(user.username);
         setDialogVisible(true);
+
     };
 
     const handleDelete = (id: string) => {
@@ -279,12 +350,16 @@ const UsersPage: React.FC = () => {
                             <Select
                                 labelId="roles-label"
                                 multiple
-                                value={selectedRoles}
+                                value={selectedRoleIds}
                                 onChange={handleRoleChange}
-
+                                renderValue={(selected: string[]) => {
+                                    const selectedRoles = selected.map((role_id) => roles.find((r) => r.role_id === role_id)?.name).filter(Boolean);
+                                    return selectedRoles.join(", ");
+                                }
+                                }
                             >
                                 {roles.map((role) => (
-                                    <MenuItem key={role.role_id} >
+                                    <MenuItem key={role.role_id} value={role.role_id} >
                                         {role.name}
                                     </MenuItem>
                                 ))}

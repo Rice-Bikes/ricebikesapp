@@ -44,9 +44,13 @@ const PermissionsPage: React.FC = () => {
             toast.error("Error deleting permission");
         },
     });
-    if (permissionError) {
-        toast.error("Error fetching permissions");
+    useEffect(() => {
+        if (permissionError) {
+            toast.error("Error fetching permissions" + permissionError);
+        }
     }
+        , [permissionError]);
+
     useEffect(() => {
         if (permissionData && !permissionsLoading) {
             setPermissions(permissionData);
