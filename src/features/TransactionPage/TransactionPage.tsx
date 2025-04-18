@@ -1209,13 +1209,14 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 color: nuclear ? "red" : "white",
                 width: "fit-content",
               }}
-              disabled={checkUserPermissions(user, "setAtomic")}
+              // disabled={checkUserPermissions(user, "setAtomic")}
               variant="contained"
             >
-              {nuclear ? <i
+              {nuclear ? 
+              <i
                 className="fas fa-radiation"
                 style={{ color: "red" }}
-              ></i> : "Mark as Nuclear"}
+              /> : "Mark as Nuclear"}
             </Button>
 
             <SetProjectsTypesDropdown
