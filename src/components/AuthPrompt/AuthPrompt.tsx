@@ -62,7 +62,7 @@ const AuthPrompt: React.FC<AuthPromptProps> = ({
   useEffect(() => {
     if (debug) console.log(data);
     if (error) {
-      toast.error("Error fetching user: " + error);
+      if (debug) toast.error("Error fetching user: " + error);
       setOpen(true);
     }
     if (!error && status !== "pending" && data) {

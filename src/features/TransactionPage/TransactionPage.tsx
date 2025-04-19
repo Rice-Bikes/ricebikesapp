@@ -341,6 +341,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     reserved,
     transactionStatus,
     transactionType,
+    isEmployee,
   ]);
 
   useEffect(() => {
@@ -1212,11 +1213,11 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               // disabled={checkUserPermissions(user, "setAtomic")}
               variant="contained"
             >
-              {nuclear ? 
-              <i
-                className="fas fa-radiation"
-                style={{ color: "red" }}
-              /> : "Mark as Nuclear"}
+              {nuclear ?
+                <i
+                  className="fas fa-radiation"
+                  style={{ color: "red" }}
+                /> : "Mark as Nuclear"}
             </Button>
 
             <SetProjectsTypesDropdown
