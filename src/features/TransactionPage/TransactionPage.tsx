@@ -809,9 +809,16 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               transaction_id={transactionData.transaction_num}
             />
 
-            {transactionType.toLowerCase() !== "retrospec" || transactionType.toLowerCase() === "retrospec" && checkUserPermissions(user, "createRetrospecTransaction") && <DeleteTransactionsModal
-              handleConfirm={() => deleteTransaction.mutate(transactionData as Transaction)}
-            />}
+            {
+              (transactionType.toLowerCase() !== "retrospec"
+                ||
+                transactionType.toLowerCase() === "retrospec"
+                && checkUserPermissions(user, "createRetrospecTransaction"))
+              &&
+              <DeleteTransactionsModal
+                handleConfirm={() => deleteTransaction.mutate(transactionData as Transaction)}
+              />
+            }
           </Grid2>
         </Grid2>
         <Item
