@@ -110,31 +110,31 @@ const RolesPage: React.FC = () => {
         permission_id: number;
     };
     const attachPermissionToRole = useMutation({
-            mutationFn: ({ role_id, permission_id }: AttachPermissionParams) => DBModel.attachPermission( permission_id, role_id),
-            onSuccess: () => {
-                queryClient.invalidateQueries({
-                    queryKey: ['roles'],
-                });
-                checkRolePermissions.mutate(roleId || "");
-                toast.success("Permission attached to role successfully");
-            },
-            onError: (error) => {
-                toast.error("Error attaching permission to role" + error);
-            }
-        });
-        const detachPermissionToRole = useMutation({
-            mutationFn: ({ role_id, permission_id }: AttachPermissionParams) => DBModel.detachPermission( permission_id, role_id),
-            onSuccess: () => {
-                queryClient.invalidateQueries({
-                    queryKey: ['roles'],
-                });
-                checkRolePermissions.mutate(roleId || "");
-                toast.success("Permission detached to role successfully");
-            },
-            onError: (error) => {
-                toast.error("Error detaching permission to role" + error);
-            }
-        });
+        mutationFn: ({ role_id, permission_id }: AttachPermissionParams) => DBModel.attachPermission(permission_id, role_id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ['roles'],
+            });
+            checkRolePermissions.mutate(roleId || "");
+            toast.success("Permission attached to role successfully");
+        },
+        onError: (error) => {
+            toast.error("Error attaching permission to role" + error);
+        }
+    });
+    const detachPermissionToRole = useMutation({
+        mutationFn: ({ role_id, permission_id }: AttachPermissionParams) => DBModel.detachPermission(permission_id, role_id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ['roles'],
+            });
+            checkRolePermissions.mutate(roleId || "");
+            toast.success("Permission detached to role successfully");
+        },
+        onError: (error) => {
+            toast.error("Error detaching permission to role" + error);
+        }
+    });
 
 
     useEffect(() => {
@@ -288,6 +288,7 @@ const RolesPage: React.FC = () => {
                     onClick={() => {
                         setEditedRoleName("");
                         setEditedDescription("");
+                        setSelectedPermissionIds([]);
                         setDialogVisible(true);
                     }}
                 >
@@ -329,6 +330,7 @@ const RolesPage: React.FC = () => {
                         <FormControl fullWidth>
                             <InputLabel id="roles-label">Permissions</InputLabel>
                             <Select
+                                sx={{ display: roleId === null ? "none" : "inherit" }}
                                 labelId="roles-label"
                                 multiple
                                 value={selectedPermissionIds}
