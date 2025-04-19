@@ -262,6 +262,12 @@ export function TransactionsTable({
                 }}
               />
               <span> {checkStatusOfRetrospec(refurb, isWaitEmail, is_completed)} </span>
+              {isNuclear && !is_completed && (
+                <i
+                  className="fas fa-radiation"
+                  style={{ color: "red", marginRight: "5px" }}
+                ></i>
+              )}
             </Stack>
           )
         };
