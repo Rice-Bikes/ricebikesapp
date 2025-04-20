@@ -14,7 +14,7 @@ interface TransactionOptionDropdownProps {
   options: string[];
   colors: string[];
   setTransactionType: (type: string) => void;
-  initialOption: number;
+  initialOption: string;
   isAllowed: (option: string) => boolean;
   disabled?: boolean;
 }
@@ -29,7 +29,10 @@ const TransactionOptionDropdown: React.FC<TransactionOptionDropdownProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
-  const [selectedIndex, setSelectedIndex] = useState(initialOption);
+  const [selectedStatus, setSelectedStatus] = useState(initialOption);
+  const [selectedIndex, setSelectedIndex] = useState(
+    options.findIndex((option) => option.toLowerCase() === initialOption)
+  );
 
   // const handleClick = () => {
   //   console.info(`You clicked ${options[selectedIndex]}`);
@@ -37,11 +40,13 @@ const TransactionOptionDropdown: React.FC<TransactionOptionDropdownProps> = ({
 
   const handleMenuItemClick = (
     event: React.MouseEvent<HTMLLIElement, MouseEvent>,
+    tag: string,
     index: number
   ) => {
-    console.info(`You clicked ${options[index]} with ${event}`);
+    // console.info(`You clicked ${options[index]} with ${event}`);
     setSelectedIndex(index);
-    setTransactionType(options[index]);
+    setSelectedStatus(tag);
+    setTransactionType(tag);
     setOpen(false);
   };
 
@@ -78,7 +83,7 @@ const TransactionOptionDropdown: React.FC<TransactionOptionDropdownProps> = ({
               colors[selectedIndex] ?? "gray",
           }}
         >
-          {options[selectedIndex]}
+          {selectedStatus}
         </Button>
       </ButtonGroup>
       {!disabled && (
@@ -106,8 +111,8 @@ const TransactionOptionDropdown: React.FC<TransactionOptionDropdownProps> = ({
                       <MenuItem
                         key={option.toUpperCase()}
                         // disabled={index === 2}
-                        selected={index === selectedIndex}
-                        onClick={(event) => handleMenuItemClick(event, index)}
+                        selected={option === selectedStatus}
+                        onClick={(event) => handleMenuItemClick(event, option.toUpperCase(), index)}
                       >
                         {option}
                       </MenuItem>

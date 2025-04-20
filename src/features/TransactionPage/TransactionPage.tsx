@@ -56,15 +56,15 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], orde
 const checkStatusOfRetrospec = (transaction: Transaction) => {
 
   if (transaction.is_refurb) {
-    return 1;
+    return "Building";
   }
   else if (transaction.is_waiting_on_email) {
-    return 2;
+    return "Completed";
   }
   else if (transaction.is_completed) {
-    return 3;
+    return "For Sale";
   }
-  return 0;
+  return "Arrived";
 }
 
 const checkUserPermissions = (user: User, permissionName: string): boolean => {
@@ -516,6 +516,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   };
 
   const handleRetrospecStatusChange = (newStatus: string) => {
+    console.log("new status retrospec", newStatus)
     switch (newStatus) {
       case "Building":
         setIsRefurb(true);
@@ -743,10 +744,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               options={["Inpatient", "Outpatient", "Merch", "Retrospec"]}
               colors={["green", "blue", "gray", "orange"]}
               setTransactionType={handleTransactionTypeChange}
-              initialOption={["inpatient", "outpatient", "merch", "retrospec"].indexOf(
-                transactionType.toLowerCase()
-              )}
-              disabled={!checkUserPermissions(user, "createRetrospecTransaction")}
+              initialOption={transactionType.toLowerCase()}
               isAllowed={(index: string) => index === "Retrospec" ? checkUserPermissions(user, "createRetrospecTransaction") : true}
             />
             {transactionType.toLowerCase() === "retrospec" &&

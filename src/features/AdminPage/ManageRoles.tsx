@@ -258,7 +258,7 @@ const RolesPage: React.FC = () => {
             const newRole = {
                 name: roleName,
                 disabled: false,
-                description: "",
+                description: description,
             } as Role;
             DBModel.createRole(newRole)
                 .then(() => {
