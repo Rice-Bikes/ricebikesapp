@@ -67,15 +67,15 @@ function timeAgo(input: Date) {
 const checkStatusOfRetrospec = (refurb: boolean, email: boolean, completed: boolean) => {
 
   if (refurb) {
-    return <ConstructionIcon style={{ color: "gold" }} />;
+    return <ConstructionIcon style={{ color: "gold", marginRight: "5px" }} />;
   }
   else if (email) {
-    return <PanToolIcon style={{ color: "red" }} />;
+    return <PanToolIcon style={{ color: "red", marginRight: "5px" }} />;
   }
   else if (completed) {
-    return <MonetizationOnIcon style={{ color: "green" }} />;
+    return <MonetizationOnIcon style={{ color: "green", marginRight: "5px" }} />;
   }
-  return <LocalShippingIcon style={{ color: "blue" }} />;
+  return <LocalShippingIcon style={{ color: "blue", marginRight: "5px" }} />;
 }
 
 
@@ -259,9 +259,12 @@ export function TransactionsTable({
                 sx={{
                   backgroundColor: "orange",
                   color: "white",
+                  marginTop: "4px",
+                  marginLeft: "10px",
+                  marginRight: "5px",
                 }}
               />
-              <span> {checkStatusOfRetrospec(refurb, isWaitEmail, is_completed)} </span>
+              {checkStatusOfRetrospec(refurb, isWaitEmail, is_completed)}
               {isNuclear && !is_completed && (
                 <i
                   className="fas fa-radiation"

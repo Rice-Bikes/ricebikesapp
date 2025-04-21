@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AgGridReact } from "ag-grid-react";
-import { ColDef, ICellRendererParams } from "ag-grid-community";
+import { CellClassParams, ColDef, EditableCallbackParams, ICellRendererParams, NewValueParams } from "ag-grid-community";
 import { Part } from "../../model";
 import {
     Box,
@@ -33,6 +33,23 @@ const ItemsTable: React.FC = () => {
             toast.error("Error deleting item");
         },
     });
+    const updatePart = useMutation({
+        mutationFn: (part: Part) => DBModel.updateItem(part),
+        onSuccess: () => {
+            queryClient.invalidateQueries(DBModel.getItemsQuery());
+            toast.success("Item updated successfully");
+            queryClient.invalidateQueries({
+                queryKey: ["items"],
+            });
+        },
+        onError: (error) => {
+            console.error("Error updating item:", error);
+            toast.error("Error updating item:" + error);
+            queryClient.invalidateQueries({
+                queryKey: ["items"],
+            });
+        },
+    });
     if (itemError) {
         toast.error("Error fetching items");
     }
@@ -41,9 +58,63 @@ const ItemsTable: React.FC = () => {
             setItems(itemData);
         }
     }, [itemData, itemsLoading]);
+
+    function isCellEditable(params: EditableCallbackParams | CellClassParams) {
+        try {
+            if (!params.colDef) return false;
+            return params.colDef.field === "stock";
+        }
+        catch (error) {
+            console.error('Error in isCellEditable:', error);
+            throw error; // Re-throw to be caught by error boundary
+        }
+
+    }
+
+    const columnTypes = {
+        editableColumn: {
+            editable: (params: EditableCallbackParams<Part>) => {
+                try {
+                    return isCellEditable(params);
+                } catch (error) {
+                    console.error('Error in editableColumn:', error);
+                    throw error; // Re-throw to be caught by error boundary
+                }
+            },
+            cellStyle: (params: CellClassParams<Part>) => {
+                try {
+                    if (isCellEditable(params)) {
+                        return { backgroundColor: "#2244CC44" };
+                    }
+                }
+                catch (error) {
+                    console.error('Error in cellStyle:', error);
+                    throw error; // Re-throw to be caught by error boundary
+                }
+            },
+            onCellValueChanged: (event: NewValueParams<Part>) => {
+                console.log("cell value changes event", event);
+                try {
+                    console.log("cellValueChanged", event);
+                    const updatedPart = event.data as Part;
+                    updatePart.mutate(updatedPart);
+
+                    console.log("updating", updatedPart);
+                }
+                catch (error) {
+                    console.error('Error in onCellValueChanged:', error);
+                    throw error; // Re-throw to be caught by error boundary
+                }
+            },
+        },
+    };
     const columnDefs: ColDef[] = [
         { field: "name", headerName: "Name", sortable: true, filter: true },
-        { field: "standard_price", headerName: "Price", sortable: true, filter: true },
+        { field: "standard_price", headerName: "Price", sortable: true, filter: true, flex: 0.75 },
+        {
+            field: "stock", headerName: "Stock", sortable: true, filter: true, type: "editableColumn",
+        },
+        { field: "upc", headerName: "UPC", sortable: true, filter: true },
         {
             headerName: "Actions",
             colId: "actions",
@@ -103,8 +174,9 @@ const ItemsTable: React.FC = () => {
                     loadingOverlayComponent={Skeleton}
                     ref={gridApiRef}
                     rowData={items}
+                    columnTypes={columnTypes}
                     columnDefs={columnDefs}
-                    defaultColDef={{ flex: 1, resizable: true }}
+                    defaultColDef={{ flex: 1, resizable: false }}
                     domLayout="autoHeight"
                     pagination
                 />

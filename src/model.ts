@@ -874,7 +874,7 @@ class DBModel {
     }
 
   public static activateItem = async (upc: string) =>
-    fetch(`${hostname}/items/${upc}`, {
+    fetch(`${hostname}/items/update/${upc}`, {
       method: "PATCH",
     })
       .then((response) => response.json())

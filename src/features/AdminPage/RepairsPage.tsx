@@ -47,9 +47,10 @@ const RepairsPage: React.FC = () => {
         }
     }
         , [repairData, repairsLoading]);
+
     const columnDefs: ColDef[] = [
         { field: "name", headerName: "Name", sortable: true, filter: true },
-        { field: "price", headerName: "Price", sortable: true, filter: true },
+        { field: "price", headerName: "Price", sortable: true, filter: true, flex: 0.5 },
         {
             headerName: "Actions",
             colId: "actions",
@@ -155,9 +156,16 @@ const RepairsPage: React.FC = () => {
                     ref={gridApiRef}
                     rowData={repairs}
                     columnDefs={columnDefs}
-                    defaultColDef={{ flex: 1, resizable: true }}
+                    defaultColDef={{ flex: 1, resizable: false }}
                     domLayout="autoHeight"
                     pagination
+                    onGridReady={(params) => {
+                        gridApiRef.current!.api.applyColumnState({
+                            state: [{ colId: "time_since_completion", hide: true }, { colId: "submitted", hide: false }],
+                            defaultState: { sort: null },
+                        });
+                        params.api.sizeColumnsToFit();
+                    }}
                 />
             </Box>
             <Dialog open={dialogVisible} onClose={handleCancel}>

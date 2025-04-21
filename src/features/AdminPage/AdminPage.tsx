@@ -99,10 +99,10 @@ const AdminPage: React.FC<AdminPageProps> = ({ user }) => {
                 }
             </Grid2>
             <Grid2 container sx={{ height: 'fit-content' }} >
-                <Grid2 size={6} >
+                <Grid2 size={5} >
                     {checkPermission(user, "mutateRepairs") && <RepairsPage />}
                 </Grid2>
-                <Grid2 size={6} >
+                <Grid2 size={7} >
                     {checkPermission(user, "mutateItems") && <ItemsTable />}
                 </Grid2>
             </Grid2>
