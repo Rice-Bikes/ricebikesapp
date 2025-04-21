@@ -43,7 +43,7 @@ const TransactionOptionDropdown: React.FC<TransactionOptionDropdownProps> = ({
     tag: string,
     index: number
   ) => {
-    // console.info(`You clicked ${options[index]} with ${event}`);
+    console.info(`You clicked ${options[index]} with ${event}`);
     setSelectedIndex(index);
     setSelectedStatus(tag);
     setTransactionType(tag);
@@ -112,7 +112,7 @@ const TransactionOptionDropdown: React.FC<TransactionOptionDropdownProps> = ({
                         key={option.toUpperCase()}
                         // disabled={index === 2}
                         selected={option === selectedStatus}
-                        onClick={(event) => handleMenuItemClick(event, option.toUpperCase(), index)}
+                        onClick={(event) => handleMenuItemClick(event, option, index)}
                       >
                         {option}
                       </MenuItem>
