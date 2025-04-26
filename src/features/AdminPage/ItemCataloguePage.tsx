@@ -109,8 +109,8 @@ const ItemsTable: React.FC = () => {
         },
     };
     const columnDefs: ColDef[] = [
-        { field: "name", headerName: "Name", sortable: true, filter: true },
-        { field: "standard_price", headerName: "Price", sortable: true, filter: true, flex: 0.75 },
+        { field: "name", headerName: "Name", sortable: true, filter: true, resizable: true },
+        { field: "standard_price", headerName: "Price", sortable: true, filter: true, flex: 0.6 },
         {
             field: "stock", headerName: "Stock", sortable: true, filter: true, type: "editableColumn",
         },

@@ -18,6 +18,7 @@ interface TransactionOptionDropdownProps {
   isAllowed: (option: string) => boolean;
   disabled?: boolean;
 }
+const debug = false;
 
 const TransactionOptionDropdown: React.FC<TransactionOptionDropdownProps> = ({
   options,
@@ -43,7 +44,7 @@ const TransactionOptionDropdown: React.FC<TransactionOptionDropdownProps> = ({
     tag: string,
     index: number
   ) => {
-    console.info(`You clicked ${options[index]} with ${event}`);
+    if (debug) console.info(`You clicked ${options[index]} with ${event}`);
     setSelectedIndex(index);
     setSelectedStatus(tag);
     setTransactionType(tag);
