@@ -1,12 +1,14 @@
 import React from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { CellClassParams, CellClickedEvent, ColDef, EditableCallbackParams, NewValueParams } from 'ag-grid-community';
+import { CellClassParams, CellClickedEvent, ColDef, EditableCallbackParams, ICellRendererParams, NewValueParams } from 'ag-grid-community';
 import { Container, Typography, Button, Grid2 } from '@mui/material';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import DBModel from '../model';
 import { OrderRequest } from '../model';
 import { queryClient } from '../app/main';
 import { useNavigate } from 'react-router-dom';
+import { CheckBox, CheckBoxOutlineBlank } from '@mui/icons-material';
+import { toast } from 'react-toastify';
 
 interface WhiteboardPageProps {
     user_id: string;
@@ -47,13 +49,22 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = (
             console.log(Item, User);
             return DBModel.putOrderRequest(reqWithoutAgg);
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({
+        onSuccess: (orderReq: OrderRequest) => {
+            queryClient.removeQueries({
                 queryKey: ["orderRequest"],
             });
+            toast.info("orderReq" + JSON.stringify(orderReq));
+            if (orderReq === undefined || orderReq.Item === undefined) return;
+            if (orderReq.ordered) {
+                toast.success("Order request marked as ordered " + orderReq.Item.name + " | " + orderReq.ordered);
+            }
+            else {
+                toast.success("Order request unmarked successfully " + orderReq.Item.name + " | " + orderReq.ordered);
+
+            }
         },
         onError: (error) => {
-            console.error("Error updating order request", error);
+            toast.error("Error updating order request: " + error.message);
         }
     });
 
@@ -176,22 +187,26 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = (
             cellRenderer: () => <Button type="submit">🔗</Button>
         },
 
-        // {
-        //     headerName: "Ordered",
-        //     colId: "ordered",
-        //     onCellClicked: (event: CellClickedEvent<OrderRequest>) => {
-        //         console.log("showing add btn", event);
-        //         try {
-        //             //TODO: MAKE SURE THIS URL PARAMS ASSUMPTION IS CORRECT
-        //             return event.data ? nav(`/transaction-details/${event.data.transaction_id}?type=Inpatient`) : console.error("cannot add order request to transaction", event)
-        //         }
-        //         catch (error) {
-        //             console.error('Error in onCellClicked:', error);
-        //             throw error; // Re-throw to be caught by error boundary
-        //         }
-        //     },
-        //     cellRenderer: () => <Button type="submit">🔗</Button>
-        // }
+        {
+            headerName: "Ordered",
+            field: "ordered",
+            onCellClicked: (event: CellClickedEvent<OrderRequest>) => {
+                updateOrderRequest.mutate({
+                    ...event.data,
+                    ordered: !event.data!.ordered,
+                } as OrderRequest);
+            },
+            cellRenderer: (params: ICellRendererParams) => {
+                const ordered = params.data?.ordered;
+                return <Button type="submit">{ordered ? <CheckBox /> : <CheckBoxOutlineBlank />}</Button>;
+            },
+            valueGetter: (params) => {
+                console.log("showing ordered", params);
+                if (!params.data || !params.data.ordered) return false;
+                return params.data.ordered;
+
+            }
+        },
         {
             headerName: "Delete",
             colId: "delete",

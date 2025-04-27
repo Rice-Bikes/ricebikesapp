@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Button, Grid2 } from '@mui/material';
 import DBModel, { User } from '../../model';
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 // import PdfViewer from '../../components/PdfViewer';
 import RepairsPage from './RepairsPage';
 import ItemsTable from './ItemCataloguePage';
@@ -63,7 +63,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ user }) => {
 
     return (
         <div style={{ padding: '0 5vw', paddingBottom: '100px' }}>
-            <ToastContainer />
+
             <h1>Admin Page</h1>
             {/* <TextField
                 type="file"

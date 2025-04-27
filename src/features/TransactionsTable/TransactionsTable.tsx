@@ -452,7 +452,7 @@ export function TransactionsTable({
   const sortMap: Map<string, () => void> = new Map([
     // ["main", sortBySubmittedDateAsc],
     ["pickup", sortByCompletionDateAsc],
-    ["paid", sortByTransactionNumDesc],
+    ["paid", sortByCompletionDateAsc],
     ["employee", sortByTransactionNumDesc],
     ["refurb", sortByTransactionNumDesc],
     ["beer bike", sortByTransactionNumDesc],

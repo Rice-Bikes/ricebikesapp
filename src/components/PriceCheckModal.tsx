@@ -113,6 +113,7 @@ const PriceCheckModal = ({
                     onClose();
                 }} item={item}
             />
+
         </Dialog>
     );
 };

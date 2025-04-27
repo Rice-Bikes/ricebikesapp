@@ -22,7 +22,7 @@ function App() {
 
   return (
     <>
-      <ToastContainer />
+
       <header id="taskbar">
         <Link to="/">
           <img src={RiceBikesIcon} alt="Rice Bikes Icon" />
@@ -71,6 +71,18 @@ function App() {
           element={<WhiteboardPage user_id={user.user_id} />}
         />
       </Routes>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        />
     </>
   );
 }

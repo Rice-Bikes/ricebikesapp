@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AgGridReact } from "ag-grid-react";
-import { CellClassParams, ColDef, EditableCallbackParams, ICellRendererParams, NewValueParams } from "ag-grid-community";
+import { CellClassParams, ColDef, EditableCallbackParams, ICellRendererParams, NewValueParams, ValueGetterParams } from "ag-grid-community";
 import { Part } from "../../model";
 import {
     Box,
@@ -14,6 +14,22 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import DBModel from "../../model";
 import { queryClient } from "../../app/main";
 import ItemPageModal from "../../components/ItemPage";
+import { ErrorSharp, ThumbUp, Warning } from "@mui/icons-material";
+
+const getUrgency = (stock: number, minStock: number) => {
+    if (minStock === 0) {
+        return 0;
+    }
+    if (stock < minStock) {
+        return 3;
+    }
+    else if (stock < minStock * 2) {
+        return 2;
+    }
+    else {
+        return 1;
+    }
+}
 
 const ItemsTable: React.FC = () => {
     const [items, setItems] = useState<Part[]>([]);
@@ -62,7 +78,7 @@ const ItemsTable: React.FC = () => {
     function isCellEditable(params: EditableCallbackParams | CellClassParams) {
         try {
             if (!params.colDef) return false;
-            return params.colDef.field === "stock";
+            return params.colDef.field === "stock" || params.colDef.field === "minimum_stock";
         }
         catch (error) {
             console.error('Error in isCellEditable:', error);
@@ -84,7 +100,7 @@ const ItemsTable: React.FC = () => {
             cellStyle: (params: CellClassParams<Part>) => {
                 try {
                     if (isCellEditable(params)) {
-                        return { backgroundColor: "#2244CC44" };
+                        return { backgroundColor: params.colDef.field === "stock" ? "lightblue" : "lightgreen" };
                     }
                 }
                 catch (error) {
@@ -112,20 +128,22 @@ const ItemsTable: React.FC = () => {
         { field: "name", headerName: "Name", sortable: true, filter: true, resizable: true },
         { field: "standard_price", headerName: "Price", sortable: true, filter: true, flex: 0.6 },
         {
-            field: "stock", headerName: "Stock", sortable: true, filter: true, type: "editableColumn",
+            field: "stock", headerName: "Stock", sortable: true, type: "editableColumn", flex: 0.45,
         },
-        { field: "upc", headerName: "UPC", sortable: true, filter: true },
+        { field: "minimum_stock", headerName: "Min Stock", sortable: true, flex: 0.5, type: "editableColumn" },
+        { field: "upc", headerName: "UPC", sortable: true, filter: true, flex: 0.5 },
         {
             headerName: "Actions",
             colId: "actions",
+            flex: 0.85,
             cellRenderer: (params: ICellRendererParams) => (
-                <Stack direction="row" spacing={1}>
+                <Stack direction="row">
                     <Button
                         variant="outlined"
                         onClick={() => handleEdit(params.data)}
                         size="small"
                     >
-                        Edit
+                        ✎
                     </Button>
                     <Button
                         variant="outlined"
@@ -133,10 +151,58 @@ const ItemsTable: React.FC = () => {
                         onClick={() => handleDelete(params.data.item_id)}
                         size="small"
                     >
-                        Delete
+                        🗑️
                     </Button>
                 </Stack>
             ),
+        },
+        {
+            colId: "urgency",
+            sortable: true,
+            flex: 0.4,
+            headerName: "Status",
+            hide: true,
+            cellRenderer: (params: ICellRendererParams) => {
+                const stock = params.data.stock;
+                const minStock = params.data.minimum_stock;
+                if (minStock === 0) {
+                    return <ThumbUp
+                        style={{
+                            color: "green",
+                            marginRight: "5px",
+                        }}
+                    />;
+                }
+                if (stock < minStock) {
+                    return <ErrorSharp
+                        style={{
+                            color: "red",
+                            marginRight: "5px",
+                        }}
+                    />;
+                }
+                else if (stock < minStock * 2) {
+                    return <Warning
+                        style={{
+                            color: "orange",
+                            marginRight: "5px",
+                        }}
+                    />;
+                }
+                else {
+                    return <ThumbUp
+                        style={{
+                            color: "green",
+                            marginRight: "5px",
+                        }}
+                    />;
+                }
+            },
+            valueGetter: (params: ValueGetterParams) => {
+                const stock = params.data.stock;
+                const minStock = params.data.minimum_stock;
+                return getUrgency(stock, minStock);
+            }
         },
     ];
 
@@ -179,6 +245,31 @@ const ItemsTable: React.FC = () => {
                     defaultColDef={{ flex: 1, resizable: false }}
                     domLayout="autoHeight"
                     pagination
+                    getRowStyle={({ data }) => {
+                        const part = data as Part;
+                        const urgency = getUrgency(part.stock ?? 0, part.minimum_stock ?? 0);
+                        console.log("urgency", urgency);
+                        if (urgency == 3) {
+                            return { backgroundColor: "#F88379" };
+                        }
+                        else if (urgency == 2) {
+                            return { backgroundColor: "lightyellow" };
+                        }
+                        else if (urgency == 1) {
+                            return { backgroundColor: "lightgreen" };
+                        }
+                        // return { backgroundColor: "black" };
+                    }
+                    }
+                    onGridReady={() => {
+                        gridApiRef.current?.api.applyColumnState({
+                            state: [
+                                { colId: "urgency", sort: "desc" },
+                            ],
+                            applyOrder: true,
+                        });
+
+                    }}
                 />
             </Box>
             <ItemPageModal

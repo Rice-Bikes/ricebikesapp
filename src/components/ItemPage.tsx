@@ -94,7 +94,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
             return;
         }
 
-        if (!upc || upc.length != 12 || !name || standard_price_num == 0 || wholesale_cost_num == 0 || wholesale_cost_num > standard_price_num || stock < 0 || minimum_stock < 0) {
+        if (!upc || !name || standard_price_num == 0 || wholesale_cost_num == 0 || wholesale_cost_num > standard_price_num || stock < 0 || minimum_stock < 0) {
             toast.error(`Please fill out all required fields: ${!upc ? 'UPC, ' : ''}${!name ? 'Name, ' : ''}${standard_price_num == 0 ? 'Standard Price, ' : ''}${wholesale_cost_num == 0 || wholesale_cost_num > standard_price_num ? 'Wholesale Cost, ' : ''}${stock < 0 ? 'Stock, ' : ''}${minimum_stock < 0 ? 'Minimum Stock, ' : ''}`.slice(0, -2));
             return;
         }
@@ -173,7 +173,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
 
                             <Grid2 size={6}>
                                 <Typography variant="body1">UPC:</Typography>
-                                {edit ? <TextField type="text" helperText="Generate for custom/used items" error={hasBeenSubmitted && (!upc || upc.length !== 12)} value={upc} onChange={(e) => setUpc(e.target.value)} required /> :
+                                {edit ? <TextField type="text" helperText="Generate for custom/used items" error={hasBeenSubmitted && (!upc)} value={upc} onChange={(e) => setUpc(e.target.value)} required /> :
                                     <Button
                                         variant="outlined"
                                         sx={{

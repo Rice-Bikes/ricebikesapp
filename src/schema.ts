@@ -259,6 +259,7 @@ export const OrderRequestSchema = {
     date_created: { type: "string"},
     quantity: { type: "integer" },
     notes: { type: ["string", "null"] },
+    ordered: { type: "boolean" },
     Item: partSchema,
     User: UserSchema,
   },

@@ -19,7 +19,7 @@ import DBModel, {
 } from "../../model";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../app/main";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import SearchModal from "../../components/ItemSearch/SearchModal";
 import "./TransactionPage.css";
 import NewBikeForm from "../../components/TransactionPage/BikeForm";
@@ -1288,7 +1288,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           </Grid2>
         </Grid2>
       </Grid2>
-      <ToastContainer />
+
     </div>
   );
 };

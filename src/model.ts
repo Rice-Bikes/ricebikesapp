@@ -1466,6 +1466,10 @@ class DBModel {
         if (!response.success) {
           throw new Error("Failed to post order request");
         }
+        if (!DBModel.validateOrderRequest(response.responseObject)) {
+          throw new Error("Invalid order request response");
+        }
+        return response.responseObject;
       })
       .catch((error) => {
         console.error("Error posting order request data: ", error);
@@ -1554,7 +1558,7 @@ class DBModel {
     return queryOptions({
       queryKey: ["transactions"],
       queryFn: () => this.fetchTransactions(page_limit, aggregate),
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: "always",
       staleTime: 600000, // Cache products for 1 minute
     });
   };
