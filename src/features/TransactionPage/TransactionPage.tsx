@@ -150,7 +150,10 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     },
     select: (data: OrderRequest[]) => {
       if (debug) console.log("converting incoming data", data);
-      return data.map((dataItem: OrderRequest) => dataItem.Item) as Part[] ?? Array<Part>()
+      return data.flatMap((dataItem: OrderRequest) => {
+        // Create an array with the same part repeated based on quantity
+        return Array(dataItem.quantity).fill(dataItem.Item);
+      }) as Part[] ?? Array<Part>();
     },
   });
   if (orderRequestError) toast.error("orderRequest: " + orderRequestError);
@@ -442,7 +445,10 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       queryClient.invalidateQueries({
         queryKey: ["transactionDetails", transaction_id, "item"],
       });
-      if (debug) console.log("repair added");
+      queryClient.invalidateQueries({
+        queryKey: ["items"],
+      });
+      if (debug) console.log("part added");
     },
   });
 
@@ -456,6 +462,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       );
       queryClient.removeQueries({
         queryKey: ["transactionLogs", transactionData?.transaction_num],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["items"],
       });
       return DBModel.deleteTransactionDetails(
         transactionDetail.transaction_detail_id

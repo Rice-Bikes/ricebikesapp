@@ -138,6 +138,21 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = (
             },
         },
         {
+            headerName: "Quantity",
+            colId: "quantity",
+            valueGetter: (params) => {
+                console.log("showing quantity", params);
+                if (!params.data) return '';
+                try {
+                    return params.data?.quantity ?? 0
+                }
+                catch (error) {
+                    console.error('Error in valueGetter for Quantity:', error);
+                    throw error; // Re-throw to be caught by error boundary
+                }
+            }
+        },
+        {
             headerName: "UPC",
             colId: "upc",
             valueGetter: (params) => {
@@ -327,7 +342,7 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = (
                         <div style={{ height: 400, width: '100%' }}>
                             <AgGridReact
                                 // onGridReady={onGridReady}
-                                rowData={orderRequestData ?? Array<OrderRequest>()}
+                                rowData={orderRequestData.filter((order: OrderRequest) => order.User?.firstname !== "SYSTEM") ?? Array<OrderRequest>()}
                                 columnDefs={columnDefs}
                                 defaultColDef={defaultColDef}
                                 columnTypes={columnTypes}
@@ -341,18 +356,17 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = (
                     <Grid2 size={12}>
                         <Typography variant="h6">Stock Orders</Typography>
                         <div style={{ height: 400, width: '100%' }}>
-                            TBD
-                            {/* <AgGridReact
+                            <AgGridReact
                                 // onGridReady={onGridReady}
-                                rowData={orderRequestData ?? Array<OrderRequest>()}
-                                columnDefs={columnDefs}
+                                rowData={orderRequestData.filter((order: OrderRequest) => order.User?.firstname === "SYSTEM") ?? Array<OrderRequest>()}
+                                columnDefs={columnDefs.filter((col) => col.colId !== "link")}
                                 defaultColDef={defaultColDef}
                                 columnTypes={columnTypes}
                                 loading={orderRequestStatus === "fetching"}
                                 overlayNoRowsTemplate="Add a part to the whiteboard!"
                                 suppressMenuHide={true} // Disable menu completely
                                 enableCellTextSelection={true}
-                            /> */}
+                            />
                         </div>
                     </Grid2>
                 </Grid2>
