@@ -67,6 +67,9 @@ export default function SetProjectsTypesDropdown({
                 variant="outlined"
                 ref={anchorRef}
                 aria-label="Button group with a nested menu"
+                sx={{
+                    height: "100%",
+                }}
             >
                 <Button
                     aria-controls={open ? "split-button-menu" : undefined}
@@ -74,9 +77,12 @@ export default function SetProjectsTypesDropdown({
                     aria-label="select merge strategy"
                     aria-haspopup="menu"
                     onClick={handleToggle}
-                    size="medium"
+                    size="small"
+                    sx={{
+                        height: "100%",
+                    }}
                 >
-                    Set Project Type
+                    Project Type
                 </Button>
             </ButtonGroup>
             <Popper

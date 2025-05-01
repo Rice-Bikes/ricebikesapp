@@ -994,11 +994,16 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             Add Part
           </SearchModal>
         </Grid2>
-        <Grid2 size={6} sx={{ textAlign: "center" }}>
+        <Grid2 size={6} sx={{ textAlign: "center", bgcolor: "#FFF3E0", padding: "10px", borderRadius: "10px" }}>
           <h3>Repairs</h3>
-          <List sx={{ width: "100%", bgcolor: "background.paper" }}>
-            {!repairDetailsLoading && repairDetails ? (
-              repairDetails.map((transactionDetail: RepairDetails) => (
+          {!repairDetailsLoading && repairDetails ? (
+            <List sx={{
+              width: "100%",
+              borderRadius: "7px",
+              bgcolor: "background.paper",
+              opacity: repairDetails.length === 0 ? 0 : 1
+            }}>
+              {repairDetails.map((transactionDetail: RepairDetails) => (
                 <ListItem
                   key={transactionDetail.transaction_detail_id}
                   style={{
@@ -1058,21 +1063,26 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                     </Stack>
                   </>
                 </ListItem>
-              ))
-            ) : (
-              <Skeleton
-                variant="rectangular"
-                animation="wave"
-                style={{ marginBottom: "10px", opacity: 0.5 }}
-              />)}
-          </List>
+              ))}
+            </List>
+
+          ) : (
+            <Skeleton
+              variant="rectangular"
+              animation="wave"
+              style={{ marginBottom: "10px", opacity: 0.5 }}
+            />)}
         </Grid2>
 
-        <Grid2 size={6} sx={{ textAlign: "center" }}>
+        <Grid2 size={6} sx={{ textAlign: "center", bgcolor: "#E3F2FD", padding: "10px", borderRadius: "10px" }}>
           <h3>Parts</h3>
-          <List sx={{ width: "100%", bgcolor: "background.paper" }}>
-            {!itemDetailsLoading && itemDetails ? (
-              (itemDetails as ItemDetails[]).map((part: ItemDetails) => (
+
+          {!itemDetailsLoading && itemDetails ? (
+            <List sx={{
+              width: "100%", bgcolor: "background.paper", borderRadius: "7px", opacity: itemDetails.length === 0 ? 0 : 1
+            }}>
+              {(itemDetails as ItemDetails[]).map((part: ItemDetails) => (
+
                 <ListItem
                   key={part.transaction_detail_id}
                   style={{
@@ -1102,17 +1112,26 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                     </Button>
                   </Stack>
                 </ListItem>
-              ))
-            ) : (
-              <Skeleton
-                variant="rectangular"
-                animation="wave"
-                style={{ marginBottom: "10px", opacity: 0.5 }}
-              />
-            )}
+              ))}
+            </List>
 
-            {!orderRequestLoading && orderRequestData ? (
-              (orderRequestData).map((part: Part) => (
+          ) : (
+            <Skeleton
+              variant="rectangular"
+              animation="wave"
+              style={{ marginBottom: "10px", opacity: 0.5 }}
+            />
+          )}
+
+          {!orderRequestLoading && orderRequestData ? (
+            <List sx={{
+              width: "100%", 
+              bgcolor: "background.paper",
+               borderRadius: "7px", 
+               opacity: itemDetails.length === 0 ? 0 : 1,
+              marginTop: "10px",
+            }}>
+              {(orderRequestData).map((part: Part) => (
                 <ListItem
                   key={part.item_id}
                   style={{
@@ -1141,26 +1160,27 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                     </Button>
                   </Stack>
                 </ListItem>
-              ))
-            ) : (
-              <Skeleton
-                variant="rectangular"
-                animation="wave"
-                style={{ marginBottom: "10px", opacity: 0.5 }}
-              />
-            )}
-          </List>
+
+              ))}
+            </List>
+
+          ) : (
+            <Skeleton
+              variant="rectangular"
+              animation="wave"
+              style={{ marginBottom: "10px", opacity: 0.5 }}
+            />
+          )}
         </Grid2>
       </Grid2>
 
-      <Grid2 container>
+      <Grid2 container sx={{ marginTop: "5vh", backgroundColor: "white", borderRadius: "10px", padding: "10px" }}>
         <Grid2
           size={12}
           style={{
-            marginTop: "20px",
-            backgroundColor: "white",
-            padding: "20px",
             borderRadius: "10px",
+            height: "50%",
+            marginBottom: "5px",
           }}
         >
           <h3>Total</h3>
@@ -1177,124 +1197,140 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             user_id={user.user_id}
             handleAddOrderedPart={handleAddOrderedPart}
           />
-          <Grid2
-            style={{ marginBottom: "20px", color: "white", gap: "2px" }}
-            size={12}
-          // gap={2}
-          >
-            <Button
-              onClick={handleWaitPartClick}
-              style={{
-                backgroundColor: waitPart ? "red" : "grey",
-                color: "white",
-              }}
-              variant="contained"
-            >
-              Wait on Part
-            </Button>
-            <Button
-              onClick={handleWaitEmail}
-              style={{
-                backgroundColor: waitEmail ? "red" : "grey",
-                color: "white",
-              }}
-              variant="contained"
-            >
-              Wait on Email
-            </Button>
-            <Button
-              onClick={handlePriority}
-              style={{
-                backgroundColor: "black",
-              }}
-              disableElevation={!priority}
-              variant="contained"
-            >
-              <ErrorSharp
+        </Grid2>
+        <Grid2
+          style={{
+            color: "white", gap: "2px", height: "50%", marginBottom: "10px",
+          }}
+          size={12}
+          gap={2}
+
+        >
+          <Grid2 size={6} >
+            <Stack spacing={1} direction="row" alignItems="center" height={"6vh"}>
+              <Button
+                onClick={handleWaitPartClick}
                 style={{
-                  color: priority ? "red" : "white",
-                  marginRight: "5px",
+                  backgroundColor: waitPart ? "red" : "grey",
+                  color: "white",
+                  height: "100%"
                 }}
-              />
-            </Button>
-            <Button
-              onClick={handleNuclear}
-              style={{
-                backgroundColor: nuclear ? "white" : "grey",
-                color: nuclear ? "red" : "white",
-                width: "fit-content",
-              }}
-              // disabled={checkUserPermissions(user, "setAtomic")}
-              variant="contained"
-            >
-              {nuclear ?
-                <i
-                  className="fas fa-radiation"
-                  style={{ color: "red" }}
-                /> : "Mark as Nuclear"}
-            </Button>
+                variant="contained"
+              >
+                Wait on Part
+              </Button>
+              <Button
+                onClick={handleWaitEmail}
+                style={{
+                  backgroundColor: waitEmail ? "red" : "grey",
+                  color: "white",
+                  height: "100%"
+                }}
+                variant="contained"
+              >
+                Wait on Email
+              </Button>
+              <Button
+                onClick={handlePriority}
+                style={{
+                  backgroundColor: "black",
+                  height: "100%"
 
-            <SetProjectsTypesDropdown
-              setRefurb={() => setIsRefurb(!refurb)}
-              setBeerBike={() => setBeerBike(!beerBike)}
+                }}
+                disableElevation={!priority}
+                variant="contained"
+              >
+                <ErrorSharp
+                  style={{
+                    color: priority ? "red" : "white",
+                    marginRight: "5px",
+                  }}
+                />
+              </Button>
+              <Button
+                onClick={handleNuclear}
+                style={{
+                  // backgroundColor: nuclear ? "white" : "grey",
+                  borderColor: nuclear ? "red" : "black",
+                  color: nuclear ? "red" : "black",
+                  width: "fit-content",
+                  height: "100%"
+
+                }}
+                // disabled={checkUserPermissions(user, "setAtomic")}
+
+                variant="outlined"
+              >
+                {nuclear ?
+                  <i
+                    className="fas fa-radiation"
+                    style={{ color: "red" }}
+                  /> : "Mark as Nuclear"}
+              </Button>
+
+              <SetProjectsTypesDropdown
+                setRefurb={() => setIsRefurb(!refurb)}
+                setBeerBike={() => setBeerBike(!beerBike)}
+              />
+            </Stack>
+          </Grid2>
+
+        </Grid2>
+        <Grid2 size={6} >
+          <Button
+            onClick={handleCheckout}
+            disabled={!isCompleted}
+            style={{
+              backgroundColor: isCompleted ? "green" : "grey",
+              border: "white",
+              marginRight: "10px",
+              color: "white",
+              // cursor: allRepairsDone() ? "pointer" : "not-allowed",
+              opacity: isCompleted ? 1 : 0.5,
+            }}
+            variant="outlined"
+          >
+            Checkout
+          </Button>
+          {showCheckout &&
+            <CheckoutModal
+              repairDetails={repairDetails as RepairDetails[]}
+              itemDetails={itemDetails as ItemDetails[]}
+              totalPrice={totalPrice}
+              isEmployee={isEmployee}
+              beerBike={beerBike ?? false}
+              handlePaid={handlePaid}
+              closeCheckout={closeCheckout}
             />
+          }
+          {!isCompleted ? (
+            <CompleteTransactionDropdown
+              sendEmail={() => handleMarkDone(true)}
+              disabled={blockCompletion()}
+              completeTransaction={() => handleMarkDone(false)}
+            />
+          ) : <Button
+            onClick={() => {
+              setIsCompleted(false);
+              setPaid(false);
+              queryClient.invalidateQueries({
+                queryKey: ["transaction", transaction_id],
+              });
+              queryClient.invalidateQueries({
+                queryKey: ["transactions"],
+              });
+            }}
+            style={{
+              marginRight: "10px",
+              color: "white",
+              backgroundColor: "gray",
+            }}
+            variant="outlined"
+          >
+            Reopen Transaction
+          </Button>
 
-          </Grid2>
-          <Grid2 size={6}>
-            <Button
-              onClick={handleCheckout}
-              disabled={!isCompleted}
-              style={{
-                backgroundColor: isCompleted ? "green" : "grey",
-                border: "white",
-                marginRight: "10px",
-                color: "white",
-                // cursor: allRepairsDone() ? "pointer" : "not-allowed",
-                opacity: isCompleted ? 1 : 0.5,
-              }}
-            >
-              Checkout
-            </Button>
-            {showCheckout &&
-              <CheckoutModal
-                repairDetails={repairDetails as RepairDetails[]}
-                itemDetails={itemDetails as ItemDetails[]}
-                totalPrice={totalPrice}
-                isEmployee={isEmployee}
-                beerBike={beerBike ?? false}
-                handlePaid={handlePaid}
-                closeCheckout={closeCheckout}
-              />
-            }
-            {!isCompleted ? (
-              <CompleteTransactionDropdown
-                sendEmail={() => handleMarkDone(true)}
-                disabled={blockCompletion()}
-                completeTransaction={() => handleMarkDone(false)}
-              />
-            ) : <Button
-              onClick={() => {
-                setIsCompleted(false);
-                setPaid(false);
-                queryClient.invalidateQueries({
-                  queryKey: ["transaction", transaction_id],
-                });
-                queryClient.invalidateQueries({
-                  queryKey: ["transactions"],
-                });
-              }}
-              style={{
-                marginRight: "10px",
-                color: "white",
-                backgroundColor: "gray",
-              }}
-              variant="contained"
-            >
-              Reopen Transaction
-            </Button>
-
-            }
-          </Grid2>
+          }
         </Grid2>
       </Grid2>
 

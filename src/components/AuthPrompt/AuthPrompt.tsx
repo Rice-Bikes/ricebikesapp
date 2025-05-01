@@ -10,6 +10,7 @@ interface AuthPromptProps {
   setUser: (user: User) => void;
 }
 
+
 const debug: boolean = import.meta.env.VITE_DEBUG
 
 const AuthPrompt: React.FC<AuthPromptProps> = ({
@@ -20,6 +21,7 @@ const AuthPrompt: React.FC<AuthPromptProps> = ({
   const [currentNetId, setCurrentNetId] = useState<string>("");
   const timerDuration = 7 * 60;
   const [timer, setTimer] = useState<number>(timerDuration);
+  const [user, setUserState] = useState<User | null>(null);
 
 
 
@@ -85,10 +87,12 @@ const AuthPrompt: React.FC<AuthPromptProps> = ({
     }
     else {
       setUser(data);
+      setUserState(data);
       setTimer(timerDuration);
     }
 
   }, [data, setUser, setOpen]);
+
 
 
 
@@ -99,14 +103,14 @@ const AuthPrompt: React.FC<AuthPromptProps> = ({
   return (
     <>
       <Grid2 container spacing={2} >
-        <Grid2 size={6}>
-          <Button
+        <Grid2 size={2} />
+        <Grid2 size={4} justifyItems={"flex-start"}>
+          < Button
             onClick={() => {
               nav("/admin");
             }}
             variant="contained"
-            hidden
-            sx={{ display: "none" }}
+            sx={{ display: (user?.permissions?.length || 0) > 0 ? "inherit" : "none", width: "40%" }}
           >
             Admin Page
           </Button>
@@ -129,7 +133,7 @@ const AuthPrompt: React.FC<AuthPromptProps> = ({
               (data ? data.firstname + " " + data.lastname : "None")}
           </Button>
         </Grid2>
-      </Grid2>
+      </Grid2 >
 
       <Dialog open={open}>
         <DialogTitle>Enter your NetID</DialogTitle>

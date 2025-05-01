@@ -92,6 +92,7 @@ const PriceCheckModal = ({
                         }}
                         variant="outlined"
                         fullWidth
+                        autoFocus
                     />
                 </div>
 

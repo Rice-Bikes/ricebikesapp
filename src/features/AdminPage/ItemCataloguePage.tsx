@@ -15,6 +15,7 @@ import DBModel from "../../model";
 import { queryClient } from "../../app/main";
 import ItemPageModal from "../../components/ItemPage";
 import { ErrorSharp, ThumbUp, Warning } from "@mui/icons-material";
+import PriceCheckModal from "../../components/PriceCheckModal";
 
 const getUrgency = (stock: number, minStock: number) => {
     if (minStock === 0) {
@@ -35,6 +36,7 @@ const ItemsTable: React.FC = () => {
     const [items, setItems] = useState<Part[]>([]);
     const [selectedItem, setSelectedItem] = useState<Part>();
     const [dialogVisible, setDialogVisible] = useState(false);
+    const [showPriceCheckModal, setShowPriceCheckModal] = useState(false);
 
     const gridApiRef = useRef<AgGridReact>(null);
     const { data: itemData, error: itemError, isLoading: itemsLoading } = useQuery(DBModel.getItemsQuery());
@@ -226,6 +228,21 @@ const ItemsTable: React.FC = () => {
                 Items Management
             </Typography>
             <Stack direction="row" spacing={2} justifyContent="flex-end">
+                <Button
+                    variant="contained"
+                    onClick={() => {
+                        setShowPriceCheckModal(true);
+                    }}
+                    sx={{ marginBottom: "2%" }}
+                >
+                    Check for Availability
+                </Button>
+                <PriceCheckModal
+                    open={showPriceCheckModal}
+                    onClose={() => {
+                        setShowPriceCheckModal(false);
+                    }}
+                />
                 <Button
                     variant="contained"
                     onClick={() => {
