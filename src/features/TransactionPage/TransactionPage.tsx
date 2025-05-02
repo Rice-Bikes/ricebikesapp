@@ -1125,10 +1125,10 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
           {!orderRequestLoading && orderRequestData ? (
             <List sx={{
-              width: "100%", 
+              width: "100%",
               bgcolor: "background.paper",
-               borderRadius: "7px", 
-               opacity: itemDetails.length === 0 ? 0 : 1,
+              borderRadius: "7px",
+              opacity: orderRequestData.length === 0 ? 0 : 1,
               marginTop: "10px",
             }}>
               {(orderRequestData).map((part: Part) => (
