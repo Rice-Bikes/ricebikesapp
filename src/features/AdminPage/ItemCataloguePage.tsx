@@ -17,8 +17,8 @@ import ItemPageModal from "../../components/ItemPage";
 import { ErrorSharp, ThumbUp, Warning } from "@mui/icons-material";
 import PriceCheckModal from "../../components/PriceCheckModal";
 
-const getUrgency = (stock: number, minStock: number) => {
-    if (minStock === 0) {
+const getUrgency = (stock: number, minStock: number, name: string) => {
+    if (minStock === 0 || name.includes("Retrospec") || name.includes("Used") || name.includes("used")) {
         return 0;
     }
     if (stock < minStock) {
@@ -127,7 +127,7 @@ const ItemsTable: React.FC = () => {
         },
     };
     const columnDefs: ColDef[] = [
-        { field: "name", headerName: "Name", sortable: true, filter: true, resizable: true },
+        { field: "name", headerName: "Name", sortable: true, filter: true, resizable: true, flex: 1.5 },
         { field: "standard_price", headerName: "Price", sortable: true, filter: true, flex: 0.6 },
         {
             field: "stock", headerName: "Stock", sortable: true, type: "editableColumn", flex: 0.45,
@@ -167,7 +167,8 @@ const ItemsTable: React.FC = () => {
             cellRenderer: (params: ICellRendererParams) => {
                 const stock = params.data.stock;
                 const minStock = params.data.minimum_stock;
-                if (minStock === 0) {
+                const name = params.data.name;
+                if (minStock === 0 || name.includes("Retrospec") || name.includes("Used") || name.includes("used")) {
                     return <ThumbUp
                         style={{
                             color: "green",
@@ -203,7 +204,8 @@ const ItemsTable: React.FC = () => {
             valueGetter: (params: ValueGetterParams) => {
                 const stock = params.data.stock;
                 const minStock = params.data.minimum_stock;
-                return getUrgency(stock, minStock);
+                const name = params.data.name;
+                return getUrgency(stock, minStock, name);
             }
         },
     ];
@@ -264,7 +266,7 @@ const ItemsTable: React.FC = () => {
                     pagination
                     getRowStyle={({ data }) => {
                         const part = data as Part;
-                        const urgency = getUrgency(part.stock ?? 0, part.minimum_stock ?? 0);
+                        const urgency = getUrgency(part.stock ?? 0, part.minimum_stock ?? 0, part.name ?? "");
                         console.log("urgency", urgency);
                         if (urgency == 3) {
                             return { backgroundColor: "#F88379" };
