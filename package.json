@@ -12,7 +12,9 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
-    "test:changed": "vitest run --changed"
+    "test:changed": "vitest run --changed",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "tsc --noEmit --watch"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
