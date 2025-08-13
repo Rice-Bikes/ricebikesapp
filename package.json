@@ -11,7 +11,8 @@
     "email": "email dev",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "test:changed": "vitest --changed"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
