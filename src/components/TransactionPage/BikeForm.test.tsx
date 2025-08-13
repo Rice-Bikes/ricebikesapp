@@ -146,6 +146,15 @@ describe('NewBikeForm Component', () => {
     test('form submission calls mutate function', async () => {
         render(<NewBikeForm {...defaultProps} />)
 
+        // Fill out required fields to pass validation
+        const makeInput = screen.getByPlaceholderText('Make:')
+        const modelInput = screen.getByPlaceholderText('Model:')
+        const descriptionInput = screen.getByPlaceholderText('Description:')
+        
+        fireEvent.change(makeInput, { target: { value: 'Test Make' } })
+        fireEvent.change(modelInput, { target: { value: 'Test Model' } })
+        fireEvent.change(descriptionInput, { target: { value: 'Test Description' } })
+
         const submitButton = screen.getByRole('button', { name: 'Submit Bike' })
         fireEvent.click(submitButton)
 

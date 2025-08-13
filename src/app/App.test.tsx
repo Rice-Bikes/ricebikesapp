@@ -28,11 +28,11 @@ vi.mock('../features/AdminPage/AdminPage', () => ({
     default: () => <div data-testid="admin-page">Mock Admin Page</div>
 }))
 
-vi.mock('../features/WhiteboardPage/WhiteboardPage', () => ({
+vi.mock('../features/WhiteboardPage', () => ({
     default: () => <div data-testid="whiteboard-page">Mock Whiteboard Page</div>
 }))
 
-vi.mock('../features/TransactionDetail/TransactionDetail', () => ({
+vi.mock('../features/TransactionPage/TransactionPage', () => ({
     default: () => <div data-testid="transaction-detail">Mock Transaction Detail</div>
 }))
 
