@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import { CellClassParams, CellClickedEvent, ColDef, EditableCallbackParams, ICellRendererParams, NewValueParams } from 'ag-grid-community';
 import { Container, Typography, Button, Grid2 } from '@mui/material';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import DBModel from '../model';
 import { OrderRequest } from '../model';
-import { queryClient } from '../app/main';
+import { queryClient } from '../app/queryClient';
 import { useNavigate } from 'react-router-dom';
 import { CheckBox, CheckBoxOutlineBlank } from '@mui/icons-material';
 import { toast } from 'react-toastify';
@@ -63,8 +63,8 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = (
 
             }
         },
-        onError: (error) => {
-            toast.error("Error updating order request: " + error.message);
+        onError: () => {
+            toast.error("500 Server Error: Failed to update order request");
         }
     });
 
@@ -77,15 +77,21 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = (
             });
 
         },
-        onError: (error) => {
-            console.error("Error deleting order request", error)
+        onError: () => {
+            toast.error("500 Server Error: Failed to delete order request");
         }
     });
 
+    useEffect(() => {
+        if (orderRequestError) {
+            console.error(orderRequestError);
+            toast.error("500 Server Error: Failed to load order requests");
+        }
+    }, [orderRequestError]);
+
 
     if (orderRequestError) {
-        console.error(orderRequestError);
-        return <div>Error: {orderRequestError.message}</div>;
+        return <div>Loading...</div>;
     }
 
     // console.log("reqs", orderRequestData);

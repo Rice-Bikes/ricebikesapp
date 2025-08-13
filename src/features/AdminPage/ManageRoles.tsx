@@ -19,7 +19,7 @@ import {
 import { toast } from "react-toastify";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import DBModel from "../../model";
-import { queryClient } from "../../app/main";
+import { queryClient } from "../../app/queryClient";
 
 const RolesPage: React.FC = () => {
     const [roles, setRoles] = useState<Role[]>([]);

@@ -18,7 +18,7 @@ import DBModel, {
   Customer
 } from "../../model";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
-import { queryClient } from "../../app/main";
+import { queryClient } from "../../app/queryClient";
 import { toast } from "react-toastify";
 import SearchModal from "../../components/ItemSearch/SearchModal";
 import "./TransactionPage.css";

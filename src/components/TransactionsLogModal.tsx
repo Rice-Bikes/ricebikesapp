@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, Box, Typography, Button, CircularProgress } from '@mui/material';
 import { useQuery } from "@tanstack/react-query";
 import DBModel, { TransactionLog } from '../model';
+import { toast } from "react-toastify";
 
 // const fetchTransactionLogs = async () => {
 //     const { data } = await axios.get('/api/transaction-logs');
@@ -34,6 +35,12 @@ const TransactionsLogModal = ({
         },
     });
 
+    useEffect(() => {
+        if (error) {
+            toast.error("Error fetching transaction logs");
+        }
+    }, [error]);
+
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
 
@@ -49,8 +56,6 @@ const TransactionsLogModal = ({
                     </Typography>
                     {!data ? (
                         <CircularProgress />
-                    ) : error ? (
-                        <Typography color="error">Error fetching transaction logs</Typography>
                     ) : (
                         <Box>
                             {data.map((log: TransactionLog, index: number) => (

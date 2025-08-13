@@ -3,7 +3,7 @@ import { createFilterOptions, Dialog, Box, Typography, Grid2, TextField, Button,
 import DBModel, { Part } from '../model'
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { queryClient } from '../app/main';
+import { queryClient } from '../app/queryClient';
 
 interface ItemPageModalProps {
     open: boolean;
@@ -115,7 +115,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
             disabled: false,
             specifications: {},
             features: [],
-            item_id: "",
+            item_id: item?.item_id || "",
         };
 
         upsertItem.mutate(newItem);
@@ -124,12 +124,17 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
     const upsertItem = useMutation({
         mutationFn: (item: Part) => {
             setIsLoading(true);
-            return DBModel.createItem(item);
+            // Use updateItem if item has an item_id, otherwise use createItem
+            if (item.item_id) {
+                return DBModel.updateItem(item);
+            } else {
+                return DBModel.createItem(item);
+            }
         },
         onSuccess: (data) => {
             setIsLoading(false);
-            console.log("Item created successfully", data);
-            toast.success("Item created successfully");
+            console.log("Item saved successfully", data);
+            toast.success("Item saved successfully");
             queryClient.invalidateQueries({ queryKey: ['items'] });
             queryClient.invalidateQueries({ queryKey: ['category', '1'] });
             queryClient.invalidateQueries({ queryKey: ['category', '2'] });
@@ -138,9 +143,9 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
             onClose();
         },
         onError: (error) => {
-            console.error("Error creating item", error);
+            console.error("Error saving item", error);
             setIsLoading(false);
-            toast.error("Error creating item");
+            toast.error("Error saving item");
             setEdit(true);
         }
     });

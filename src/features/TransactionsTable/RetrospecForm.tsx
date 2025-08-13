@@ -12,7 +12,7 @@ import DBModel, {
     Transaction,
 } from "../../model";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { queryClient } from "../../app/main";
+import { queryClient } from "../../app/queryClient";
 import { toast } from "react-toastify";
 
 interface NewRetrospecFormProps {

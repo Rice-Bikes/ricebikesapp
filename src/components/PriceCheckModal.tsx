@@ -13,6 +13,7 @@ import DBModel, { Part } from "../model";
 import { useQuery } from "@tanstack/react-query";
 import ItemPageModal from "./ItemPage";
 import { CustomNoRowsOverlay } from "./ItemSearch/CreateItemModal";
+import { toast } from "react-toastify";
 
 type PriceCheckModalProps = {
     open: boolean;
@@ -38,6 +39,13 @@ const PriceCheckModal = ({
         error: partsError,
     } = itemsQuery;
 
+    useEffect(() => {
+        if (partsError) {
+            console.error(partsError);
+            toast.error("Error loading items data");
+        }
+    }, [partsError]);
+
     const handleCancel = () => {
         onClose();
         setSearchTerm("");
@@ -54,11 +62,6 @@ const PriceCheckModal = ({
             setLoading(false);
         }
     }, [parts, loading]);
-
-    if (partsError) {
-        console.error(partsError);
-        return <div>Error: {partsError.message}</div>;
-    }
 
     const handleSearch = () => {
         console.log("searching for", searchTerm);

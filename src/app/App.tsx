@@ -11,7 +11,7 @@ import { User } from "../model";
 import AdminPage from "../features/AdminPage/AdminPage";
 import WhiteboardPage from "../features/WhiteboardPage";
 import { ToastContainer } from "react-toastify";
-import { queryClient } from "./main";
+import { queryClient } from "./queryClient";
 
 function App() {
   const [user, setNewUser] = useState<User>({} as User);
@@ -82,7 +82,7 @@ function App() {
         draggable
         pauseOnHover
         theme="light"
-        />
+      />
     </>
   );
 }

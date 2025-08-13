@@ -15,7 +15,7 @@ import {
 import { toast } from "react-toastify";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import DBModel from "../../model";
-import { queryClient } from "../../app/main";
+import { queryClient } from "../../app/queryClient";
 import { MenuItem, Select, InputLabel, FormControl } from "@mui/material";
 
 const UsersPage: React.FC = () => {
@@ -162,8 +162,10 @@ const UsersPage: React.FC = () => {
             setRoles(roleData);
         }
     }, [userData, usersLoading, roleData, roleLoading]);
+
     const columnDefs: ColDef[] = [
         { colId: "name", headerName: "Name", sortable: true, filter: true, flex: 0.4, valueGetter: (params) => `${params.data.firstname} ${params.data.lastname}` },
+        { field: "username", headerName: "Net Id", sortable: true, filter: true, flex: 0.2 },
         { field: "username", headerName: "Net Id", sortable: true, filter: true, flex: 0.2 },
         {
             field: "active", headerName: "Active", flex: 0.2, valueGetter: (params) => params.data.active ? "Yes" : "No", cellRenderer: (params: ICellRendererParams) => (

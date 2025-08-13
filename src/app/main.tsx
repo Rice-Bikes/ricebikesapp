@@ -17,7 +17,8 @@ import {
 // import {PartsProvider} from '../components/PartItem/PartItem';
 import { BrowserRouter as Router } from "react-router-dom";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./queryClient";
 
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
@@ -29,10 +30,6 @@ ModuleRegistry.registerModules([
   ValidationModule,
   ColumnApiModule,
 ]);
-
-export const queryClient = new QueryClient({
-  defaultOptions: { queries: { refetchOnWindowFocus: false } },
-});
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

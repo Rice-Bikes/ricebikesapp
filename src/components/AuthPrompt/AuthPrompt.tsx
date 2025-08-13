@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Grid2 } from "@mui/material";
 import DBModel, { User } from "../../model";
-import { queryClient } from "../../app/main";
+import { queryClient } from "../../app/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";

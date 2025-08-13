@@ -14,7 +14,7 @@ import {
 import { toast } from "react-toastify";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import DBModel from "../../model";
-import { queryClient } from "../../app/main";
+import { queryClient } from "../../app/queryClient";
 
 const PermissionsPage: React.FC = () => {
     const [permissions, setPermissions] = useState<Permission[]>([]);

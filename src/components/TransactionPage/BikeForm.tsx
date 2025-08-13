@@ -3,7 +3,7 @@ import { Button, Dialog, TextField } from "@mui/material";
 // import { Link } from "react-router-dom";
 import DBModel, { Bike } from "../../model";
 import { useMutation } from "@tanstack/react-query";
-import { queryClient } from "../../app/main";
+import { queryClient } from "../../app/queryClient";
 
 interface FormBike {
   bike_id?: string | null | undefined;

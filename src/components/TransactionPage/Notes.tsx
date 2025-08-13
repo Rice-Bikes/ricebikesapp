@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import DBModel, { User } from "../../model";
 import { TextField, Button } from "@mui/material";
-import { queryClient } from "../../app/main";
+import { queryClient } from "../../app/queryClient";
 
 interface NotesProps {
   notes: string;

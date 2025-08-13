@@ -12,7 +12,7 @@ import {
 import { toast } from "react-toastify";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import DBModel from "../../model";
-import { queryClient } from "../../app/main";
+import { queryClient } from "../../app/queryClient";
 import ItemPageModal from "../../components/ItemPage";
 import { ErrorSharp, ThumbUp, Warning } from "@mui/icons-material";
 import PriceCheckModal from "../../components/PriceCheckModal";

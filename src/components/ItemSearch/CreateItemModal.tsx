@@ -5,7 +5,7 @@ import ItemPageModal from "../ItemPage";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import DBModel from "../../model";
-import { queryClient } from "../../app/main";
+import { queryClient } from "../../app/queryClient";
 
 interface CustomNoRowsOverlayProps {
     searchTerm: string;

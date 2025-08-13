@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogActions,
@@ -22,8 +22,9 @@ import { AgGridReact } from "ag-grid-react";
 import DBModel, { OrderRequest, Part } from "../model";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import SearchModal from "./ItemSearch/SearchModal";
-import { queryClient } from "../app/main";
+import { queryClient } from "../app/queryClient";
 import { ErrorBoundary } from "react-error-boundary";
+import { toast } from "react-toastify";
 
 type WhiteboardEntryModalProps = {
   open: boolean;
@@ -72,6 +73,7 @@ const WhiteboardEntryModal = ({
     },
     onError: (error) => {
       console.error("Error creating order request", error);
+      toast.error("Error creating order request");
     }
   });
 
@@ -88,6 +90,7 @@ const WhiteboardEntryModal = ({
     },
     onError: (error) => {
       console.error("Error updating order request", error);
+      toast.error("Error updating order request");
     }
   });
 
@@ -107,7 +110,8 @@ const WhiteboardEntryModal = ({
 
     },
     onError: (error) => {
-      console.error("Error deleting order request", error)
+      console.error("Error deleting order request", error);
+      toast.error("Error deleting order request");
     }
   });
 
@@ -118,10 +122,12 @@ const WhiteboardEntryModal = ({
   //   }
   // }, []);
 
-  if (orderRequestError) {
-    console.error(orderRequestError);
-    return <div>Error: {orderRequestError.message}</div>;
-  }
+  useEffect(() => {
+    if (orderRequestError) {
+      console.error(orderRequestError);
+      toast.error("Error loading whiteboard data");
+    }
+  }, [orderRequestError]);
 
   if (orderRequestData && waitingOnParts !== (orderRequestData.length > 0)) {
     console.log("setting waiting on parts", orderRequestData.length > 0);
