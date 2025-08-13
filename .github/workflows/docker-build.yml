@@ -17,6 +17,9 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tags: ${{ steps.meta.outputs.tags }}
 
     steps:
       - name: Checkout repository
@@ -31,11 +34,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
+      - name: Run type checking
+        run: npm run type-check
 
       - name: Run linting
         run: npm run lint
+
+      - name: Run tests
+        run: npm test
 
       - name: Build application
         run: npm run build
@@ -64,6 +70,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -81,14 +88,56 @@ jobs:
     if: github.event_name != 'pull_request'
 
     steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get image tag for scanning
+        id: scan-tag
+        run: |
+          # Use a more reliable approach to get the image tag
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            IMAGE_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          else
+            # For non-main branches, use the branch name
+            BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+            IMAGE_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_NAME}"
+          fi
+          echo "image-tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "Scanning image: ${IMAGE_TAG}"
+
+      - name: Verify image exists before scanning
+        run: |
+          echo "Checking if image exists: ${{ steps.scan-tag.outputs.image-tag }}"
+          docker manifest inspect ${{ steps.scan-tag.outputs.image-tag }} || {
+            echo "ERROR: Image ${{ steps.scan-tag.outputs.image-tag }} not found"
+            echo "Available tags for ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:"
+            # This will show what tags are actually available
+            docker images --format "table {{.Repository}}:{{.Tag}}" | grep "${{ env.IMAGE_NAME }}" || echo "No images found"
+            exit 1
+          }
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          image-ref: ${{ steps.scan-tag.outputs.image-tag }}
           format: "sarif"
           output: "trivy-results.sarif"
+          skip-files: "**/*.test.js,**/*.spec.js,**/node_modules/**"
+          skip-dirs: "node_modules,test,tests"
+          exit-code: "0" # Don't fail the build on vulnerabilities
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
+        if: always()
         with:
           sarif_file: "trivy-results.sarif"

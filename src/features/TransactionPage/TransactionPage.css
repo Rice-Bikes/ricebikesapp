@@ -155,7 +155,8 @@ button {
   overflow-x: auto !important;
   overflow-y: auto !important;
 }
-*/ .ag-body.ag-layout-normal {
+
+.ag-body.ag-layout-normal {
   overflow-x: auto !important;
   overflow-y: auto !important;
 }

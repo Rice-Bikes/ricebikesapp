@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:fast": "vite build --minify esbuild",
+    "build:analyze": "vite build --mode analyze",
     "lint": "eslint .",
     "preview": "vite preview",
     "email": "email dev",

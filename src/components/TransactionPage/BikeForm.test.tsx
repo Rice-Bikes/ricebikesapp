@@ -150,7 +150,7 @@ describe('NewBikeForm Component', () => {
         const makeInput = screen.getByPlaceholderText('Make:')
         const modelInput = screen.getByPlaceholderText('Model:')
         const descriptionInput = screen.getByPlaceholderText('Description:')
-        
+
         fireEvent.change(makeInput, { target: { value: 'Test Make' } })
         fireEvent.change(modelInput, { target: { value: 'Test Model' } })
         fireEvent.change(descriptionInput, { target: { value: 'Test Description' } })
