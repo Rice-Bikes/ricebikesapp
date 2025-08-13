@@ -1,35 +1,27 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
+import { useMutation } from '@tanstack/react-query'
 import NewBikeForm from './BikeForm'
 
 // Mock DBModel
-const mockCreateBike = vi.fn()
 vi.mock('../../model', () => ({
     default: {
-        createBike: mockCreateBike,
+        createBike: vi.fn(),
     },
 }))
 
 // Mock queryClient
-const mockInvalidateQueries = vi.fn()
 vi.mock('../../app/queryClient', () => ({
     queryClient: {
-        invalidateQueries: mockInvalidateQueries,
+        invalidateQueries: vi.fn(),
     },
 }))
 
 // Mock useMutation
 const mockMutate = vi.fn()
-const mockUseMutation = vi.fn(() => ({
-    mutate: mockMutate,
-    isLoading: false,
-    isError: false,
-    error: null,
-}))
-
 vi.mock('@tanstack/react-query', () => ({
-    useMutation: mockUseMutation,
+    useMutation: vi.fn(),
 }))
 
 describe('NewBikeForm Component', () => {
@@ -51,6 +43,14 @@ describe('NewBikeForm Component', () => {
 
     beforeEach(() => {
         vi.clearAllMocks()
+        // Set up the mock return value for useMutation
+        // @ts-expect-error - Mock return value for testing
+        vi.mocked(useMutation).mockReturnValue({
+            mutate: mockMutate,
+            mutateAsync: vi.fn(),
+            reset: vi.fn(),
+            status: 'idle',
+        })
     })
 
     test('renders form when isOpen is true', () => {
@@ -143,7 +143,7 @@ describe('NewBikeForm Component', () => {
         })
     })
 
-    test('prevents form submission with preventDefault', async () => {
+    test('form submission calls mutate function', async () => {
         render(<NewBikeForm {...defaultProps} />)
 
         const submitButton = screen.getByRole('button', { name: 'Submit Bike' })
@@ -167,7 +167,7 @@ describe('NewBikeForm Component', () => {
     test('calls useMutation when component renders', () => {
         render(<NewBikeForm {...defaultProps} />)
 
-        expect(mockUseMutation).toHaveBeenCalled()
+        expect(useMutation).toHaveBeenCalled()
     })
 
     test('updates form when bike prop changes', () => {

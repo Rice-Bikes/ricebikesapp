@@ -21,7 +21,7 @@ vi.mock('../components/AuthPrompt/AuthPrompt', () => ({
 }))
 
 vi.mock('../features/TransactionsTable/TransactionsTable', () => ({
-    default: () => <div data-testid="transactions-table">Mock Transactions Table</div>
+    TransactionsTable: () => <div data-testid="transactions-table">Mock Transactions Table</div>
 }))
 
 vi.mock('../features/AdminPage/AdminPage', () => ({
