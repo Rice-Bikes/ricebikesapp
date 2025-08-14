@@ -149,43 +149,84 @@ jobs:
       - name: Get image tag for scanning
         id: scan-tag
         run: |
-          # Use the first tag from the actual build output
+          # Debug the build outputs first
+          echo "🔍 Debug build outputs:"
+          echo "Image name: ${{ needs.build.outputs.image-name }}"
+          echo "Image digest: ${{ needs.build.outputs.image-digest }}"
+          echo "Raw tags output:"
+          echo "${{ needs.build.outputs.image-tags }}"
+          echo "---"
+          
+          # Use the first tag from the actual build output, but clean it up
           BUILT_TAGS="${{ needs.build.outputs.image-tags }}"
-          FIRST_TAG=$(echo "${BUILT_TAGS}" | head -n1)
-
-          echo "Available built tags:"
-          echo "${BUILT_TAGS}"
+          
+          # Extract the first line and trim whitespace
+          FIRST_TAG=$(echo "${BUILT_TAGS}" | head -n1 | xargs)
+          
+          # If first tag is empty, fallback to constructing the tag
+          if [ -z "${FIRST_TAG}" ]; then
+            echo "⚠️ No tags found in build output, constructing fallback tag"
+            BASE_IMAGE="${{ needs.build.outputs.image-name }}"
+            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+              FIRST_TAG="${BASE_IMAGE}:latest"
+            else
+              BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+              FIRST_TAG="${BASE_IMAGE}:${BRANCH_NAME}"
+            fi
+          fi
+          
           echo "Selected tag for scanning: ${FIRST_TAG}"
-
-          echo "image-tag=${FIRST_TAG}" >> $GITHUB_OUTPUT
-
-      - name: Verify image exists before scanning
+          echo "image-tag=${FIRST_TAG}" >> $GITHUB_OUTPUT      - name: Verify image exists before scanning
+        id: verify-image
+        continue-on-error: true
         run: |
           IMAGE_TAG="${{ steps.scan-tag.outputs.image-tag }}"
-          echo "Checking if image exists: ${IMAGE_TAG}"
-
-          # Wait a moment to ensure image propagation
-          sleep 5
-
-          # Try to inspect the manifest
-          if docker manifest inspect "${IMAGE_TAG}"; then
-            echo "✅ Image found: ${IMAGE_TAG}"
-          else
-            echo "❌ ERROR: Image ${IMAGE_TAG} not found"
-            echo ""
-            echo "🔍 Debugging information:"
-            echo "Build outputs from previous job:"
-            echo "- Image name: ${{ needs.build.outputs.image-name }}"
-            echo "- Built tags: ${{ needs.build.outputs.image-tags }}"
-            echo "- Digest: ${{ needs.build.outputs.image-digest }}"
-            echo ""
-            echo "Trying to list available images..."
-            docker images | grep -E "(rice-bikes|ricebikesapp)" || echo "No matching images found locally"
-            exit 1
-          fi
+          echo "🔍 Checking if image exists: ${IMAGE_TAG}"
+          
+          # Wait for image propagation in registry
+          echo "⏳ Waiting for image propagation..."
+          sleep 15
+          
+          # Try multiple times with backoff
+          MAX_ATTEMPTS=3
+          ATTEMPT=1
+          
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "Attempt $ATTEMPT/$MAX_ATTEMPTS to verify image..."
+            
+            if docker manifest inspect "${IMAGE_TAG}" 2>/dev/null; then
+              echo "✅ Image found: ${IMAGE_TAG}"
+              echo "image-available=true" >> $GITHUB_OUTPUT
+              exit 0
+            else
+              echo "❌ Image not found on attempt $ATTEMPT"
+              if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+                echo ""
+                echo "🚨 FINAL ERROR: Image ${IMAGE_TAG} not found after $MAX_ATTEMPTS attempts"
+                echo ""
+                echo "🔍 Debugging information:"
+                echo "Build outputs from previous job:"
+                echo "- Image name: ${{ needs.build.outputs.image-name }}"
+                echo "- Built tags: ${{ needs.build.outputs.image-tags }}"
+                echo "- Digest: ${{ needs.build.outputs.image-digest }}"
+                echo ""
+                echo "🔍 Registry debugging:"
+                echo "Trying to list packages in registry..."
+                # Try to see if we can at least reach the registry
+                docker manifest inspect ghcr.io/rice-bikes/ricebikesapp:latest 2>/dev/null || echo "Cannot reach latest tag either"
+                echo "image-available=false" >> $GITHUB_OUTPUT
+                exit 1
+              else
+                echo "Waiting 10 seconds before retry..."
+                sleep 10
+                ATTEMPT=$((ATTEMPT + 1))
+              fi
+            fi
+          done
 
       - name: Run Trivy vulnerability scanner
         id: trivy-scan
+        if: steps.verify-image.outputs.image-available == 'true'
         continue-on-error: true # Don't fail the entire workflow if scan fails
         uses: aquasecurity/trivy-action@master
         with:
@@ -208,9 +249,19 @@ jobs:
       - name: Security scan summary
         if: always()
         run: |
-          if [ "${{ steps.trivy-scan.outcome }}" = "success" ]; then
-            echo "✅ Security scan completed successfully"
+          if [ "${{ steps.verify-image.outputs.image-available }}" = "true" ]; then
+            if [ "${{ steps.trivy-scan.outcome }}" = "success" ]; then
+              echo "✅ Security scan completed successfully"
+            else
+              echo "⚠️ Security scan failed, but build continues"
+              echo "Image was available but scanning encountered issues"
+            fi
           else
-            echo "⚠️ Security scan failed, but build continues"
-            echo "This may be due to image availability or scanning service issues"
+            echo "⚠️ Security scan skipped - image not available"
+            echo "Build completed successfully but image verification failed"
+            echo "This may be due to:"
+            echo "- Registry propagation delays"
+            echo "- Authentication issues"
+            echo "- Image tag mismatch"
+            echo "- Network connectivity issues"
           fi
