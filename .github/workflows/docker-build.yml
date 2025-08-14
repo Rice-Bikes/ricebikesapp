@@ -138,6 +138,8 @@ jobs:
       contents: read
       packages: read
       security-events: write
+      actions: read
+      id-token: write
 
     steps:
       - name: Set up Docker Buildx
@@ -251,6 +253,9 @@ jobs:
         if: always() && steps.trivy-scan.outcome == 'success'
         with:
           sarif_file: "trivy-results.sarif"
+          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Security scan summary
         if: always()
