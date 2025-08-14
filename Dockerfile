@@ -12,6 +12,9 @@ RUN npm ci --only=production && npm cache clean --force
 FROM node:23.11.0-alpine AS builder
 WORKDIR /app
 
+# Accept build arguments
+ARG VITE_API_URL=http://localhost:7130
+
 # Copy package files
 COPY package.json package-lock.json ./
 
@@ -20,6 +23,9 @@ RUN npm ci
 
 # Copy source code
 COPY . .
+
+# Set environment variables for build
+ENV VITE_API_URL=${VITE_API_URL}
 
 # Build the application
 RUN npm run build
