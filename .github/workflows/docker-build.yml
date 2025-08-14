@@ -156,13 +156,13 @@ jobs:
           echo "Raw tags output:"
           echo "${{ needs.build.outputs.image-tags }}"
           echo "---"
-          
+
           # Use the first tag from the actual build output, but clean it up
           BUILT_TAGS="${{ needs.build.outputs.image-tags }}"
-          
+
           # Extract the first line and trim whitespace
           FIRST_TAG=$(echo "${BUILT_TAGS}" | head -n1 | xargs)
-          
+
           # If first tag is empty, fallback to constructing the tag
           if [ -z "${FIRST_TAG}" ]; then
             echo "⚠️ No tags found in build output, constructing fallback tag"
@@ -174,23 +174,25 @@ jobs:
               FIRST_TAG="${BASE_IMAGE}:${BRANCH_NAME}"
             fi
           fi
-          
+
           echo "Selected tag for scanning: ${FIRST_TAG}"
-          echo "image-tag=${FIRST_TAG}" >> $GITHUB_OUTPUT      - name: Verify image exists before scanning
+          echo "image-tag=${FIRST_TAG}" >> $GITHUB_OUTPUT
+
+      - name: Verify image exists before scanning
         id: verify-image
         continue-on-error: true
         run: |
           IMAGE_TAG="${{ steps.scan-tag.outputs.image-tag }}"
           echo "🔍 Checking if image exists: ${IMAGE_TAG}"
-          
+
           # Wait for image propagation in registry
           echo "⏳ Waiting for image propagation..."
           sleep 15
-          
+
           # Try multiple times with backoff
           MAX_ATTEMPTS=3
           ATTEMPT=1
-          
+
           while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
             echo "Attempt $ATTEMPT/$MAX_ATTEMPTS to verify image..."
             
