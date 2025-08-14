@@ -130,28 +130,3 @@ jobs:
           }
 
           echo "✅ Image successfully built and pushed: ${MAIN_TAG}"
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    permissions:
-      contents: read
-      packages: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up deployment environment
-        run: |
-          echo "🚀 Starting frontend deployment to production"
-          echo "Image: ${{ needs.build.outputs.image-name }}:latest"
-          echo "Target environment: production"
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
