@@ -159,7 +159,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
                 </Typography>
                 {isLoading ? (
                     <CircularProgress size={24} color="inherit" />
-                ) : (
+                ) : edit ? (
                     <form onSubmit={handleSubmit}>
                         <Grid2 container spacing={2}>
                             <Grid2 size={12}>
@@ -323,6 +323,27 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
                             </Grid2>
                         </Grid2>
                     </form>
+                ) : (
+                    <Box>
+                        <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                            {form.name}
+                        </Typography>
+                        <Typography variant="body1" sx={{ mb: 2 }}>
+                            {form.upc}
+                        </Typography>
+                        <Typography variant="body1" sx={{ mb: 2 }}>
+                            {form.brand}
+                        </Typography>
+                        <Button
+                            fullWidth
+                            sx={{ height: "80%", marginTop: "10%" }}
+                            variant="contained"
+                            onClick={() => setEdit(true)}
+                            color="primary"
+                        >
+                            Open for Edit
+                        </Button>
+                    </Box>
                 )}
             </Box>
         </Dialog>

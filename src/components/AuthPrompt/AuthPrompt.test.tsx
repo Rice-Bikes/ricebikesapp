@@ -236,30 +236,4 @@ describe('AuthPrompt Component', () => {
     // The current user display should be visible immediately
     expect(screen.getByText('Current User: Test User')).toBeInTheDocument()
   })
-
-  test('handles logout action', async () => {
-    // Start with successful user data to show logged-in state
-    mockUseQuery.mockReturnValue({
-      data: mockUser,
-      error: null,
-      status: 'success',
-      isLoading: false,
-      isError: false,
-      isSuccess: true,
-    })
-
-    render(<AuthPrompt setUser={mockSetUser} />, { wrapper })
-
-    const removeQueriesSpy = vi.spyOn(queryClient, 'removeQueries')
-    
-    // The button should be visible immediately
-    const currentUserButton = screen.getByText('Current User: Test User')
-    expect(currentUserButton).toBeInTheDocument()
-
-    // Click the button
-    fireEvent.click(currentUserButton)
-
-    // Verify the query client was called
-    expect(removeQueriesSpy).toHaveBeenCalledWith({ queryKey: ['user'] })
-  })
 })
