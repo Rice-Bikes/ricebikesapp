@@ -1,4 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
+import Ajv from "ajv";
+import addFormats from "ajv-formats";
 import {
   $Compiler,
   wrapCompilerAsTypeGuard,
@@ -33,8 +35,9 @@ import {
   CreatePartSchema,
   RoleSchema,
   PermissionsSchema,
+  FeatureFlagSchema,
 } from "./schema";
-import Ajv from "ajv";
+import { IRow } from "./features/TransactionsTable/TransactionsTable";
 
 const hostname = import.meta.env.VITE_API_URL;
 
@@ -56,6 +59,7 @@ export type Permission = FromSchema<typeof PermissionsSchema>;
 export type OrderRequest = FromSchema<typeof OrderRequestSchema>;
 export type CreateOrderRequests = FromSchema<typeof CreateOrderRequestsSchema>;
 export type CreatePart = FromSchema<typeof CreatePartSchema>;
+export type FeatureFlag = FromSchema<typeof FeatureFlagSchema>;
 
 export type PartArray = FromSchema<typeof partArraySchema>;
 export type RepairArray = FromSchema<typeof repairArraySchema>;
@@ -122,6 +126,7 @@ export interface ExtractedRow {
  * @returns {object} - The query configuration object.
  */
 class DBModel {
+
   // OBJECT VERIFICATION METHODS
   static validateTransaction: (data: unknown) => data is Transaction;
   static validateCustomer: (data: unknown) => data is Customer;
@@ -136,6 +141,7 @@ class DBModel {
   public static validateTransactionLog: (data: unknown) => data is TransactionLog;
   public static validateRole: (data: unknown) => data is Role;
   public static validatePermissions: (data: unknown) => data is Permission;
+  public static validateFeatureFlags: (data: unknown) => data is FeatureFlag[];
 
   // ARRAY VERIFICATION METHODS
   static validatePartsArray: (data: unknown) => data is Part[];
@@ -157,6 +163,7 @@ class DBModel {
 
   static initialize() {
     const ajv = new Ajv();
+    addFormats(ajv); // Enables support for 'date-time' and other formats
     const $compile: $Compiler = (schema) => ajv.compile(schema);
     const compile = wrapCompilerAsTypeGuard($compile);
 
@@ -175,6 +182,7 @@ class DBModel {
     DBModel.validateTransactionLog = compile(TransactionLogSchema);
     DBModel.validateRole = compile(RoleSchema);
     DBModel.validatePermissions = compile(PermissionsSchema);
+    DBModel.validateFeatureFlags = compile(FeatureFlagSchema);
 
     // ARRAY VERIFICATION METHODS
     DBModel.validateTransactionsArray = compile(TransactionArraySchema);
@@ -262,7 +270,7 @@ class DBModel {
             Customer: part.Customer,
             Bike: part.Bike,
             OrderRequests: part.OrderRequests ?? [],
-            Submitted: new Date(part.date_created),
+            Submitted: new Date(part.date_created ?? 0),
           };
         });
         return transactionRowsPromises;
@@ -1528,13 +1536,39 @@ class DBModel {
       });
 
     public static sendEmail = async (customer: Customer, transaction_num: number) => 
-      fetch(`${hostname}/customers/${transaction_num}`, {
+      fetch(`${hostname}/customers/${transaction_num}/emails/pickup`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         customer
+      }),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        console.log(response);
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post order request");
+        }
+      })
+      .catch((error) => {
+        console.error("Error posting order request data: ", error);
+        throw new Error("Error posting order request data: " + error); // More detailed error logging
+      });
+
+  public static sendRecieptEmail = async (customer: Customer, transaction_num: number, transaction_id: string) => 
+      fetch(`${hostname}/customers/${transaction_num}/emails/receipt`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        customer,
+        transaction_id
       }),
     })
       .then((response) => response.json())
@@ -1560,6 +1594,7 @@ class DBModel {
       queryFn: () => this.fetchTransactions(page_limit, aggregate),
       refetchOnWindowFocus: "always",
       staleTime: 600000, // Cache products for 1 minute
+      select: (data) => data as IRow[],
     });
   };
 
@@ -1624,7 +1659,82 @@ class DBModel {
       staleTime: 600000, // Cache products for 10 minutes
     });
   }
+  public static getFeatureFlagsQuery = () => {
+    return queryOptions({
+      queryKey: ["featureFlags"],
+      queryFn: () => this.fetchFeatureFlags(),
+      refetchOnWindowFocus: false,
+      staleTime: 600000, // Cache products for 10 minutes
+    });
+  };
 
+    /**
+   * Fetch all feature flags from the backend
+   */
+  public static fetchFeatureFlags = async () =>
+    fetch(`${hostname}/feature-flags`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // Optionally validate response shape here
+        return data;
+      });
+
+  /**
+   * Update a feature flag value (admin only)
+   */
+  public static updateFeatureFlags = async (flags: Record<string, boolean>) =>
+    fetch(`${hostname}/feature-flags`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(flags),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // Optionally validate response shape here
+        return data;
+      });
+    public static addFeatureFlag = async (flagName: string, value: boolean, details: string, user: User) => {
+      return fetch(`${hostname}/feature-flags/${flagName}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({  value, details, user }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // Optionally validate response shape here
+        return data;
+      });
+  };
+
+  public static deleteFeatureFlag = async (flagName: string) => {
+    return fetch(`${hostname}/feature-flags/${flagName}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // Optionally validate response shape here
+        return data;
+      });
+  };
+
+  /**
+   * Fetch feature flag audit log (optional)
+   */
+  public static fetchFeatureFlagAudit = async () =>
+    fetch(`${hostname}/feature-flags/audit`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // Optionally validate response shape here
+        return data;
+      });
+    
   static async processPdf(formData: FormData): Promise<ExtractedRow[]> {
     const response = await fetch(`${hostname}/orderRequests/process-pdf`, {
       method: 'POST',

@@ -7,6 +7,10 @@ import Item from "../../components/TransactionPage/HeaderItem";
 import Notes from "../../components/TransactionPage/Notes";
 import { RowClickedEvent } from "ag-grid-community";
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
+import {
+  SALES_TAX_MULTIPLIER,
+  MECHANIC_PART_MULTIPLIER
+} from "../../constants/transaction"
 import DBModel, {
   ItemDetails,
   Part,
@@ -42,12 +46,12 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], orde
     });
   if (parts)
     parts.forEach((part) => {
-      total += !isEmployee || isBeerBike ? part.Item.standard_price : (part.Item.wholesale_cost * 1.06);
+      total += !isEmployee || isBeerBike ? part.Item.standard_price : (part.Item.wholesale_cost * MECHANIC_PART_MULTIPLIER);
     });
   if (orderRequest)
     if (debug) console.log("calculating order request cost: ", orderRequest, total);
   orderRequest.forEach((part) => {
-    total += !isEmployee || isBeerBike ? part.standard_price : (part.wholesale_cost * 1.06);
+    total += !isEmployee || isBeerBike ? part.standard_price : (part.wholesale_cost * MECHANIC_PART_MULTIPLIER);
   });
   if (debug) console.log("total cost: ", total);
   return total;
@@ -217,6 +221,23 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       toast.error("Error sending email: " + error);
     },
   })
+
+  const sendRecieptEmail = useMutation({
+    mutationFn: ({customer, transaction_id}: {customer: Customer, transaction_id: string}) => {
+      if (!transactionData) throw new Error("Transaction data not found");
+      return DBModel.sendRecieptEmail(
+        customer,
+        transactionData.transaction_num,
+        transaction_id
+      );
+    },
+    onSuccess: () => {
+      toast.success("Receipt email sent");
+    },
+    onError: (error) => {
+      toast.error("Error sending receipt email: " + error);
+    },
+  });
 
   const updateTransaction = useMutation({
     mutationFn: (input: {
@@ -521,6 +542,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       `checked out transaction for $${totalPrice}`,
       "transaction",
     );
+    const customer: Customer = transactionData?.Customer as Customer;
+    sendRecieptEmail.mutate({ customer, transaction_id: transactionData!.transaction_id });
     nav("/");
   };
 
@@ -1092,7 +1115,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                   }}
                 >
                   <span>
-                    {part.Item.name} - ${!isEmployee || beerBike ? part.Item.standard_price.toFixed(2) : (part.Item.wholesale_cost * 1.06).toFixed(2)}
+                    {part.Item.name} - ${!isEmployee || beerBike ? part.Item.standard_price.toFixed(2) : (part.Item.wholesale_cost * MECHANIC_PART_MULTIPLIER).toFixed(2)}
                   </span>
                   <Stack direction="row" spacing={2} sx={{ padding: " 0 2px" }}>
                     <Button
@@ -1142,7 +1165,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                   }}
                 >
                   <span>
-                    {part.name} - ${!isEmployee || beerBike ? part.standard_price.toFixed(2) : (part.wholesale_cost * 1.06).toFixed(2)}
+                    {part.name} - ${!isEmployee || beerBike ? part.standard_price.toFixed(2) : (part.wholesale_cost * MECHANIC_PART_MULTIPLIER).toFixed(2)}
                   </span>
                   <Stack direction="row" spacing={2} sx={{ padding: " 0 2px" }}>
                     <Button
@@ -1185,7 +1208,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         >
           <h3>Total</h3>
           <p>
-            <strong>${(totalPrice * 1.0825).toFixed(2)}</strong>
+            <strong>${(totalPrice * SALES_TAX_MULTIPLIER).toFixed(2)}</strong>
           </p>
           <WhiteboardEntryModal
             open={showWaitingParts}

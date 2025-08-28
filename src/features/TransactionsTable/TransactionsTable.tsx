@@ -394,37 +394,41 @@ export function TransactionsTable({
   }
 
   function doesExternalFilterPass(node: IRowNode) {
-    // if (debug) console.log(node);
     const transaction = node.data.Transaction as Transaction;
-    if (transaction.transaction_num === 16281) {
-      if (debug) console.log("transaction", transaction);
-    }
     return (
       (viewType === "retrospec" &&
+        transaction.transaction_type != null &&
         transaction.transaction_type.toLowerCase() === "retrospec" &&
-        transaction.is_paid === false) ||
+        transaction?.is_paid === false) ||
       (viewType === "pickup" &&
-        transaction.is_paid === false &&
-        transaction.is_completed === true
-        && transaction.is_refurb === false
-        && transaction.transaction_type.toLowerCase() !== "retrospec"
-        && !isDaysLess(183, new Date(transaction.date_created), new Date())
+        transaction?.is_paid === false &&
+        transaction?.is_completed === true
+        && transaction?.is_refurb === false
+        && transaction.transaction_type != null &&
+        transaction?.transaction_type.toLowerCase() !== "retrospec"
+        && !isDaysLess(183, new Date(transaction.date_created ?? ""), new Date())
       ) ||
-      (viewType === "paid" && transaction.is_paid === true) ||
+      (viewType === "paid" && transaction?.is_paid === true) ||
       (viewType === "main" &&
-        (transaction.is_completed === false &&
-          transaction.transaction_type.toLowerCase() !== "retrospec" &&
-          (transaction.is_employee === false || transaction.is_employee === true && transaction.is_beer_bike === true) &&
-          transaction.is_refurb === false || transaction.transaction_type.toLowerCase() === "retrospec" && transaction.is_refurb)) ||
+        (transaction?.is_completed === false &&
+          transaction.transaction_type != null &&
+
+          transaction?.transaction_type.toLowerCase() !== "retrospec" &&
+          (transaction?.is_employee === false || transaction?.is_employee === true && transaction?.is_beer_bike === true) &&
+          transaction?.is_refurb === false || transaction.transaction_type != null &&
+          transaction?.transaction_type.toLowerCase() === "retrospec" && transaction?.is_refurb)) ||
       (viewType === "employee" &&
-        transaction.is_employee === true &&
-        transaction.is_completed === false &&
-        transaction.is_beer_bike === false &&
-        transaction.transaction_type.toLowerCase() !== "retrospec"
-        && transaction.is_refurb === false) ||
-      (viewType === "refurb" && transaction.is_refurb === true && transaction.is_paid === false && transaction.is_completed === false && transaction.transaction_type.toLowerCase() != "retrospec") ||
+        transaction?.is_employee === true &&
+        transaction?.is_completed === false &&
+        transaction?.is_beer_bike === false &&
+        transaction.transaction_type != null &&
+
+        transaction?.transaction_type.toLowerCase() !== "retrospec"
+        && transaction?.is_refurb === false) ||
+      (viewType === "refurb" && transaction?.is_refurb === true && transaction?.is_paid === false && transaction?.is_completed === false && transaction.transaction_type != null &&
+        transaction?.transaction_type.toLowerCase() != "retrospec") ||
       (viewType === "beer bike" &&
-        transaction.is_beer_bike === true && !isDaysLess(364, new Date(transaction.date_created), new Date())));
+        transaction?.is_beer_bike === true && !isDaysLess(364, new Date(transaction?.date_created ?? ""), new Date())));
   }
 
 
@@ -516,12 +520,12 @@ export function TransactionsTable({
             onRowClicked={onRowClicked}
             getRowStyle={({ data }) => {
               const transaction = data?.Transaction as Transaction;
-              if (transaction.is_completed === false
+              if (transaction.date_created && transaction.transaction_type != null && (transaction.is_completed === false
                 && transaction.transaction_type !== "retrospec"
                 && transaction.is_employee === false
                 && transaction.is_refurb === false ||
                 transaction.is_beer_bike === true
-                && transaction.is_completed === false
+                && transaction.is_completed === false)
               ) {
                 if (
                   isDaysLess(
@@ -543,6 +547,7 @@ export function TransactionsTable({
               }
               else if (
                 transaction.date_completed !== null
+                && transaction.transaction_type !== null
                 && transaction.date_completed !== undefined
                 && (transaction.is_paid === false
                   && transaction.is_completed === true

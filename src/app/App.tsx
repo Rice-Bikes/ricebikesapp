@@ -13,6 +13,8 @@ import WhiteboardPage from "../features/WhiteboardPage";
 import { ToastContainer } from "react-toastify";
 import { queryClient } from "./queryClient";
 
+
+
 function App() {
   const [user, setNewUser] = useState<User>({} as User);
 
@@ -21,70 +23,70 @@ function App() {
   };
 
   return (
-    <>
-
-      <header id="taskbar">
-        <Link to="/">
-          <img src={RiceBikesIcon} alt="Rice Bikes Icon" />
-        </Link>
-        <h2>Rice Bikes App</h2>
-        <Button
-          id="logout"
-          variant="contained"
-          style={{ backgroundColor: "black" }}
-          onClick={() => {
-            queryClient.removeQueries({ queryKey: ["user"] });
-          }}
-        >
-          {" "}
-          <h2>
-            {user === null ? (
-              <Link to="https://idp.rice.edu/idp/profile/cas/login?service=https://ricebikesapp.rice.edu/auth">
-                {"Login"}
-              </Link>
-            ) : (
-              "Logout"
-            )}
-          </h2>{" "}
-        </Button>
-      </header>
-      <AuthPrompt
-        setUser={onUserChange}
-      />
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <TransactionsTable user={user} />
-          }
+      <>
+        <header id="taskbar">
+          <Link to="/">
+            <img src={RiceBikesIcon} alt="Rice Bikes Icon" />
+          </Link>
+          <h2>Rice Bikes App</h2>
+          <Button
+            id="logout"
+            variant="contained"
+            style={{ backgroundColor: "black" }}
+            onClick={() => {
+              queryClient.removeQueries({ queryKey: ["user"] });
+            }}
+          >
+            {" "}
+            <h2>
+              {user === null ? (
+                <Link to="https://idp.rice.edu/idp/profile/cas/login?service=https://ricebikesapp.rice.edu/auth">
+                  {"Login"}
+                </Link>
+              ) : (
+                "Logout"
+              )}
+            </h2>{" "}
+          </Button>
+        </header>
+        <AuthPrompt
+          setUser={onUserChange}
         />
-        <Route
-          path="/transaction-details/:transaction_id"
-          element={<TransactionDetail propUser={user} />}
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <TransactionsTable user={user} />
+            }
+          />
+          <Route
+            path="/transaction-details/:transaction_id"
+            element={<TransactionDetail propUser={user} />}
+          />
+          <Route
+            path="/admin"
+            element={<AdminPage user={user} />}
+          />
+          <Route
+            path="/whiteboard"
+            element={<WhiteboardPage user_id={user.user_id} />}
+          />
+        </Routes>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
         />
-        <Route
-          path="/admin"
-          element={<AdminPage user={user} />}
-        />
-        <Route
-          path="/whiteboard"
-          element={<WhiteboardPage user_id={user.user_id} />}
-        />
-      </Routes>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-    </>
+      </>
   );
 }
+
 
 export default App;

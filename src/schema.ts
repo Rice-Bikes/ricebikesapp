@@ -570,3 +570,17 @@ export const TransactionLogArraySchema = {
   type: "array",
   items: TransactionLogSchema,
 } as const satisfies JSONSchema;
+
+export const FeatureFlagSchema = {
+  $id: "featureFlag.json",
+  type: "object",
+  properties: {
+    name: { type: "string" },
+    description: { type: "string" },
+    isActive: { type: "boolean" },
+    createdAt: { type: "string", format: "date-time" },
+    updatedAt: { type: "string", format: "date-time" },
+  },
+  required: ["name", "isActive", "createdAt", "updatedAt"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;

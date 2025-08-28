@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { createFilterOptions, Dialog, Box, Typography, Grid2, TextField, Button, CircularProgress, Autocomplete } from '@mui/material';
+import { Dialog, Box, Typography, Grid2, TextField, Button, CircularProgress, Autocomplete } from '@mui/material';
 import DBModel, { Part } from '../model'
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
@@ -10,130 +10,74 @@ interface ItemPageModalProps {
     onClose: () => void;
     item?: Part;
 }
-const filter = createFilterOptions<string>();
+
 const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) => {
-    // if (!item) return};
-    console.log(item ? false : true);
     const [edit, setEdit] = useState(item === null);
-    console.log(edit);
-    console.log("item", item);
     const [isLoading, setIsLoading] = useState(false);
     const [hasBeenSubmitted, setHasBeenSubmitted] = useState(false);
-    const [upc, setUpc] = useState<string>(item?.upc || '');
-    const [name, setName] = useState<string>(item?.name || '');
-    const [brand, setBrand] = useState<string>(item?.brand || '');
-    const [description, setDescription] = useState<string>(item?.description || '');
-    const [standard_price, setStandardPrice] = useState<string>(`${item?.standard_price}` || "0");
-    const [wholesale_cost, setWholesaleCost] = useState<string>(`${item?.wholesale_cost}` || "0");
-    const [category_1, setCategory1] = useState<string>(item?.category_1 || '');
-    const [category_2, setCategory2] = useState<string>(item?.category_2 || '');
-    const [category_3, setCategory3] = useState<string>(item?.category_3 || '');
-    const [stock, setStock] = useState<number>(item?.stock || 0);
-    const [minimum_stock, setMinimumStock] = useState<number>(item?.minimum_stock || 0);
+    const [form, setForm] = useState({
+        upc: item?.upc || '',
+        name: item?.name || '',
+        brand: item?.brand || '',
+        description: item?.description || '',
+        standard_price: `${item?.standard_price ?? "0"}`,
+        wholesale_cost: `${item?.wholesale_cost ?? "0"}`,
+        category_1: item?.category_1 || '',
+        category_2: item?.category_2 || '',
+        category_3: item?.category_3 || '',
+        stock: item?.stock ?? 0,
+        minimum_stock: item?.minimum_stock ?? 0,
+    });
 
     useEffect(() => {
         if (item) {
-            setUpc(item.upc);
-            setName(item.name);
-            setBrand(item.brand ?? '');
-            setDescription(item.description ?? '');
-            setStandardPrice(`${item.standard_price}`);
-            setWholesaleCost(`${item.wholesale_cost}`);
-            setCategory1(item.category_1 ?? '');
-            setCategory2(item.category_2 ?? '');
-            setCategory3(item.category_3 ?? '');
-            setStock(item.stock ?? 0);
-            setMinimumStock(item.minimum_stock ?? 0);
+            setForm({
+                upc: item.upc ?? '',
+                name: item.name ?? '',
+                brand: item.brand ?? '',
+                description: item.description ?? '',
+                standard_price: `${item.standard_price ?? "0"}`,
+                wholesale_cost: `${item.wholesale_cost ?? "0"}`,
+                category_1: item.category_1 ?? '',
+                category_2: item.category_2 ?? '',
+                category_3: item.category_3 ?? '',
+                stock: item.stock ?? 0,
+                minimum_stock: item.minimum_stock ?? 0,
+            });
         }
-
     }, [item]);
 
     const { data: first_categories } = useQuery({
         queryKey: ['category', '1'],
         queryFn: () => DBModel.fetchItemCategory(1),
-        select: (data) => data as string[]
+        select: (data) => data as string[],
     });
-
     const { data: second_categories } = useQuery({
         queryKey: ['category', '2'],
         queryFn: () => DBModel.fetchItemCategory(2),
-        select: (data) => data as string[]
+        select: (data) => data as string[],
     });
-
     const { data: third_categories } = useQuery({
         queryKey: ['category', '3'],
         queryFn: () => DBModel.fetchItemCategory(3),
-        select: (data) => data as string[]
+        select: (data) => data as string[],
     });
-
-
-
-    const handleSubmit = () => {
-        setHasBeenSubmitted(true);
-        if (isNaN(Number.parseFloat(standard_price))) {
-            toast.error("Standard Price must be a number");
-            return;
-        }
-        if (isNaN(Number.parseFloat(wholesale_cost))) {
-            toast.error("Wholesale Cost must be a number");
-            return
-        }
-
-        const wholesale_cost_num = Number.parseFloat(wholesale_cost);
-        const standard_price_num = Number.parseFloat(standard_price);
-        if (wholesale_cost_num > standard_price_num) {
-            toast.error("Wholesale Cost must be less than or equal to Standard Price");
-            return;
-        }
-        if (isNaN(stock)) {
-            toast.error("Stock must be a number");
-            return;
-        }
-        if (isNaN(minimum_stock)) {
-            toast.error("Minimum Stock must be a number");
-            return;
-        }
-
-        if (!upc || !name || standard_price_num == 0 || wholesale_cost_num == 0 || wholesale_cost_num > standard_price_num || stock < 0 || minimum_stock < 0) {
-            toast.error(`Please fill out all required fields: ${!upc ? 'UPC, ' : ''}${!name ? 'Name, ' : ''}${standard_price_num == 0 ? 'Standard Price, ' : ''}${wholesale_cost_num == 0 || wholesale_cost_num > standard_price_num ? 'Wholesale Cost, ' : ''}${stock < 0 ? 'Stock, ' : ''}${minimum_stock < 0 ? 'Minimum Stock, ' : ''}`.slice(0, -2));
-            return;
-        }
-        const newItem: Part = {
-            upc,
-            name,
-            brand,
-            description,
-            standard_price: standard_price_num,
-            wholesale_cost: wholesale_cost_num,
-            category_1,
-            category_2,
-            category_3,
-            stock,
-            minimum_stock,
-            managed: true,
-            condition: "new",
-            disabled: false,
-            specifications: {},
-            features: [],
-            item_id: item?.item_id || "",
-        };
-
-        upsertItem.mutate(newItem);
-    }
 
     const upsertItem = useMutation({
         mutationFn: (item: Part) => {
             setIsLoading(true);
-            // Use updateItem if item has an item_id, otherwise use createItem
             if (item.item_id) {
                 return DBModel.updateItem(item);
             } else {
-                return DBModel.createItem(item);
+                if (item.upc && item.upc !== null) {
+                    return DBModel.createItem(item);
+                } else {
+                    return Promise.reject(new Error("UPC is required for new items"));
+                }
             }
         },
-        onSuccess: (data) => {
+        onSuccess: () => {
             setIsLoading(false);
-            console.log("Item saved successfully", data);
             toast.success("Item saved successfully");
             queryClient.invalidateQueries({ queryKey: ['items'] });
             queryClient.invalidateQueries({ queryKey: ['category', '1'] });
@@ -142,54 +86,106 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
             setEdit(false);
             onClose();
         },
-        onError: (error) => {
-            console.error("Error saving item", error);
+        onError: () => {
             setIsLoading(false);
             toast.error("Error saving item");
             setEdit(true);
-        }
+        },
     });
+
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value, type } = e.target;
+        setForm((prev) => ({
+            ...prev,
+            [name]: type === 'number' ? Number(value) : value,
+        }));
+    };
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setHasBeenSubmitted(true);
+        const standard_price_num = isNaN(Number.parseFloat(form.standard_price)) ? 0 : Number.parseFloat(form.standard_price);
+        const wholesale_cost_num = isNaN(Number.parseFloat(form.wholesale_cost)) ? 0 : Number.parseFloat(form.wholesale_cost);
+        if (isNaN(standard_price_num)) {
+            toast.error("Standard Price must be a number");
+            return;
+        }
+        if (isNaN(wholesale_cost_num)) {
+            toast.error("Wholesale Cost must be a number");
+            return;
+        }
+        if (wholesale_cost_num > standard_price_num) {
+            toast.error("Wholesale Cost must be less than or equal to Standard Price");
+            return;
+        }
+        if (isNaN(form.stock)) {
+            toast.error("Stock must be a number");
+            return;
+        }
+        if (isNaN(form.minimum_stock)) {
+            toast.error("Minimum Stock must be a number");
+            return;
+        }
+        if (!form.upc || !form.name || standard_price_num === 0 || wholesale_cost_num === 0 || wholesale_cost_num > standard_price_num || form.stock < 0 || form.minimum_stock < 0) {
+            toast.error(`Please fill out all required fields: ${!form.upc ? 'UPC, ' : ''}${!form.name ? 'Name, ' : ''}${standard_price_num === 0 ? 'Standard Price, ' : ''}${wholesale_cost_num === 0 || wholesale_cost_num > standard_price_num ? 'Wholesale Cost, ' : ''}${form.stock < 0 ? 'Stock, ' : ''}${form.minimum_stock < 0 ? 'Minimum Stock, ' : ''}`.slice(0, -2));
+            return;
+        }
+        const newItem: Part = {
+            upc: form.upc ?? "",
+            name: (form.name ?? "") || "",
+            brand: form.brand,
+            description: form.description,
+            standard_price: standard_price_num || 0,
+            wholesale_cost: wholesale_cost_num || 0,
+            category_1: form.category_1,
+            category_2: form.category_2,
+            category_3: form.category_3,
+            stock: form.stock ?? 0,
+            minimum_stock: form.minimum_stock ?? 0,
+            managed: true,
+            condition: "new",
+            disabled: false,
+            specifications: {},
+            features: [],
+            item_id: item?.item_id ?? "",
+        };
+        upsertItem.mutate(newItem);
+    };
     return (
         <Dialog open={open} onClose={onClose}>
-            <Box component="form" sx={{ p: 4, bgcolor: 'background.paper', borderRadius: 1, maxWidth: 600, mx: 'auto', mt: '-10px', textAlign: 'center', textJustify: 'center' }}>
-
+            <Box sx={{ p: 4, bgcolor: 'background.paper', borderRadius: 1, maxWidth: 600, mx: 'auto', mt: '-10px', textAlign: 'center', textJustify: 'center' }}>
                 <Typography variant="h6" gutterBottom>
                     Item Details
                 </Typography>
-                {isLoading ?
-                    <CircularProgress size={24} color='inherit' />
-                    : (<Grid2 container spacing={2}>
-                        <>
+                {isLoading ? (
+                    <CircularProgress size={24} color="inherit" />
+                ) : (
+                    <form onSubmit={handleSubmit}>
+                        <Grid2 container spacing={2}>
                             <Grid2 size={12}>
-                                <Typography variant="body1">Name:</Typography>
-                                {edit ? <TextField name="name" type="text" error={hasBeenSubmitted && !name} required value={name} onChange={(e) => setName(e.target.value)} /> :
-                                    <Button
-                                        variant="outlined"
-                                        sx={{
-                                            color: "black",
-                                            backgroundColor: "white",
-                                            borderColor: "white",
-                                            pointerEvents: "none",
-                                        }}
-                                        fullWidth
-                                        style={{ height: "80%" }}
-                                    >{name}</Button>}
+                                <TextField
+                                    name="name"
+                                    label="Name"
+                                    type="text"
+                                    required
+                                    error={hasBeenSubmitted && !form.name}
+                                    value={form.name}
+                                    onChange={handleFormChange}
+                                    fullWidth
+                                />
                             </Grid2>
-
                             <Grid2 size={6}>
-                                <Typography variant="body1">UPC:</Typography>
-                                {edit ? <TextField type="text" helperText="Generate for custom/used items" error={hasBeenSubmitted && (!upc)} value={upc} onChange={(e) => setUpc(e.target.value)} required /> :
-                                    <Button
-                                        variant="outlined"
-                                        sx={{
-                                            color: "black",
-                                            backgroundColor: "white",
-                                            borderColor: "white",
-                                            pointerEvents: "none",
-                                        }}
-                                        fullWidth
-                                        style={{ height: "80%" }}
-                                    >{upc}</Button>}
+                                <TextField
+                                    name="upc"
+                                    label="UPC"
+                                    type="text"
+                                    required
+                                    helperText="Generate for custom/used items"
+                                    error={hasBeenSubmitted && !form.upc}
+                                    value={form.upc}
+                                    onChange={handleFormChange}
+                                    fullWidth
+                                />
                             </Grid2>
                             <Grid2 size={6}>
                                 <Button
@@ -199,237 +195,135 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({ open, onClose, item }) =>
                                     variant="contained"
                                     onClick={() => {
                                         const newUpc = Math.floor(Math.random() * 1000000000000).toString();
-                                        if (newUpc.length < 12) {
-                                            setUpc("0".repeat(12 - newUpc.length) + newUpc);
-                                        }
-                                        else {
-                                            setUpc(newUpc);
-                                        }
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            upc: newUpc.length < 12 ? "0".repeat(12 - newUpc.length) + newUpc : newUpc,
+                                        }));
                                     }}
                                     color="secondary"
                                 >
                                     Generate UPC
                                 </Button>
                             </Grid2>
-
                             <Grid2 size={6}>
-                                <Typography variant="body1">Brand:</Typography>
-                                {edit ? <TextField type="text" value={brand} onChange={(e) => setBrand(e.target.value)} /> :
-                                    <Button
-                                        variant="outlined"
-                                        sx={{
-                                            color: "black",
-                                            backgroundColor: "white",
-                                            borderColor: "white",
-                                            pointerEvents: "none",
-                                        }}
-                                        fullWidth
-                                        style={{ height: "80%" }}
-                                    >{brand}</Button>}
+                                <TextField
+                                    name="brand"
+                                    label="Brand"
+                                    type="text"
+                                    value={form.brand}
+                                    onChange={handleFormChange}
+                                    fullWidth
+                                />
                             </Grid2>
                             <Grid2 size={6}>
-                                <Typography variant="body1">Description:</Typography>
-                                {edit ? <TextField type="text" value={description} onChange={(e) => setDescription(e.target.value)} /> :
-                                    <Button
-                                        variant="outlined"
-                                        sx={{
-                                            color: "black",
-                                            backgroundColor: "white",
-                                            borderColor: "white",
-                                            pointerEvents: "none",
-                                        }}
-                                        fullWidth
-                                        style={{ height: "80%" }}
-                                    >{description}</Button>}
+                                <TextField
+                                    name="description"
+                                    label="Description"
+                                    type="text"
+                                    value={form.description}
+                                    onChange={handleFormChange}
+                                    fullWidth
+                                />
                             </Grid2>
                             <Grid2 size={6}>
-                                <Typography variant="body1">Price:</Typography>
-                                {edit ? <TextField type="number" slotProps={{ "htmlInput": { step: 0.01 } }} error={hasBeenSubmitted && Number.parseFloat(standard_price) === 0} value={standard_price} onChange={(e) => setStandardPrice(e.target.value)} />
-                                    : <Button variant="outlined" fullWidth style={{ height: "80%" }} sx={{ color: "black", backgroundColor: "white", borderColor: "white", pointerEvents: "none" }}>{standard_price}</Button>}
+                                <TextField
+                                    name="standard_price"
+                                    label="Price"
+                                    type="number"
+                                    inputProps={{ step: 0.01 }}
+                                    error={hasBeenSubmitted && Number.parseFloat(form.standard_price) === 0}
+                                    value={form.standard_price}
+                                    onChange={handleFormChange}
+                                    fullWidth
+                                />
                             </Grid2>
                             <Grid2 size={6}>
-                                <Typography variant="body1">Wholesale Cost:</Typography>
-                                {edit ? <TextField type="number" slotProps={{ "htmlInput": { step: 0.01 } }} value={wholesale_cost} error={hasBeenSubmitted && Number.parseFloat(wholesale_cost) === 0} onChange={(e) => setWholesaleCost(e.target.value)} />
-                                    : <Button variant="outlined" sx={{ color: "black", backgroundColor: "white", borderColor: "white", pointerEvents: "none", }} fullWidth style={{ height: "80%" }}>{wholesale_cost}</Button>}
+                                <TextField
+                                    name="wholesale_cost"
+                                    label="Wholesale Cost"
+                                    type="number"
+                                    inputProps={{ step: 0.01 }}
+                                    error={hasBeenSubmitted && Number.parseFloat(form.wholesale_cost) === 0}
+                                    value={form.wholesale_cost}
+                                    onChange={handleFormChange}
+                                    fullWidth
+                                />
                             </Grid2>
                             <Grid2 size={6}>
-                                <Typography variant="body1">Stock:</Typography>
-                                {edit ? <TextField type="number" error={hasBeenSubmitted && stock < 0} value={stock} onChange={(e) => setStock(Number.parseInt(e.target.value))} required /> :
-                                    <Button
-                                        variant="outlined"
-                                        sx={{
-                                            color: "black",
-                                            backgroundColor: "white",
-                                            borderColor: "white",
-                                            pointerEvents: "none",
-                                        }}
-                                        fullWidth
-                                        style={{ height: "80%" }}
-                                    >{stock}</Button>}
+                                <TextField
+                                    name="stock"
+                                    label="Stock"
+                                    type="number"
+                                    required
+                                    error={hasBeenSubmitted && form.stock < 0}
+                                    value={form.stock}
+                                    onChange={handleFormChange}
+                                    fullWidth
+                                />
                             </Grid2>
                             <Grid2 size={6}>
-                                <Typography variant="body1">Min Stock:</Typography>
-                                {edit ? <TextField type="number" required error={hasBeenSubmitted && minimum_stock < 0} value={minimum_stock} onChange={(e) => setMinimumStock(Number.parseInt(e.target.value))} /> :
-                                    <Button
-                                        variant="outlined"
-                                        sx={{
-                                            color: "black",
-                                            backgroundColor: "white",
-                                            borderColor: "white",
-                                            pointerEvents: "none",
-                                        }}
-                                        fullWidth
-                                        style={{ height: "80%" }}
-                                    >{minimum_stock}</Button>}
-                            </Grid2>
-
-                            <Grid2 size={4}>
-                                <Typography variant="body1">Category 1:</Typography>
-                                {edit && first_categories ?
-                                    <Autocomplete
-                                        renderInput={(params) => (
-                                            <TextField {...params} type="text" name="category1" onChange={(e) => setCategory1(e.target.value)} value={category_1} />)}
-                                        options={first_categories}
-                                        onChange={(_, value, reason) => {
-                                            if (reason === "selectOption" && first_categories) {
-                                                const first_category = first_categories.find(
-                                                    (second_category) => second_category === value
-                                                );
-                                                if (first_category) {
-                                                    setCategory1(
-                                                        first_category
-                                                    );
-                                                }
-                                            }
-                                            else {
-                                                setCategory1(value ?? "");
-                                            }
-                                        }
-                                        }
-                                        filterOptions={(options, params) => {
-                                            const filtered = filter(options, params);
-
-                                            const { inputValue } = params;
-                                            // Suggest the creation of a new value
-                                            const isExisting = options.some((option) => inputValue === option);
-                                            if (inputValue !== '' && !isExisting) {
-                                                filtered.push(`${inputValue}`);
-                                            }
-
-                                            return filtered;
-                                        }
-                                        }
-                                        fullWidth
-                                    />
-                                    : <Button variant="outlined" sx={{ color: "black", backgroundColor: "white", borderColor: "white", pointerEvents: "none", }} fullWidth style={{ height: "80%" }} >{category_1}</Button>
-                                }
+                                <TextField
+                                    name="minimum_stock"
+                                    label="Min Stock"
+                                    type="number"
+                                    required
+                                    error={hasBeenSubmitted && form.minimum_stock < 0}
+                                    value={form.minimum_stock}
+                                    onChange={handleFormChange}
+                                    fullWidth
+                                />
                             </Grid2>
                             <Grid2 size={4}>
-                                <Typography variant="body1">Category 2:</Typography>
-                                {edit && second_categories ?
-                                    <Autocomplete
-                                        renderInput={(params) => (
-                                            <TextField {...params} type="text" name="category2" onChange={(e) => setCategory2(e.target.value)} value={category_2} />)}
-                                        options={second_categories}
-                                        onChange={(_, value, reason) => {
-                                            if (reason === "selectOption" && second_categories) {
-                                                const second_category = second_categories.find(
-                                                    (second_category) => second_category === value
-                                                );
-                                                if (second_category) {
-                                                    setCategory2(
-                                                        second_category
-                                                    );
-                                                }
-                                            }
-                                            else {
-                                                setCategory2(value ?? "");
-                                            }
-                                        }
-                                        }
-                                        filterOptions={(options, params) => {
-                                            const filtered = filter(options, params);
-
-                                            const { inputValue } = params;
-                                            // Suggest the creation of a new value
-                                            const isExisting = options.some((option) => inputValue === option);
-                                            if (inputValue !== '' && !isExisting) {
-                                                filtered.push(`${inputValue}`);
-                                            }
-
-                                            return filtered;
-                                        }
-                                        }
-                                        fullWidth
-                                    />
-                                    : <Button variant="outlined" sx={{ color: "black", backgroundColor: "white", borderColor: "white", pointerEvents: "none", }} fullWidth style={{ height: "80%" }} >{category_2}</Button>
-                                }
+                                <Autocomplete
+                                    options={first_categories || []}
+                                    value={form.category_1}
+                                    onChange={(_, value) => setForm((prev) => ({ ...prev, category_1: value ?? '' }))}
+                                    renderInput={(params) => (
+                                        <TextField {...params} name="category_1" label="Category 1" />
+                                    )}
+                                    fullWidth
+                                />
                             </Grid2>
                             <Grid2 size={4}>
-                                <Typography variant="body1">Category 3:</Typography>
-                                {edit && third_categories ?
-                                    <Autocomplete
-                                        renderInput={(params) => (
-                                            <TextField {...params} type="text" name="category3" onChange={(e) => setCategory3(e.target.value)} value={category_3} />)}
-                                        options={third_categories}
-                                        onChange={(_, value, reason) => {
-                                            if (reason === "selectOption" && third_categories) {
-                                                const third_category = third_categories.find(
-                                                    (third_category) => third_category === value
-                                                );
-                                                if (third_category) {
-                                                    setCategory3(
-                                                        third_category
-                                                    );
-                                                }
-                                            }
-                                            else {
-                                                setCategory3(value ?? "");
-                                            }
-                                        }
-                                        }
-                                        filterOptions={(options, params) => {
-                                            const filtered = filter(options, params);
-
-                                            const { inputValue } = params;
-                                            // Suggest the creation of a new value
-                                            const isExisting = options.some((option) => inputValue === option);
-                                            if (inputValue !== '' && !isExisting) {
-                                                filtered.push(`${inputValue}`);
-                                            }
-
-                                            return filtered;
-                                        }
-                                        }
-                                        fullWidth
-                                    />
-                                    : <Button variant="outlined" sx={{ color: "black", backgroundColor: "white", borderColor: "white", pointerEvents: "none", }} fullWidth style={{ height: "80%" }} >{category_3}</Button>
-                                }
+                                <Autocomplete
+                                    options={second_categories || []}
+                                    value={form.category_2}
+                                    onChange={(_, value) => setForm((prev) => ({ ...prev, category_2: value ?? '' }))}
+                                    renderInput={(params) => (
+                                        <TextField {...params} name="category_2" label="Category 2" />
+                                    )}
+                                    fullWidth
+                                />
                             </Grid2>
-                            <Grid2 size={8}>
+                            <Grid2 size={4}>
+                                <Autocomplete
+                                    options={third_categories || []}
+                                    value={form.category_3}
+                                    onChange={(_, value) => setForm((prev) => ({ ...prev, category_3: value ?? '' }))}
+                                    renderInput={(params) => (
+                                        <TextField {...params} name="category_3" label="Category 3" />
+                                    )}
+                                    fullWidth
+                                />
                             </Grid2>
+                            <Grid2 size={8}></Grid2>
                             <Grid2 size={4}>
                                 <Button
                                     fullWidth
                                     sx={{ height: "80%", marginTop: "10%" }}
                                     variant={edit ? "contained" : "outlined"}
+                                    type={edit ? "submit" : "button"}
                                     onClick={() => {
-                                        if (edit) {
-                                            handleSubmit();
-                                        }
-                                        else {
-                                            setEdit(true);
-                                        }
-                                        // setEdit(!edit);
+                                        if (!edit) setEdit(true);
                                     }}
                                     color="primary"
                                 >
                                     {!edit ? "Open for Edit" : "Submit Item"}
                                 </Button>
                             </Grid2>
-                        </>
-                    </Grid2>)
-                }
+                        </Grid2>
+                    </form>
+                )}
             </Box>
         </Dialog>
     );
