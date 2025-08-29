@@ -24,6 +24,7 @@ import { Transaction, Bike, Customer, TransactionSummary, OrderRequest, User } f
 import { useNavigate } from "react-router-dom";
 import DBModel from "../../model";
 import PriceCheckModal from "../../components/PriceCheckModal";
+import OrderModal from "../../components/OrderModal";
 import ConstructionIcon from '@mui/icons-material/Construction';
 import PanToolIcon from '@mui/icons-material/PanTool';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
@@ -489,6 +490,9 @@ export function TransactionsTable({
             {summaryData?.quantity_waiting_on_safety_check} Bikes to Safety Check
           </Button>}
         </article>
+                        <OrderModal
+        user={user}
+      />
       </header>
       <section
         id="transactions-table"
@@ -593,6 +597,7 @@ export function TransactionsTable({
         </>
 
       </section>
+
     </main>
   );
 }

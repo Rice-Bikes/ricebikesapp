@@ -36,6 +36,9 @@ import {
   RoleSchema,
   PermissionsSchema,
   FeatureFlagSchema,
+  OrderSchema,
+  CreateOrderSchema,
+  GetOrderSchema,
 } from "./schema";
 import { IRow } from "./features/TransactionsTable/TransactionsTable";
 
@@ -60,6 +63,9 @@ export type OrderRequest = FromSchema<typeof OrderRequestSchema>;
 export type CreateOrderRequests = FromSchema<typeof CreateOrderRequestsSchema>;
 export type CreatePart = FromSchema<typeof CreatePartSchema>;
 export type FeatureFlag = FromSchema<typeof FeatureFlagSchema>;
+export type Order = FromSchema<typeof OrderSchema>;
+export type CreateOrder = FromSchema<typeof CreateOrderSchema>;
+export type GetOrder = FromSchema<typeof GetOrderSchema>;
 
 export type PartArray = FromSchema<typeof partArraySchema>;
 export type RepairArray = FromSchema<typeof repairArraySchema>;
@@ -142,6 +148,7 @@ class DBModel {
   public static validateRole: (data: unknown) => data is Role;
   public static validatePermissions: (data: unknown) => data is Permission;
   public static validateFeatureFlags: (data: unknown) => data is FeatureFlag[];
+  public static validateOrder: (data: unknown) => data is Order;
 
   // ARRAY VERIFICATION METHODS
   static validatePartsArray: (data: unknown) => data is Part[];
@@ -183,6 +190,7 @@ class DBModel {
     DBModel.validateRole = compile(RoleSchema);
     DBModel.validatePermissions = compile(PermissionsSchema);
     DBModel.validateFeatureFlags = compile(FeatureFlagSchema);
+    DBModel.validateOrder = compile(OrderSchema);
 
     // ARRAY VERIFICATION METHODS
     DBModel.validateTransactionsArray = compile(TransactionArraySchema);
@@ -1535,6 +1543,150 @@ class DBModel {
         throw new Error("Error posting order request data: " + error); // More detailed error logging
       });
 
+  public static fetchOrders = async () =>
+    fetch(`${hostname}/orders`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateArrayResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to load orders");
+        }
+        for (const order of response.responseObject) {
+          if (!DBModel.validateOrder(order)) {
+            throw new Error("Invalid order data");
+          }
+        }
+        return response.responseObject as Order[];
+      })
+      .catch((error) => {
+        throw new Error("Error loading orders data: " + error);
+      });
+
+  public static fetchOrder = async (order_id: string) =>
+    fetch(`${hostname}/orders/${order_id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to load order");
+        }
+        if (!DBModel.validateOrder(response.responseObject)) {
+          throw new Error("Invalid order data");
+        }
+        return response.responseObject as Order;
+      })
+      .catch((error) => {
+        throw new Error("Error loading order data: " + error);
+      });
+
+  public static createOrder = async (order: Omit<Order, 'order_id' | 'order_date'>) =>
+    fetch(`${hostname}/orders`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(order),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to create order");
+        }
+        if (!DBModel.validateOrder(response.responseObject)) {
+          throw new Error("Invalid order response");
+        }
+        return response.responseObject as Order;
+      })
+      .catch((error) => {
+        throw new Error("Error creating order data: " + error);
+      });
+
+  public static updateOrder = async (order: Order) =>
+    fetch(`${hostname}/orders/${order.order_id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(order),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to update order");
+        }
+        if (!DBModel.validateOrder(response.responseObject)) {
+          throw new Error("Invalid order response");
+        }
+        return response.responseObject as Order;
+      })
+      .catch((error) => {
+        throw new Error("Error updating order data: " + error);
+      });
+
+  public static deleteOrder = async (order_id: string) =>
+    fetch(`${hostname}/orders/${order_id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to delete order");
+        }
+      })
+      .catch((error) => {
+        throw new Error("Error deleting order data: " + error);
+      });
+
+  public static getClosestFutureOrder = async () =>
+    fetch(`${hostname}/orders/closest-future`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to get closest future order");
+        }
+        if (!DBModel.validateOrder(response.responseObject)) {
+          throw new Error("Invalid order response");
+        }
+        return response.responseObject as Order;
+      })
+      .catch((error) => {
+        throw new Error("Error getting closest future order: " + error);
+      });
+
     public static sendEmail = async (customer: Customer, transaction_num: number) => 
       fetch(`${hostname}/customers/${transaction_num}/emails/pickup`, {
       method: "POST",
@@ -1665,6 +1817,15 @@ class DBModel {
       queryFn: () => this.fetchFeatureFlags(),
       refetchOnWindowFocus: false,
       staleTime: 600000, // Cache products for 10 minutes
+    });
+  };
+
+  public static getClosestFutureOrderQuery = () => {
+    return queryOptions({
+      queryKey: ["closestFutureOrder"],
+      queryFn: () => this.getClosestFutureOrder(),
+      refetchOnWindowFocus: false,
+      staleTime: 300000, // Cache for 5 minutes
     });
   };
 

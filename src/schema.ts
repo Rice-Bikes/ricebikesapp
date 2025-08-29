@@ -584,3 +584,57 @@ export const FeatureFlagSchema = {
   required: ["name", "isActive", "createdAt", "updatedAt"],
   additionalProperties: false,
 } as const satisfies JSONSchema;
+
+export const OrderSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "Order",
+  type: "object",
+  properties: {
+    order_id: { type: "string", format: "uuid" },
+    order_date: { type: "string", format: "date-time" },
+    estimated_delivery: { type: "string", format: "date-time" },
+    supplier: { type: "string" },
+    ordered_by: { type: "string" },
+  },
+  required: ["order_id", "order_date", "estimated_delivery", "supplier", "ordered_by"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+export const CreateOrderSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "CreateOrder",
+  type: "object",
+  properties: {
+    body: {
+      type: "object",
+      properties: {
+        supplier: { type: "string" },
+        ordered_by: { type: "string" },
+        order_date: { type: "string", format: "date-time" },
+        estimated_delivery: { type: "string", format: "date-time" },
+      },
+      required: ["supplier", "ordered_by", "estimated_delivery"],
+      additionalProperties: false,
+    },
+  },
+  required: ["body"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+export const GetOrderSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "GetOrder",
+  type: "object",
+  properties: {
+    params: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+      },
+      required: ["id"],
+      additionalProperties: false,
+    },
+  },
+  required: ["params"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;

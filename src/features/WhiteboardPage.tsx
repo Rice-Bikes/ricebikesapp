@@ -9,14 +9,14 @@ import { queryClient } from '../app/queryClient';
 import { useNavigate } from 'react-router-dom';
 import { CheckBox, CheckBoxOutlineBlank } from '@mui/icons-material';
 import { toast } from 'react-toastify';
+import OrderModal from '../components/OrderModal';
+import { User } from '../model';
 
 interface WhiteboardPageProps {
-    user_id: string;
+    user: User;
 }
 
-const WhiteboardPage: React.FC<WhiteboardPageProps> = (
-    // { user_id }: WhiteboardPageProps
-) => {
+const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
     const nav = useNavigate();
     const { data: orderRequestData, error: orderRequestError, fetchStatus: orderRequestStatus } = useQuery({
         queryKey: ["orderRequest"],
@@ -341,6 +341,9 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = (
             <Typography variant="h4" gutterBottom>
                 Order Requests
             </Typography>
+                        <OrderModal
+                user={user}
+            />
             {
                 <Grid2 container spacing={4}>
                     <Grid2 size={12}>
