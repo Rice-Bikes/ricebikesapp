@@ -1720,7 +1720,7 @@ class DBModel {
       },
       body: JSON.stringify({
         customer,
-        transaction_id
+        transaction_id,
       }),
     })
       .then((response) => response.json())
