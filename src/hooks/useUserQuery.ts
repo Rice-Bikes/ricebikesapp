@@ -4,7 +4,7 @@ import { queryClient } from "../app/queryClient";
 
 export function useUserQuery(netId: string, enabled: boolean) {
   return useQuery<User, Error>({
-    queryKey: ["user", netId],
+    queryKey: ["user"],
     queryFn: () => DBModel.fetchUser(netId),
     enabled: enabled && !!netId,
     retry: false,

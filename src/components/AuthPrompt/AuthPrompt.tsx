@@ -20,10 +20,45 @@ export default function AuthPrompt({ setUser }: AuthPromptProps) {
   const [timer, setTimer] = useState(TIMER_DURATION);
   const [user, setUserState] = useState<User | null>(null);
 
-  const { data, error } = useUserQuery(netId, open);
+  const { data, error } = useUserQuery(netId, !!netId && open);
+
+  // Check if we have a valid user from cache on mount
+  useEffect(() => {
+    const cachedUser = queryClient.getQueryData<User>(["user"]);
+    if (cachedUser && cachedUser.user_id) {
+      setUser(cachedUser);
+      setUserState(cachedUser);
+      setOpen(false);
+      setTimer(TIMER_DURATION);
+    } else {
+      setOpen(true);
+      setUserState(null);
+    }
+  }, [setUser]);
+
+  // Check for cache removal more frequently and immediately
+  useEffect(() => {
+    const checkCache = () => {
+      const cachedUser = queryClient.getQueryData<User>(["user"]);
+      if (!cachedUser && user && !open) {
+        setOpen(true);
+        setUserState(null);
+        setNetId("");
+        setTimer(TIMER_DURATION);
+      }
+    };
+
+    // Check immediately
+    checkCache();
+
+    // Check every 100ms for more responsive detection
+    const cacheCheckInterval = setInterval(checkCache, 100);
+
+    return () => clearInterval(cacheCheckInterval);
+  }, [user, open]);
 
   useEffect(() => {
-    if (data) {
+    if (data && data.user_id) {
       setUser(data);
       setUserState(data);
       setOpen(false);
@@ -31,7 +66,8 @@ export default function AuthPrompt({ setUser }: AuthPromptProps) {
     }
     if (error) {
       toast.error("Error fetching user: " + error.message);
-      setOpen(true);
+      // Keep dialog open on error, but clear the netId so user can try again
+      setNetId("");
     }
   }, [data, error, setUser]);
 
@@ -42,18 +78,19 @@ export default function AuthPrompt({ setUser }: AuthPromptProps) {
           queryClient.removeQueries({ queryKey: ["user"] });
           setOpen(true);
           setUserState(null);
+          setNetId("");
           return TIMER_DURATION;
         }
         return prev - 1;
       });
     }, 1000);
+
     return () => clearInterval(interval);
   }, []);
 
   const handleSubmit = () => {
     setNetId(netIdInput.trim());
     setNetIdInput("");
-    queryClient.removeQueries({ queryKey: ["user"] });
   };
 
   const nav = useNavigate();
