@@ -224,10 +224,10 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
   const sendRecieptEmail = useMutation({
     mutationFn: ({customer, transaction_id}: {customer: Customer, transaction_id: string}) => {
-      if (!transactionData) throw new Error("Transaction data not found");
+      if (!transactionData || !transactionData.transaction_num) throw new Error("Transaction data not found");
       return DBModel.sendRecieptEmail(
         customer,
-        transactionData.transaction_num,
+        transactionData.transaction_num ?? '',
         transaction_id
       );
     },
