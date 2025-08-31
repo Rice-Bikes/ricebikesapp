@@ -60,7 +60,7 @@ export default function CreateTransactionDropdown({
   };
 
   const handleTransactionCreated = (newTransaction: Transaction) => {
-    console.log("Transaction created", newTransaction);
+    // console.log("Transaction created", newTransaction);
     DBModel.postTransactionLog(
       newTransaction.transaction_num,
       user.user_id,

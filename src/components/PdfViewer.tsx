@@ -46,7 +46,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ file, onDataExtracted }) => {
     }, [file]);
 
     const rows = Array.isArray(extractedData) ? extractedData : [];
-    console.log("rows", extractedData);
+    // console.log("rows", extractedData);
 
     return (
         <StyledPaper elevation={3}>

@@ -34,7 +34,7 @@ const RolesPage: React.FC = () => {
 
 
     useEffect(() => {
-        console.log("Role permissions:", rolePermissions);
+        // console.log("Role permissions:", rolePermissions);
         if (rolePermissions.length > 0) {
             // Extract just the role IDs from the userRoles array
             setSelectedPermissionIds(rolePermissions.map(permission => permission.id));
@@ -97,7 +97,7 @@ const RolesPage: React.FC = () => {
         mutationKey: ['checkRolePermissions'],
         mutationFn: (role_id: string) => DBModel.fetchPermissionsForRole(role_id),
         onSuccess: (data: Permission[]) => {
-            console.log("User roles:", data);
+            // console.log("User roles:", data);
             setRolePermissions(data);
         },
         onError: (error) => {
@@ -177,7 +177,7 @@ const RolesPage: React.FC = () => {
                         variant="outlined"
                         onClick={() => {
                             setDisabled(!params.data.disabled);
-                            console.log("current selected role:", params.data as Role)
+                            // console.log("current selected role:", params.data as Role)
                             const updatedRole = {
                                 ...params.data,
                                 disabled: !params.data.disabled,
@@ -234,9 +234,9 @@ const RolesPage: React.FC = () => {
     };
 
     const handleSave = (selectedRole: Role) => {
-        console.log("current selected role:", selectedRole)
+        // console.log("current selected role:", selectedRole)
         if (selectedRole.role_id !== "") {
-            console.log(selectedRole);
+            // console.log(selectedRole);
             const updatedRole = {
                 ...selectedRole,
             } as Role;

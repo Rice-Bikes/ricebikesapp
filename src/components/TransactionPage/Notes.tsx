@@ -12,7 +12,7 @@ interface NotesProps {
 }
 
 const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) => {
-  // console.log("initial data passed to Notes", notes);
+  // // console.log("initial data passed to Notes", notes);
   const [currentUser, setCurrentUser] = useState(user);
   const [isEditing, setIsEditing] = useState(false);
   const [editedNotes, setEditedNotes] = useState(notes);
@@ -20,7 +20,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) =
   const [prevLengthOfNotes, setPrevLengthOfNotes] = useState(0);
   useEffect(() => {
     if (currentUser !== user && isWaitingForUser) {
-      console.log("setting new user in Notes component", user);
+      // console.log("setting new user in Notes component", user);
       setCurrentUser(user);
       setIsWaitingForUser(false);
     }
@@ -28,14 +28,14 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) =
 
   const handleSubmit = () => {
     setIsWaitingForUser(true);
-    console.log("invalidated user query", user, isWaitingForUser);
+    // console.log("invalidated user query", user, isWaitingForUser);
     handleSave();
   }
 
   const handleSave = () => {
     const currentLengthOfNotes = editedNotes.length;
     setEditedNotes(editedNotes + " - " + user.firstname + " " + user.lastname);
-    // console.log("edited notes in Notes component", editedNotes);
+    // // console.log("edited notes in Notes component", editedNotes);
     onSave(editedNotes + " - " + user.firstname + " " + user.lastname);
     DBModel.postTransactionLog(
       transaction_num,

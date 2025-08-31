@@ -91,7 +91,7 @@ const UsersPage: React.FC = () => {
         mutationKey: ['checkUserRoles'],
         mutationFn: (userId: string) => DBModel.fetchRolesForUser(userId),
         onSuccess: (data: Role[]) => {
-            console.log("User roles:", data);
+            // console.log("User roles:", data);
             setUserRoles(data);
         },
         onError: (error) => {
@@ -174,7 +174,7 @@ const UsersPage: React.FC = () => {
                         variant="outlined"
                         onClick={() => {
                             setEditedActive(!params.data.active);
-                            console.log("current selected user:", params.data as User)
+                            // console.log("current selected user:", params.data as User)
                             const updatedUser = {
                                 ...params.data,
                                 active: !params.data.active,
@@ -233,9 +233,9 @@ const UsersPage: React.FC = () => {
     };
 
     const handleSave = (selectedUser: User) => {
-        console.log("current selected user:", selectedUser)
+        // console.log("current selected user:", selectedUser)
         if (selectedUser.user_id !== "") {
-            console.log(selectedUser);
+            // console.log(selectedUser);
             const updatedUser = {
                 ...selectedUser,
             } as User;

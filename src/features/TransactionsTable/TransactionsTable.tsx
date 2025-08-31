@@ -127,227 +127,227 @@ export function TransactionsTable({
       setSummaryData(summaryQueryData as TransactionSummary);
     }
   }, [status, data, error, summaryStatus, summaryQueryData, summaryError]);
-  if (debug) console.log(status, data, error);
+  if (debug)  console.log(status, data, error);
 
-  const [colDefs] = useState<ColDef<IRow>[]>([
-    {
-      headerName: "#",
-      colId: "transaction_num",
-      valueGetter: (params) => params.data?.Transaction.transaction_num,
-      filter: true,
-    },
-    {
-      headerName: "Status",
-      flex: 2,
-      valueGetter: (params) => {
-        const isWaitEmail = params.data?.Transaction.is_waiting_on_email;
-        const isUrgent = params.data?.Transaction.is_urgent;
-        const isNuclear = params.data?.Transaction.is_nuclear;
-        const isBeerBike = params.data?.Transaction.is_beer_bike;
-        const transaction_type = params.data?.Transaction.transaction_type;
-        const isWaitingOnParts = (params.data?.OrderRequests?.length ?? 0) > 0;
-        const is_completed = params.data?.Transaction.is_completed;
-        const refurb = params.data?.Transaction.is_refurb;
-
-        // Return the data to be rendered by the cellRenderer
-        return {
-          isWaitEmail,
-          isUrgent,
-          isNuclear,
-          isBeerBike,
-          transaction_type,
-          isWaitingOnParts,
-          is_completed,
-          refurb,
-        };
+    const [colDefs] = useState<ColDef<IRow>[]>([
+      {
+        headerName: "#",
+        colId: "transaction_num",
+        valueGetter: (params) => params.data?.Transaction.transaction_num,
+        filter: true,
       },
-      cellRenderer: (params: ICellRendererParams) => {
-        const {
-          isWaitEmail,
-          isUrgent,
-          isNuclear,
-          isBeerBike,
-          transaction_type,
-          isWaitingOnParts,
-          is_completed,
-          refurb,
-        } = params.value;
+      {
+        headerName: "Status",
+        flex: 2,
+        valueGetter: (params) => {
+          const isWaitEmail = params.data?.Transaction.is_waiting_on_email;
+          const isUrgent = params.data?.Transaction.is_urgent;
+          const isNuclear = params.data?.Transaction.is_nuclear;
+          const isBeerBike = params.data?.Transaction.is_beer_bike;
+          const transaction_type = params.data?.Transaction.transaction_type;
+          const isWaitingOnParts = (params.data?.OrderRequests?.length ?? 0) > 0;
+          const is_completed = params.data?.Transaction.is_completed;
+          const refurb = params.data?.Transaction.is_refurb;
 
-        if (transaction_type.toLowerCase() !== "retrospec") {
-          return (
-            <Stack
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-start",
-                padding: "5px",
-              }}
-              direction={"row"}
-            >
-              {transaction_type?.toLowerCase() === "inpatient" && (
-                <Chip
-                  label="Inpatient"
-                  sx={{
-                    margin: "0 0.5vw",
-                    backgroundColor: "green",
-                    color: "white",
-                  }}
-                />
-              )}
+          // Return the data to be rendered by the cellRenderer
+          return {
+            isWaitEmail,
+            isUrgent,
+            isNuclear,
+            isBeerBike,
+            transaction_type,
+            isWaitingOnParts,
+            is_completed,
+            refurb,
+          };
+        },
+        cellRenderer: (params: ICellRendererParams) => {
+          const {
+            isWaitEmail,
+            isUrgent,
+            isNuclear,
+            isBeerBike,
+            transaction_type,
+            isWaitingOnParts,
+            is_completed,
+            refurb,
+          } = params.value;
 
-              {transaction_type?.toLowerCase() === "outpatient" && (
-                <Chip
-                  label="Outpatient"
-                  sx={{
-                    margin: "0 0.5vw",
-                    backgroundColor: "blue",
-                    color: "white",
-                  }}
-                />
-              )}
-
-              {transaction_type?.toLowerCase() === "merch" && (
-                <Chip
-                  label="Merch"
-                  sx={{
-                    margin: "0 0.5vw",
-                    backgroundColor: "gray",
-                    color: "white",
-                  }}
-                />
-              )}
-              {isBeerBike && (
-                <Chip
-                  label="Beer Bike"
-                  sx={{
-                    margin: "0 0.5vw",
-                    backgroundColor: "turquoise",
-                    color: "black",
-                  }}
-                />
-              )}
-              {isUrgent && !is_completed && (
-                <ErrorSharp style={{ color: "red", marginRight: "5px" }} />
-
-              )}
-              {isWaitingOnParts && !is_completed && (
-                <i
-                  className="fas fa-wrench"
-                  style={{ color: "orange", marginRight: "5px" }}
-                />
-              )}
-              {isNuclear && !is_completed && (
-                <i
-                  className="fas fa-radiation"
-                  style={{ color: "red", marginRight: "5px" }}
-                ></i>
-              )}
-              {isWaitEmail && <EmailOutlinedIcon style={{ color: "red" }} />}
-            </Stack>
-          );
-        } else {
-          return (
-
-            <Stack
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-start",
-              }}
-              direction={"row"}
-            ><Chip
-                label="Retrospec"
-                sx={{
-                  backgroundColor: "orange",
-                  color: "white",
-                  marginTop: "4px",
-                  marginLeft: "10px",
-                  marginRight: "5px",
+          if (transaction_type.toLowerCase() !== "retrospec") {
+            return (
+              <Stack
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-start",
+                  padding: "5px",
                 }}
-              />
-              {checkStatusOfRetrospec(refurb, isWaitEmail, is_completed)}
-              {isNuclear && !is_completed && (
-                <i
-                  className="fas fa-radiation"
-                  style={{ color: "red", marginRight: "5px" }}
-                ></i>
-              )}
-            </Stack>
-          )
-        };
+                direction={"row"}
+              >
+                {transaction_type?.toLowerCase() === "inpatient" && (
+                  <Chip
+                    label="Inpatient"
+                    sx={{
+                      margin: "0 0.5vw",
+                      backgroundColor: "green",
+                      color: "white",
+                    }}
+                  />
+                )}
+
+                {transaction_type?.toLowerCase() === "outpatient" && (
+                  <Chip
+                    label="Outpatient"
+                    sx={{
+                      margin: "0 0.5vw",
+                      backgroundColor: "blue",
+                      color: "white",
+                    }}
+                  />
+                )}
+
+                {transaction_type?.toLowerCase() === "merch" && (
+                  <Chip
+                    label="Merch"
+                    sx={{
+                      margin: "0 0.5vw",
+                      backgroundColor: "gray",
+                      color: "white",
+                    }}
+                  />
+                )}
+                {isBeerBike && (
+                  <Chip
+                    label="Beer Bike"
+                    sx={{
+                      margin: "0 0.5vw",
+                      backgroundColor: "turquoise",
+                      color: "black",
+                    }}
+                  />
+                )}
+                {isUrgent && !is_completed && (
+                  <ErrorSharp style={{ color: "red", marginRight: "5px" }} />
+
+                )}
+                {isWaitingOnParts && !is_completed && (
+                  <i
+                    className="fas fa-wrench"
+                    style={{ color: "orange", marginRight: "5px" }}
+                  />
+                )}
+                {isNuclear && !is_completed && (
+                  <i
+                    className="fas fa-radiation"
+                    style={{ color: "red", marginRight: "5px" }}
+                  ></i>
+                )}
+                {isWaitEmail && <EmailOutlinedIcon style={{ color: "red" }} />}
+              </Stack>
+            );
+          } else {
+            return (
+
+              <Stack
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-start",
+                }}
+                direction={"row"}
+              ><Chip
+                  label="Retrospec"
+                  sx={{
+                    backgroundColor: "orange",
+                    color: "white",
+                    marginTop: "4px",
+                    marginLeft: "10px",
+                    marginRight: "5px",
+                  }}
+                />
+                {checkStatusOfRetrospec(refurb, isWaitEmail, is_completed)}
+                {isNuclear && !is_completed && (
+                  <i
+                    className="fas fa-radiation"
+                    style={{ color: "red", marginRight: "5px" }}
+                  ></i>
+                )}
+              </Stack>
+            )
+          };
+        }
+      },
+      {
+        headerName: "Name",
+        valueGetter: (params) =>
+          `${params.data?.Customer.first_name} ${params.data?.Customer.last_name}`,
+        filter: true,
+      },
+      {
+        headerName: "Bike",
+        valueGetter: (params) => {
+          if (
+            !params.data?.Bike ||
+            (params.data?.Bike.make === "" && params.data?.Bike.model === "")
+          ) {
+            return "";
+          }
+          return params.data?.Bike.make + " " + params.data?.Bike.model;
+        },
+      },
+      {
+        headerName: "Created",
+        colId: "submitted",
+        valueGetter: (params) => {
+          if (
+            !params.data?.Transaction ||
+            params.data?.Transaction.date_created === undefined ||
+            params.data?.Transaction.date_created === null
+          ) {
+            return "";
+          }
+
+          return (new Date(params.data?.Transaction.date_created));
+        },
+        cellRenderer: (params: ICellRendererParams) => {
+          if (
+            !params.data?.Transaction ||
+            params.data?.Transaction.date_created === undefined ||
+            params.data?.Transaction.date_created === null
+          ) {
+            return "";
+          }
+
+          return timeAgo(new Date(params.data?.Transaction.date_created));
+        },
+      },
+      {
+        headerName: "Time Since Completion",
+        colId: "time_since_completion",
+        valueGetter: (params) => {
+          if (
+            !params.data?.Transaction ||
+            params.data?.Transaction.date_completed === undefined ||
+            params.data?.Transaction.date_completed === null
+          ) {
+            return "";
+          }
+
+          return (new Date(params.data?.Transaction.date_completed));
+        },
+        cellRenderer: (params: ICellRendererParams) => {
+          if (
+            !params.data?.Transaction ||
+            params.data?.Transaction.date_completed === undefined ||
+            params.data?.Transaction.date_completed === null
+          ) {
+            return "";
+          }
+
+          return timeAgo(new Date(params.data?.Transaction.date_completed));
+        },
       }
-    },
-    {
-      headerName: "Name",
-      valueGetter: (params) =>
-        `${params.data?.Customer.first_name} ${params.data?.Customer.last_name}`,
-      filter: true,
-    },
-    {
-      headerName: "Bike",
-      valueGetter: (params) => {
-        if (
-          !params.data?.Bike ||
-          (params.data?.Bike.make === "" && params.data?.Bike.model === "")
-        ) {
-          return "";
-        }
-        return params.data?.Bike.make + " " + params.data?.Bike.model;
-      },
-    },
-    {
-      headerName: "Created",
-      colId: "submitted",
-      valueGetter: (params) => {
-        if (
-          !params.data?.Transaction ||
-          params.data?.Transaction.date_created === undefined ||
-          params.data?.Transaction.date_created === null
-        ) {
-          return "";
-        }
-
-        return (new Date(params.data?.Transaction.date_created));
-      },
-      cellRenderer: (params: ICellRendererParams) => {
-        if (
-          !params.data?.Transaction ||
-          params.data?.Transaction.date_created === undefined ||
-          params.data?.Transaction.date_created === null
-        ) {
-          return "";
-        }
-
-        return timeAgo(new Date(params.data?.Transaction.date_created));
-      },
-    },
-    {
-      headerName: "Time Since Completion",
-      colId: "time_since_completion",
-      valueGetter: (params) => {
-        if (
-          !params.data?.Transaction ||
-          params.data?.Transaction.date_completed === undefined ||
-          params.data?.Transaction.date_completed === null
-        ) {
-          return "";
-        }
-
-        return (new Date(params.data?.Transaction.date_completed));
-      },
-      cellRenderer: (params: ICellRendererParams) => {
-        if (
-          !params.data?.Transaction ||
-          params.data?.Transaction.date_completed === undefined ||
-          params.data?.Transaction.date_completed === null
-        ) {
-          return "";
-        }
-
-        return timeAgo(new Date(params.data?.Transaction.date_completed));
-      },
-    }
-  ]);
+    ]);
 
   const defaultColDef: ColDef = {
     flex: 1,
@@ -368,8 +368,8 @@ export function TransactionsTable({
     newAlignment: string
   ) => {
     if (newAlignment !== null) {
-      if (debug) console.log("new alignment", newAlignment);
-      setViewType(newAlignment);
+      if (debug)  console.log("new alignment", newAlignment);
+        setViewType(newAlignment);
       const sortFunc = sortMap.get(newAlignment) ?? clearSort;
       if (newAlignment === "paid" || newAlignment === "pickup") {
         gridApiRef.current!.api.applyColumnState({
@@ -490,9 +490,9 @@ export function TransactionsTable({
             {summaryData?.quantity_waiting_on_safety_check} Bikes to Safety Check
           </Button>}
         </article>
-                        <OrderModal
-        user={user}
-      />
+        <OrderModal
+          user={user}
+        />
       </header>
       <section
         id="transactions-table"

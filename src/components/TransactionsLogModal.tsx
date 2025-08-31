@@ -26,11 +26,11 @@ const TransactionsLogModal = ({
     const { data, error } = useQuery({
         queryKey: ['transactionLogs', transaction_id],
         queryFn: async () => {
-            console.log("fetching transaction logs for", transaction_id);
+            // console.log("fetching transaction logs for", transaction_id);
             return DBModel.fetchTransactionLogs(transaction_id);
         },
         select: (data) => {
-            console.log("transforming logs", data);
+            // console.log("transforming logs", data);
             return data as TransactionLog[]
         },
     });

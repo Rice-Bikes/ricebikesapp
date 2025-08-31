@@ -32,7 +32,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ user }) => {
 
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        // console.log(file)
+        // // console.log(file)
         if (file) {
             const reader = new FileReader();
             reader.onload = (e) => {

@@ -99,9 +99,9 @@ const PermissionsPage: React.FC = () => {
     };
 
     const handleSave = (selectedPermission: Permission) => {
-        console.log("current selected permission:", selectedPermission)
+        // console.log("current selected permission:", selectedPermission)
         if (selectedPermission.id !== null) {
-            console.log(selectedPermission);
+            // console.log(selectedPermission);
             const updatedPermission = {
                 ...selectedPermission,
             } as Permission;

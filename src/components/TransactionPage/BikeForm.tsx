@@ -50,7 +50,7 @@ function NewBikeForm({ onBikeCreated, isOpen, onClose, bike = {
 
   const [currBike, setCurrBike] = useState<FormBike>(bike);
   if (!compareBikes(bike, currBike)) {
-    console.log("tracking prop change", bike, currBike, bike === currBike, typeof bike, typeof currBike);
+    // console.log("tracking prop change", bike, currBike, bike === currBike, typeof bike, typeof currBike);
     setCurrBike(() => bike);
     setFormState(formState => ({
       ...formState,
@@ -59,7 +59,7 @@ function NewBikeForm({ onBikeCreated, isOpen, onClose, bike = {
       description: bike.description,
     }));
   }
-  console.log(bike, formState);
+  // console.log(bike, formState);
   const handleTextFieldChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -73,7 +73,7 @@ function NewBikeForm({ onBikeCreated, isOpen, onClose, bike = {
     },
 
     onSuccess: (data: Bike) => {
-      console.log("Bike created", data);
+      // console.log("Bike created", data);
       queryClient.invalidateQueries({
         queryKey: ["bikes"],
       });
@@ -86,7 +86,7 @@ function NewBikeForm({ onBikeCreated, isOpen, onClose, bike = {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    console.log("handle submit");
+    // console.log("handle submit");
 
     const newCustomer: Bike = {
       make: formState.make,

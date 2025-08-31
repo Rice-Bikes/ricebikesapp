@@ -58,17 +58,17 @@ const PriceCheckModal = ({
     };
     useEffect(() => {
         if (parts) {
-            console.log(parts);
+            // console.log(parts);
             setLoading(false);
         }
     }, [parts, loading]);
 
     const handleSearch = () => {
-        console.log("searching for", searchTerm);
+        // console.log("searching for", searchTerm);
         const part = parts!.find((part) => part.upc === searchTerm
         );
         if (part) {
-            console.log("found", part);
+            // console.log("found", part);
             setItem(part);
             setShowItemPage(true);
             setShowAddItem(false);
@@ -77,7 +77,7 @@ const PriceCheckModal = ({
             setShowAddItem(true);
         }
     };
-    //   console.log("reqs", parts);
+    //   // console.log("reqs", parts);
     return (
         <Dialog open={open} onClose={handleCancel} fullWidth maxWidth="md" style={{ height: "fit-content" }}>
             <DialogTitle>Enter UPC</DialogTitle>

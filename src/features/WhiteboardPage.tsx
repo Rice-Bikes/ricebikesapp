@@ -24,7 +24,7 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
             return DBModel.getOrderRequests();
         },
         select: (data) => {
-            console.log("converting incoming data", data);
+            // console.log("converting incoming data", data);
             // if (data === undefined) return [];
             return data as OrderRequest[] ?? Array<OrderRequest>()
 
@@ -94,14 +94,14 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
         return <div>Loading...</div>;
     }
 
-    // console.log("reqs", orderRequestData);
+    // // console.log("reqs", orderRequestData);
     if (!orderRequestData) return <div>Loading...</div>;
     const columnDefs: Array<ColDef<OrderRequest>> = [
         {
             headerName: "Name",
             colId: "name",
             valueGetter: (params) => {
-                console.log("showing name", params);
+                // console.log("showing name", params);
                 if (!params.data || !params.data.Item) return '';
                 try {
                     return params.data.Item.name ?? ''
@@ -115,7 +115,7 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
         {
             headerName: "Notes", field: "notes", type: "editableColumn",
             valueGetter: (params) => {
-                console.log("showing notes", params);
+                // console.log("showing notes", params);
                 if (!params.data || !params.data.notes) return '';
                 try {
                     return params.data.notes ?? ''
@@ -132,7 +132,7 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
             headerName: "Price",
             colId: "price",
             valueGetter: (params) => {
-                console.log("showing price", params);
+                // console.log("showing price", params);
                 if (!params.data || !params.data.Item) return '';
                 try {
                     return params.data?.Item?.standard_price ?? ''
@@ -147,7 +147,7 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
             headerName: "Quantity",
             colId: "quantity",
             valueGetter: (params) => {
-                console.log("showing quantity", params);
+                // console.log("showing quantity", params);
                 if (!params.data) return '';
                 try {
                     return params.data?.quantity ?? 0
@@ -162,7 +162,7 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
             headerName: "UPC",
             colId: "upc",
             valueGetter: (params) => {
-                console.log("showing upc", params);
+                // console.log("showing upc", params);
                 if (!params.data || !params.data.Item) return '';
                 try {
                     return params.data?.Item?.upc ?? ''
@@ -178,7 +178,7 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
             headerName: "User",
             colId: "user",
             valueGetter: (params) => {
-                console.log("showing user", params);
+                // console.log("showing user", params);
                 if (!params.data || !params.data.User) return '';
                 try {
                     return params.data?.User ? params.data.User.firstname + " " + params.data.User.lastname : ''
@@ -195,7 +195,7 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
             headerName: "Transaction Link",
             colId: "link",
             onCellClicked: (event: CellClickedEvent<OrderRequest>) => {
-                console.log("showing add btn", event);
+                // console.log("showing add btn", event);
                 try {
                     //TODO: MAKE SURE THIS URL PARAMS ASSUMPTION IS CORRECT
                     return event.data ? nav(`/transaction-details/${event.data.transaction_id}?type=Inpatient`) : console.error("cannot add order request to transaction", event)
@@ -222,7 +222,7 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
                 return <Button type="submit">{ordered ? <CheckBox /> : <CheckBoxOutlineBlank />}</Button>;
             },
             valueGetter: (params) => {
-                console.log("showing ordered", params);
+                // console.log("showing ordered", params);
                 if (!params.data || !params.data.ordered) return false;
                 return params.data.ordered;
 
@@ -233,7 +233,7 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
             colId: "delete",
             // valueGetter: () => 'X',
             onCellClicked: (event: CellClickedEvent<OrderRequest>) => {
-                console.log("showing delete btn", event);
+                // console.log("showing delete btn", event);
                 try {
                     return event.data ? deleteOrderRequest.mutate(event.data) : console.error("cannot delete order request", event)
                 }
@@ -257,7 +257,7 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
     //   params.api.sizeColumnsToFit();
     // };
     function isCellEditable(params: EditableCallbackParams | CellClassParams) {
-        console.log("params", params);
+        // console.log("params", params);
         try {
             if (!params.colDef) return false;
             return params.colDef.field === "notes";
@@ -290,9 +290,9 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
                 }
             },
             onCellValueChanged: (event: NewValueParams<OrderRequest>) => {
-                console.log("cell value changes event", event);
+                // console.log("cell value changes event", event);
                 try {
-                    console.log("cellValueChanged", event);
+                    // console.log("cellValueChanged", event);
                     const updatedOrderRequest = {
                         ...event.data,
                         notes: event.data?.notes,
@@ -301,7 +301,7 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
                     queryClient.invalidateQueries({
                         queryKey: ["orderRequest"],
                     });
-                    console.log("updating", updatedOrderRequest);
+                    // console.log("updating", updatedOrderRequest);
                 }
                 catch (error) {
                     console.error('Error in onCellValueChanged:', error);
@@ -313,9 +313,9 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
 
     // const handleAddPart = (event: RowClickedEvent) => {
     //     try {
-    //         console.log('Event received:', event);
+    //         // console.log('Event received:', event);
     //         const part = event.data as Part;
-    //         console.log('Part data:', part);
+    //         // console.log('Part data:', part);
 
     //         if (!part.item_id) {
     //             console.error('No item_id found in part data');
@@ -328,7 +328,7 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
     //             created_by: user_id,
     //         } as OrderRequest;
 
-    //         console.log('Creating order request:', newOrderRequest);
+    //         // console.log('Creating order request:', newOrderRequest);
     //         createOrderRequest.mutate(newOrderRequest);
     //     } catch (error) {
     //         console.error('Error in handleAddPart:', error);
@@ -341,7 +341,7 @@ const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
             <Typography variant="h4" gutterBottom>
                 Order Requests
             </Typography>
-                        <OrderModal
+            <OrderModal
                 user={user}
             />
             {

@@ -111,13 +111,13 @@ const ItemsTable: React.FC = () => {
                 }
             },
             onCellValueChanged: (event: NewValueParams<Part>) => {
-                console.log("cell value changes event", event);
+                // console.log("cell value changes event", event);
                 try {
-                    console.log("cellValueChanged", event);
+                    // console.log("cellValueChanged", event);
                     const updatedPart = event.data as Part;
                     updatePart.mutate(updatedPart);
 
-                    console.log("updating", updatedPart);
+                    // console.log("updating", updatedPart);
                 }
                 catch (error) {
                     console.error('Error in onCellValueChanged:', error);
@@ -267,7 +267,7 @@ const ItemsTable: React.FC = () => {
                     getRowStyle={({ data }) => {
                         const part = data as Part;
                         const urgency = getUrgency(part.stock ?? 0, part.minimum_stock ?? 0, part.name ?? "");
-                        console.log("urgency", urgency);
+                        // console.log("urgency", urgency);
                         if (urgency == 3) {
                             return { backgroundColor: "#F88379" };
                         }

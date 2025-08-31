@@ -42,7 +42,7 @@ function NewTransactionForm({
     setFormState((prevFormState) => ({ ...prevFormState, [name]: value }));
   };
 
-  console.log(t_type)
+  // console.log(t_type)
 
   const { status, data, error } = useQuery({
     queryKey: ["customers"],
@@ -61,7 +61,7 @@ function NewTransactionForm({
     if (data && status === "success") {
       setCustomers(data);
     }
-    console.log("customers", data);
+    // console.log("customers", data);
   }, [data, status]);
 
   const createCustomer = useMutation({
@@ -70,7 +70,7 @@ function NewTransactionForm({
     },
 
     onSuccess: (data: Customer) => {
-      console.log("Customer created", data);
+      // console.log("Customer created", data);
       queryClient.invalidateQueries({
         queryKey: ["customers"],
       });
@@ -91,8 +91,8 @@ function NewTransactionForm({
     mutationFn: (updatedCustomer: Customer) => {
       return DBModel.updateCustomer(updatedCustomer);
     },
-    onSuccess: (data) => {
-      console.log("Customer updated", data);
+    onSuccess: () => {
+      // console.log("Customer updated", data);
       queryClient.invalidateQueries({
         queryKey: ["customers"],
       });
@@ -108,13 +108,13 @@ function NewTransactionForm({
   const CreateTransaction = useMutation({
     mutationFn: (newTransaction: CreateTransaction) => {
       return DBModel.postTransaction(newTransaction).then((data) => {
-        console.log("Transaction created", data);
+        // console.log("Transaction created", data);
         return data;
       });
     },
     onSuccess: (data) => {
       onTransactionCreated(data);
-      console.log("Transaction created", data);
+      // console.log("Transaction created", data);
       queryClient.invalidateQueries({
         queryKey: ["transactions"],
       });
@@ -123,7 +123,7 @@ function NewTransactionForm({
       onClose();
     },
     onError: (error) => {
-      console.log("Error creating transaction", error);
+      toast.error("Error creating transaction: " + error.message);
     },
   });
 
