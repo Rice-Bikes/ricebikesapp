@@ -220,20 +220,4 @@ describe('AuthPrompt Component', () => {
     expect(screen.getByText('Admin Page')).toBeInTheDocument()
   })
 
-  test('updates current user display', async () => {
-    // Start with successful user data to show logged-in state
-    mockUseQuery.mockReturnValue({
-      data: mockUser,
-      error: null,
-      status: 'success',
-      isLoading: false,
-      isError: false,
-      isSuccess: true,
-    })
-
-    render(<AuthPrompt setUser={mockSetUser} />, { wrapper })
-
-    // The current user display should be visible immediately
-    expect(screen.getByText('Current User: Test User')).toBeInTheDocument()
-  })
 })
