@@ -228,7 +228,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       return DBModel.sendRecieptEmail(
         customer,
         transactionData.transaction_num ?? '',
-        transaction_id
+        transaction_id,
       );
     },
     onSuccess: () => {

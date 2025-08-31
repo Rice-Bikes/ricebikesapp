@@ -1721,6 +1721,7 @@ class DBModel {
       body: JSON.stringify({
         customer,
         transaction_id,
+        transaction_num,
       }),
     })
       .then((response) => response.json())
