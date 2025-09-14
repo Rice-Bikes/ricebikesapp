@@ -38,7 +38,7 @@ describe('Notes Component', () => {
         vi.clearAllMocks()
     })
 
-    test('renders notes title', () => {
+    test('renders Add Notes button when no notes exist', () => {
         render(
             <Notes
                 notes=""
@@ -48,7 +48,7 @@ describe('Notes Component', () => {
             />
         )
 
-        expect(screen.getByRole('heading', { name: 'Notes' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Add Notes' })).toBeInTheDocument()
     })
 
     test('displays existing notes', () => {
@@ -65,7 +65,7 @@ describe('Notes Component', () => {
         expect(screen.getByText(existingNotes)).toBeInTheDocument()
     })
 
-    test('displays "No notes yet." when notes are empty', () => {
+    test('displays "No notes yet. Click \'Add Notes\' to get started." when notes are empty', () => {
         render(
             <Notes
                 notes=""
@@ -75,13 +75,13 @@ describe('Notes Component', () => {
             />
         )
 
-        expect(screen.getByText('No notes yet.')).toBeInTheDocument()
+        expect(screen.getByText("No notes yet. Click 'Add Notes' to get started.")).toBeInTheDocument()
     })
 
-    test('shows Edit Notes button in view mode', () => {
+    test('shows Edit Notes button when notes exist', () => {
         render(
             <Notes
-                notes=""
+                notes="Some existing notes"
                 onSave={mockOnSave}
                 user={mockUser}
                 transaction_num={mockTransactionNum}
@@ -91,7 +91,7 @@ describe('Notes Component', () => {
         expect(screen.getByRole('button', { name: 'Edit Notes' })).toBeInTheDocument()
     })
 
-    test('enters edit mode when Edit Notes button is clicked', async () => {
+    test('enters edit mode when Add Notes button is clicked', async () => {
         render(
             <Notes
                 notes=""
@@ -101,12 +101,12 @@ describe('Notes Component', () => {
             />
         )
 
-        const editButton = screen.getByRole('button', { name: 'Edit Notes' })
-        fireEvent.click(editButton)
+        const addButton = screen.getByRole('button', { name: 'Add Notes' })
+        fireEvent.click(addButton)
 
         await waitFor(() => {
             expect(screen.getByDisplayValue('')).toBeInTheDocument()
-            expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+            expect(screen.getByRole('button', { name: 'Save Notes' })).toBeInTheDocument()
         })
     })
 
@@ -120,8 +120,8 @@ describe('Notes Component', () => {
             />
         )
 
-        const editButton = screen.getByRole('button', { name: 'Edit Notes' })
-        fireEvent.click(editButton)
+        const addButton = screen.getByRole('button', { name: 'Add Notes' })
+        fireEvent.click(addButton)
 
         await waitFor(() => {
             const textField = screen.getByDisplayValue('')
@@ -140,14 +140,14 @@ describe('Notes Component', () => {
             />
         )
 
-        const editButton = screen.getByRole('button', { name: 'Edit Notes' })
-        fireEvent.click(editButton)
+        const addButton = screen.getByRole('button', { name: 'Add Notes' })
+        fireEvent.click(addButton)
 
         await waitFor(() => {
             const textField = screen.getByDisplayValue('')
             fireEvent.change(textField, { target: { value: 'New note content' } })
 
-            const saveButton = screen.getByRole('button', { name: 'Save' })
+            const saveButton = screen.getByRole('button', { name: 'Save Notes' })
             fireEvent.click(saveButton)
         })
 
@@ -164,8 +164,8 @@ describe('Notes Component', () => {
             />
         )
 
-        const editButton = screen.getByRole('button', { name: 'Edit Notes' })
-        fireEvent.click(editButton)
+        const addButton = screen.getByRole('button', { name: 'Add Notes' })
+        fireEvent.click(addButton)
 
         await waitFor(() => {
             const textField = screen.getByDisplayValue('')
@@ -186,8 +186,8 @@ describe('Notes Component', () => {
             />
         )
 
-        const editButton = screen.getByRole('button', { name: 'Edit Notes' })
-        fireEvent.click(editButton)
+        const addButton = screen.getByRole('button', { name: 'Add Notes' })
+        fireEvent.click(addButton)
 
         await waitFor(() => {
             const textField = screen.getByDisplayValue('')
@@ -228,14 +228,14 @@ describe('Notes Component', () => {
             />
         )
 
-        const editButton = screen.getByRole('button', { name: 'Edit Notes' })
-        fireEvent.click(editButton)
+        const addButton = screen.getByRole('button', { name: 'Add Notes' })
+        fireEvent.click(addButton)
 
         await waitFor(() => {
             const textField = screen.getByDisplayValue('')
             fireEvent.change(textField, { target: { value: 'Some note' } })
 
-            const saveButton = screen.getByRole('button', { name: 'Save' })
+            const saveButton = screen.getByRole('button', { name: 'Save Notes' })
             fireEvent.click(saveButton)
         })
 
@@ -252,20 +252,20 @@ describe('Notes Component', () => {
             />
         )
 
-        const editButton = screen.getByRole('button', { name: 'Edit Notes' })
-        fireEvent.click(editButton)
+        const addButton = screen.getByRole('button', { name: 'Add Notes' })
+        fireEvent.click(addButton)
 
         await waitFor(() => {
             const textField = screen.getByDisplayValue('')
             fireEvent.change(textField, { target: { value: 'New note content' } })
 
-            const saveButton = screen.getByRole('button', { name: 'Save' })
+            const saveButton = screen.getByRole('button', { name: 'Save Notes' })
             fireEvent.click(saveButton)
         })
 
         await waitFor(() => {
             expect(screen.getByRole('button', { name: 'Edit Notes' })).toBeInTheDocument()
-            expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
+            expect(screen.queryByRole('button', { name: 'Save Notes' })).not.toBeInTheDocument()
         })
     })
 
