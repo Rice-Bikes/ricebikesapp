@@ -6,7 +6,7 @@
  * @param obj - The object to process
  * @returns The object with string decimals converted to numbers
  */
-function convertStringDecimalsToNumbers(obj: unknown): unknown {
+export function convertStringDecimalsToNumbers(obj: unknown): unknown {
   if (obj === null || obj === undefined) {
     return obj;
   }
@@ -123,7 +123,7 @@ export async function fetchWithDecimalConversion(
       });
       
       return convertedResponse;
-    } catch (error) {
+    } catch {
       // If JSON parsing fails, return original response
       return response;
     }

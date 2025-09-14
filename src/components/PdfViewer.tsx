@@ -43,7 +43,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ file, onDataExtracted }) => {
         if (file) {
             processPdfMutation.mutate(file);
         }
-    }, [file]);
+    }, [file, processPdfMutation]);
 
     const rows = Array.isArray(extractedData) ? extractedData : [];
     // console.log("rows", extractedData);
