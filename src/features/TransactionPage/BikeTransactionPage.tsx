@@ -134,6 +134,14 @@ const BikeTransactionPageContent: React.FC = () => {
     const currentStep = getCurrentStep();
     const currentStepIndex = SALES_STEPS.findIndex(step => step.key === currentStep?.step_name);
 
+    // Debug logging for step calculation
+    console.log('🔍 Step calculation debug:', {
+        currentStep: currentStep?.step_name,
+        currentStepIndex,
+        allSteps: steps.map(s => ({ name: s.step_name, completed: s.is_completed })),
+        SALES_STEPS: SALES_STEPS.map(s => s.key)
+    });
+
     const handleNext = async () => {
         console.log('handleNext called');
         console.log('currentStepIndex:', currentStepIndex);
@@ -187,6 +195,91 @@ const BikeTransactionPageContent: React.FC = () => {
             } else {
                 console.warn('Could not find step to revert:', currentStepToRevert);
             }
+        }
+    };
+
+    const handleStepClick = async (targetStepIndex: number) => {
+        console.log(`🔄 Step clicked: target=${targetStepIndex}, current=${currentStepIndex}`);
+        console.log('Current step:', currentStep);
+        console.log('Available steps:', steps.map(s => ({ name: s.step_name, completed: s.is_completed })));
+        console.log('Target step:', SALES_STEPS[targetStepIndex]);
+
+        // Check if we can navigate to this step
+        const targetStep = SALES_STEPS[targetStepIndex];
+        const targetStepEntity = getStepByName(targetStep.key);
+        
+        if (!targetStepEntity) {
+            console.warn(`⚠️ Target step entity not found: ${targetStep.key}`);
+            return;
+        }
+
+        if (targetStepIndex > currentStepIndex) {
+            // Can't navigate forward beyond current step
+            console.log('❌ Cannot navigate to future steps');
+            return;
+        }
+
+        if (targetStepIndex === currentStepIndex) {
+            // Already on this step, no action needed
+            console.log('ℹ️ Already on this step');
+            return;
+        }
+
+        // Navigate backwards by reverting steps AFTER the target
+        if (targetStepIndex < currentStepIndex) {
+            console.log(`🔙 Navigating backwards to step ${targetStepIndex} (${targetStep.label})`);
+
+            // Find all steps after the target that need to be reverted
+            const stepsToRevert = [];
+            for (let i = targetStepIndex + 1; i <= currentStepIndex; i++) {
+                const stepToRevert = SALES_STEPS[i].key;
+                const stepEntity = getStepByName(stepToRevert);
+                
+                if (stepEntity && stepEntity.is_completed) {
+                    stepsToRevert.push({ step: SALES_STEPS[i], entity: stepEntity });
+                }
+            }
+
+            console.log(`📋 Steps to revert:`, stepsToRevert.map(s => s.step.label));
+
+            // Revert all steps after the target
+            for (const { step, entity } of stepsToRevert) {
+                try {
+                    console.log(`⏪ Reverting step: ${step.label} (${entity.step_id})`);
+                    await markStepIncomplete(entity.step_id);
+                    console.log(`✅ Successfully reverted step: ${step.label}`);
+                } catch (error) {
+                    console.error(`❌ Error reverting step ${step.label}:`, error);
+                    // Continue reverting other steps even if one fails
+                }
+            }
+
+            // The target step should now be the "current" step since all steps after it are incomplete
+            // Force a refresh to update the UI
+            if (transaction?.transaction_id) {
+                console.log('🔄 Refreshing workflow data after step navigation');
+                
+                // Wait a moment for the backend to process the changes
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Invalidate and refetch all workflow-related queries
+                await Promise.all([
+                    queryClient.invalidateQueries({ queryKey: ['workflow', transaction.transaction_id] }),
+                    queryClient.invalidateQueries({ queryKey: ['workflow-progress', transaction.transaction_id] }),
+                    queryClient.invalidateQueries({ queryKey: ['workflow-steps', transaction.transaction_id] })
+                ]);
+                
+                // Force immediate refetch
+                await Promise.all([
+                    queryClient.refetchQueries({ queryKey: ['workflow', transaction.transaction_id] }),
+                    queryClient.refetchQueries({ queryKey: ['workflow-progress', transaction.transaction_id] }),
+                    queryClient.refetchQueries({ queryKey: ['workflow-steps', transaction.transaction_id] })
+                ]);
+
+                console.log('🔄 Completed refresh after step navigation');
+            }
+            
+            console.log(`🎉 Successfully navigated to step ${targetStepIndex} (${targetStep.label})`);
         }
     };
 
@@ -470,20 +563,45 @@ const BikeTransactionPageContent: React.FC = () => {
             {/* Step Navigation */}
             <Paper sx={{ p: 3, mb: 3 }}>
                 <Stepper activeStep={currentStepIndex} alternativeLabel>
-                    {SALES_STEPS.map((step) => (
-                        <Step key={step.key}>
-                            <StepLabel
-                                icon={step.icon}
-                                optional={
-                                    <Typography variant="caption">
-                                        {step.description}
-                                    </Typography>
-                                }
-                            >
-                                {step.label}
-                            </StepLabel>
-                        </Step>
-                    ))}
+                    {SALES_STEPS.map((step, index) => {
+                        const isCompleted = steps.some(s => s.step_name === step.key && s.is_completed);
+                        const isClickable = index <= currentStepIndex; // Can click on current step or previous steps
+                        
+                        return (
+                            <Step key={step.key} completed={isCompleted}>
+                                <Box
+                                    sx={{
+                                        cursor: isClickable ? 'pointer' : 'default',
+                                        '&:hover': isClickable ? {
+                                            '& .MuiStepLabel-label': {
+                                                color: 'primary.main'
+                                            }
+                                        } : {}
+                                    }}
+                                    onClick={isClickable ? () => {
+                                        console.log(`🖱️ Step ${index} (${step.label}) clicked - isClickable: ${isClickable}`);
+                                        console.log(`Current step index: ${currentStepIndex}, Target: ${index}`);
+                                        alert(`Clicked on ${step.label} (step ${index})`);
+                                        handleStepClick(index);
+                                    } : () => {
+                                        console.log(`❌ Step ${index} (${step.label}) clicked but not clickable`);
+                                        alert(`Cannot click on ${step.label} - not available`);
+                                    }}
+                                >
+                                    <StepLabel
+                                        icon={step.icon}
+                                        optional={
+                                            <Typography variant="caption">
+                                                {step.description}
+                                            </Typography>
+                                        }
+                                    >
+                                        {step.label}
+                                    </StepLabel>
+                                </Box>
+                            </Step>
+                        );
+                    })}
                 </Stepper>
             </Paper>
 
