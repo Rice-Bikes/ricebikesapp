@@ -72,12 +72,12 @@ function NewBikeForm({ onBikeCreated, isOpen, onClose, bike = {
       return DBModel.createBike(newBike);
     },
 
-    onSuccess: (data: Bike) => {
+    onSuccess: (data) => {
       // console.log("Bike created", data);
       queryClient.invalidateQueries({
         queryKey: ["bikes"],
       });
-      onBikeCreated(data);
+      onBikeCreated(data as Bike);
     },
     onError: (error) => {
       console.error("Error creating bike", error);

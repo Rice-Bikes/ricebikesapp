@@ -24,7 +24,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) =
       setCurrentUser(user);
       setIsWaitingForUser(false);
     }
-  }, [user, isWaitingForUser]);
+  }, [user, isWaitingForUser, currentUser]);
 
   const handleSubmit = () => {
     setIsWaitingForUser(true);

@@ -80,8 +80,9 @@ const WhiteboardEntryModal = ({
   const updateOrderRequest = useMutation({
     mutationFn: (req: OrderRequest) => {
       const { Item, User, ...reqWithoutAgg } = req;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _ = { Item, User }; // Keep for potential future use
+      // Remove Item and User from the request before sending
+      void Item; // Acknowledge Item exists but don't use it
+      void User; // Acknowledge User exists but don't use it
       return DBModel.putOrderRequest(reqWithoutAgg);
     },
     onSuccess: () => {

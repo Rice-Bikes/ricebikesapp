@@ -366,6 +366,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   transactionStatus,
   transactionType,
   isEmployee,
+  transaction_id,
+  updateTransaction,
 ]);
 
 useEffect(() => {
