@@ -349,6 +349,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       //   Transaction: transactionData,
       // });
     }
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, [
   isPaid,
   transactionData,
@@ -366,8 +367,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   transactionStatus,
   transactionType,
   isEmployee,
-  transaction_id,
-  updateTransaction,
 ]);
 
 useEffect(() => {
