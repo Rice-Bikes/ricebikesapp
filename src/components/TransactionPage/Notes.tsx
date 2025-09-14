@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import DBModel, { User } from "../../model";
-import { TextField, Button } from "@mui/material";
+import { TextField, Button, Box, Typography, Paper } from "@mui/material";
 import { queryClient } from "../../app/queryClient";
 
 interface NotesProps {
@@ -57,14 +57,12 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) =
 
 
   return (
-    <div style={{ width: "100%", textAlign: "center", margin: "0 auto" }}>
-      <h3>Notes</h3>
+    <Box sx={{ width: "100%" }}>
       {isEditing ? (
-        <div>
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
           <TextField
             value={editedNotes}
             onChange={(e) => setEditedNotes(e.target.value)}
-            style={{ width: "100%", textAlign: "left" }}
             onFocus={(e) =>
               (e.target as HTMLTextAreaElement).setSelectionRange(
                 (e.target as HTMLTextAreaElement).value.length,
@@ -75,50 +73,71 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) =
               if (e.key === "Enter" && !e.shiftKey) handleSubmit();
             }}
             multiline
+            fullWidth
             autoFocus
+            variant="outlined"
+            placeholder="Add your notes here..."
+            sx={{
+              mb: 2,
+              fontSize: '14px',
+              lineHeight: 1.5,
+              '& .MuiInputBase-root': {
+                height: '400px',
+                alignItems: 'flex-start',
+                padding: '12px'
+              },
+              '& .MuiInputBase-input': {
+                height: '100% !important',
+                overflow: 'auto !important'
+              }
+            }}
           />
           <Button
             onClick={handleSave}
-            style={{
-              marginTop: "10px",
-              padding: "5px 10px",
-              cursor: "pointer",
-              border: "1px solid black",
-              borderRadius: "5px",
-            }}
+            variant="contained"
+            fullWidth
+            sx={{ mt: 0 }}
           >
-            Save
+            Save Notes
           </Button>
-        </div>
+        </Box>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <pre
-            style={{
-              textAlign: "left",
-              border: "1px solid black",
-              padding: "20px",
-              textWrap: "wrap",
-              height: "fit-content",
-              fontSize: "16px"
+        <Box sx={{ display: "flex", flexDirection: "column", mt: 2 }}>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 3,
+              minHeight: 120,
+              backgroundColor: 'grey.50',
+              borderRadius: 1
             }}
           >
-            {editedNotes || "No notes yet."}
-          </pre>
+            <Typography
+              variant="body2"
+              component="pre"
+              sx={{
+                fontFamily: 'monospace',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                margin: 0,
+                fontSize: '14px',
+                lineHeight: 1.5
+              }}
+            >
+              {editedNotes || "No notes yet. Click 'Add Notes' to get started."}
+            </Typography>
+          </Paper>
           <Button
             onClick={() => handleOpenToEdit()}
-            style={{
-              marginTop: "10px",
-              padding: "5px 10px",
-              cursor: "pointer",
-              border: "1px solid black",
-              borderRadius: "5px",
-            }}
+            variant="outlined"
+            fullWidth
+            sx={{ mt: 0 }}
           >
-            Edit Notes
+            {editedNotes ? 'Edit Notes' : 'Add Notes'}
           </Button>
-        </div>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 };
 

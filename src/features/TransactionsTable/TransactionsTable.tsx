@@ -25,6 +25,7 @@ import { useNavigate } from "react-router-dom";
 import DBModel from "../../model";
 import PriceCheckModal from "../../components/PriceCheckModal";
 import OrderModal from "../../components/OrderModal";
+import { getBikeSalesColumnDefs } from './BikeSalesColumns';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import PanToolIcon from '@mui/icons-material/PanTool';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
@@ -66,16 +67,22 @@ function timeAgo(input: Date) {
 }
 
 const checkStatusOfRetrospec = (refurb: boolean, email: boolean, completed: boolean) => {
+  // Different states:
+  // 1. Arrived (not building): !refurb && !email && !completed
+  // 2. Building: refurb && !email && !completed  
+  // 3. Ready for inspection/email: !refurb && email && !completed
+  // 4. For sale: completed
 
-  if (refurb) {
-    return <ConstructionIcon style={{ color: "gold", marginRight: "5px" }} />;
-  }
-  else if (email) {
-    return <PanToolIcon style={{ color: "red", marginRight: "5px" }} />;
-  }
-  else if (completed) {
+  if (completed) {
     return <MonetizationOnIcon style={{ color: "green", marginRight: "5px" }} />;
   }
+  else if (email && !refurb) {
+    return <PanToolIcon style={{ color: "red", marginRight: "5px" }} />;
+  }
+  else if (refurb) {
+    return <ConstructionIcon style={{ color: "gold", marginRight: "5px" }} />;
+  }
+  // Default state: arrived but not building yet
   return <LocalShippingIcon style={{ color: "blue", marginRight: "5px" }} />;
 }
 
@@ -100,9 +107,17 @@ export function TransactionsTable({
   const [showPriceCheckModal, setShowPriceCheckModal] = useState(false);
 
   const onRowClicked = (e: RowClickedEvent) => {
-    navigate(
-      `/transaction-details/${e.data.Transaction.transaction_id}?type=${e.data.Transaction.transaction_type}`
-    );
+    // Route Retrospec transactions to the new bike transaction system
+    if (e.data.Transaction.transaction_type?.toLowerCase() === "retrospec") {
+      navigate(
+        `/bike-transaction/${e.data.Transaction.transaction_id}?type=${e.data.Transaction.transaction_type}`
+      );
+    } else {
+      // Route all other transactions to the regular transaction page
+      navigate(
+        `/transaction-details/${e.data.Transaction.transaction_id}?type=${e.data.Transaction.transaction_type}`
+      );
+    }
   };
 
   const { status, data, error } = useQuery(
@@ -127,9 +142,32 @@ export function TransactionsTable({
       setSummaryData(summaryQueryData as TransactionSummary);
     }
   }, [status, data, error, summaryStatus, summaryQueryData, summaryError]);
-  if (debug)  console.log(status, data, error);
+  if (debug) console.log(status, data, error);
 
-    const [colDefs] = useState<ColDef<IRow>[]>([
+  // Dynamic column definitions based on view type
+  const colDefs = useMemo<ColDef<IRow>[]>(() => {
+    // Use bike sales columns for Retrospec transactions
+    if (viewType === "retrospec") {
+      try {
+        const bikeSalesColumns = getBikeSalesColumnDefs();
+        if (bikeSalesColumns && Array.isArray(bikeSalesColumns) && bikeSalesColumns.length > 0) {
+          // Validate that all columns have required properties
+          const validColumns = bikeSalesColumns.filter(col => col && typeof col === 'object');
+          if (validColumns.length === bikeSalesColumns.length) {
+            return validColumns;
+          }
+          console.warn('Some bike sales columns are invalid, falling back to default columns');
+        } else {
+          console.warn('getBikeSalesColumnDefs returned empty or null, falling back to default columns');
+        }
+      } catch (error) {
+        console.error('Error loading bike sales columns:', error);
+      }
+      // Fallback to default columns if bike sales columns fail
+    }
+
+    // Default columns for all other transaction types
+    return [
       {
         headerName: "#",
         colId: "transaction_num",
@@ -256,7 +294,7 @@ export function TransactionsTable({
                 }}
                 direction={"row"}
               ><Chip
-                  label="Retrospec"
+                  label="Build"
                   sx={{
                     backgroundColor: "orange",
                     color: "white",
@@ -347,7 +385,8 @@ export function TransactionsTable({
           return timeAgo(new Date(params.data?.Transaction.date_completed));
         },
       }
-    ]);
+    ];
+  }, [viewType]); // Recalculate columns when view type changes
 
   const defaultColDef: ColDef = {
     flex: 1,
@@ -368,26 +407,38 @@ export function TransactionsTable({
     newAlignment: string
   ) => {
     if (newAlignment !== null) {
-      if (debug)  console.log("new alignment", newAlignment);
-        setViewType(newAlignment);
-      const sortFunc = sortMap.get(newAlignment) ?? clearSort;
-      if (newAlignment === "paid" || newAlignment === "pickup") {
-        gridApiRef.current!.api.applyColumnState({
-          state: [{ colId: "time_since_completion", hide: false }, { colId: "submitted", hide: true }],
-          defaultState: { hide: null },
-        });
-      }
-      else {
-        gridApiRef.current!.api.applyColumnState({
-          state: [{ colId: "time_since_completion", hide: true }, { colId: "submitted", hide: false }],
-          defaultState: { hide: null },
+      if (debug) console.log("new alignment", newAlignment);
+      setViewType(newAlignment);
 
-        });
-      }
-      sortFunc();
-      gridApiRef.current!.api.sizeColumnsToFit();
+      // Add a small delay to ensure the column definitions have been updated
+      setTimeout(() => {
+        try {
+          if (!gridApiRef.current?.api) {
+            console.warn('Grid API not available, skipping column state updates');
+            return;
+          }
+
+          const sortFunc = sortMap.get(newAlignment) ?? clearSort;
+
+          if (newAlignment === "paid" || newAlignment === "pickup") {
+            gridApiRef.current.api.applyColumnState({
+              state: [{ colId: "time_since_completion", hide: false }, { colId: "submitted", hide: true }],
+              defaultState: { hide: null },
+            });
+          } else {
+            gridApiRef.current.api.applyColumnState({
+              state: [{ colId: "time_since_completion", hide: true }, { colId: "submitted", hide: false }],
+              defaultState: { hide: null },
+            });
+          }
+
+          sortFunc();
+          gridApiRef.current.api.sizeColumnsToFit();
+        } catch (error) {
+          console.error('Error updating grid state:', error);
+        }
+      }, 100);
     }
-    // gridApiRef.current?.onFilterChanged();
   };
 
   function isExternalFilterPresent() {
@@ -396,62 +447,83 @@ export function TransactionsTable({
 
   function doesExternalFilterPass(node: IRowNode) {
     const transaction = node.data.Transaction as Transaction;
+    const isRetrospec = transaction.transaction_type != null && transaction.transaction_type.toLowerCase() === "retrospec";
+
     return (
       (viewType === "retrospec" &&
-        transaction.transaction_type != null &&
-        transaction.transaction_type.toLowerCase() === "retrospec" &&
+        isRetrospec &&
         transaction?.is_paid === false) ||
       (viewType === "pickup" &&
         transaction?.is_paid === false &&
         transaction?.is_completed === true
         && transaction?.is_refurb === false
         && transaction.transaction_type != null &&
-        transaction?.transaction_type.toLowerCase() !== "retrospec"
+        !isRetrospec
         && !isDaysLess(183, new Date(transaction.date_created ?? ""), new Date())
       ) ||
       (viewType === "paid" && transaction?.is_paid === true) ||
       (viewType === "main" &&
-        (transaction?.is_completed === false &&
+        // Include regular non-retrospec transactions that are incomplete
+        ((transaction?.is_completed === false &&
           transaction.transaction_type != null &&
-
-          transaction?.transaction_type.toLowerCase() !== "retrospec" &&
+          !isRetrospec &&
           (transaction?.is_employee === false || transaction?.is_employee === true && transaction?.is_beer_bike === true) &&
-          transaction?.is_refurb === false || transaction.transaction_type != null &&
-          transaction?.transaction_type.toLowerCase() === "retrospec" && transaction?.is_refurb)) ||
+          transaction?.is_refurb === false) ||
+          // Include retrospec transactions that are actively being built (is_refurb = true)
+          (isRetrospec &&
+            transaction?.is_refurb === true &&
+            !transaction?.is_completed &&
+            !transaction?.is_waiting_on_email))) ||
       (viewType === "employee" &&
         transaction?.is_employee === true &&
         transaction?.is_completed === false &&
         transaction?.is_beer_bike === false &&
         transaction.transaction_type != null &&
-
-        transaction?.transaction_type.toLowerCase() !== "retrospec"
+        !isRetrospec
         && transaction?.is_refurb === false) ||
       (viewType === "refurb" && transaction?.is_refurb === true && transaction?.is_paid === false && transaction?.is_completed === false && transaction.transaction_type != null &&
-        transaction?.transaction_type.toLowerCase() != "retrospec") ||
+        !isRetrospec) ||
       (viewType === "beer bike" &&
         transaction?.is_beer_bike === true && !isDaysLess(364, new Date(transaction?.date_created ?? ""), new Date())));
   }
 
 
   function sortByTransactionNumDesc() {
-    gridApiRef.current!.api.applyColumnState({
-      state: [{ colId: "transaction_num", sort: "desc" }],
-      defaultState: { sort: null },
-    });
+    try {
+      if (gridApiRef.current?.api) {
+        gridApiRef.current.api.applyColumnState({
+          state: [{ colId: "transaction_num", sort: "desc" }],
+          defaultState: { sort: null },
+        });
+      }
+    } catch (error) {
+      console.error('Error applying transaction number sort:', error);
+    }
   }
 
   function sortByCompletionDateAsc() {
-    return gridApiRef.current!.api.applyColumnState({
-      state: [{ colId: "time_since_completion", sort: "desc" }],
-      defaultState: { sort: null },
-    });
+    try {
+      if (gridApiRef.current?.api) {
+        return gridApiRef.current.api.applyColumnState({
+          state: [{ colId: "time_since_completion", sort: "desc" }],
+          defaultState: { sort: null },
+        });
+      }
+    } catch (error) {
+      console.error('Error applying completion date sort:', error);
+    }
   }
 
-
   function clearSort() {
-    gridApiRef.current!.api.applyColumnState({
-      defaultState: { sort: null },
-    });
+    try {
+      if (gridApiRef.current?.api) {
+        gridApiRef.current.api.applyColumnState({
+          defaultState: { sort: null },
+        });
+      }
+    } catch (error) {
+      console.error('Error clearing sort:', error);
+    }
   }
 
   const sortMap: Map<string, () => void> = new Map([
@@ -470,6 +542,7 @@ export function TransactionsTable({
     <main style={{ width: "100vw" }}>
       <Button></Button>
       <header style={{ display: "flex", justifyContent: "space-between" }}>
+
         <ButtonGroup id="nav-buttons" variant="outlined">
           <CreateTransactionDropdown user={user} />
           <Button onClick={() => navigate("/whiteboard")}>Whiteboard</Button>
@@ -514,86 +587,99 @@ export function TransactionsTable({
             <ToggleButton value="beer bike"> Beer Bike </ToggleButton>
           </ToggleButtonGroup>
 
-          <AgGridReact
-            ref={gridApiRef}
-            loading={status !== "success"}
-            rowData={data}
-            columnDefs={colDefs}
-            defaultColDef={defaultColDef}
-            rowSelection={rowSelection}
-            onRowClicked={onRowClicked}
-            getRowStyle={({ data }) => {
-              const transaction = data?.Transaction as Transaction;
-              if (transaction.date_created && transaction.transaction_type != null && (transaction.is_completed === false
-                && transaction.transaction_type !== "retrospec"
-                && transaction.is_employee === false
-                && transaction.is_refurb === false ||
-                transaction.is_beer_bike === true
-                && transaction.is_completed === false)
-              ) {
-                if (
-                  isDaysLess(
-                    5,
-                    currDate,
-                    new Date(transaction.date_created)
-                  )
-                ) {
-                  return { backgroundColor: "lightcoral" };
-                } else if (
-                  isDaysLess(
-                    2,
-                    currDate,
-                    new Date(transaction.date_created)
-                  )
-                ) {
-                  return { backgroundColor: "lightyellow" };
-                } else return { backgroundColor: "white" };
-              }
-              else if (
-                transaction.date_completed !== null
-                && transaction.transaction_type !== null
-                && transaction.date_completed !== undefined
-                && (transaction.is_paid === false
-                  && transaction.is_completed === true
-                  && transaction.is_refurb === false
-                  && transaction.transaction_type.toLowerCase() !== "retrospec" ||
+          {colDefs && Array.isArray(colDefs) && colDefs.length > 0 && colDefs.every(col => col && typeof col === 'object') ? (
+            <AgGridReact
+              key={`ag-grid-${viewType}`}
+              ref={gridApiRef}
+              loading={status !== "success"}
+              rowData={data}
+              columnDefs={colDefs}
+              defaultColDef={defaultColDef}
+              rowSelection={rowSelection}
+              onRowClicked={onRowClicked}
+              getRowStyle={({ data }) => {
+                const transaction = data?.Transaction as Transaction;
+                if (transaction.date_created && transaction.transaction_type != null && (transaction.is_completed === false
+                  &&( transaction.transaction_type !== "retrospec" && transaction.transaction_type !== "Retrospec" )
+                  && transaction.is_employee === false
+                  && transaction.is_refurb === false ||
                   transaction.is_beer_bike === true
-                  && transaction.is_completed === true
-                  && transaction.is_paid === false
-                )) {
-                if (
-                  isDaysLess(
-                    5,
-                    currDate,
-                    new Date(transaction.date_completed)
-                  )
+                  && transaction.is_completed === false)
                 ) {
-                  return { backgroundColor: "lightcoral" };
-                } else if (
-                  isDaysLess(
-                    2,
-                    currDate,
-                    new Date(transaction.date_completed)
-                  )
-                ) {
-                  return { backgroundColor: "lightyellow" };
-                } else return { backgroundColor: "white" };
-              }
+                  if (
+                    isDaysLess(
+                      5,
+                      currDate,
+                      new Date(transaction.date_created)
+                    )
+                  ) {
+                    return { backgroundColor: "lightcoral" };
+                  } else if (
+                    isDaysLess(
+                      2,
+                      currDate,
+                      new Date(transaction.date_created)
+                    )
+                  ) {
+                    return { backgroundColor: "lightyellow" };
+                  } else return { backgroundColor: "white" };
+                }
+                else if (
+                  transaction.date_completed !== null
+                  && transaction.transaction_type !== null
+                  && transaction.date_completed !== undefined
+                  && (transaction.is_paid === false
+                    && transaction.is_completed === true
+                    && transaction.is_refurb === false
+                    && transaction.transaction_type.toLowerCase() !== "retrospec" ||
+                    transaction.is_beer_bike === true
+                    && transaction.is_completed === true
+                    && transaction.is_paid === false
+                  )) {
+                  if (
+                    isDaysLess(
+                      5,
+                      currDate,
+                      new Date(transaction.date_completed)
+                    )
+                  ) {
+                    return { backgroundColor: "lightcoral" };
+                  } else if (
+                    isDaysLess(
+                      2,
+                      currDate,
+                      new Date(transaction.date_completed)
+                    )
+                  ) {
+                    return { backgroundColor: "lightyellow" };
+                  } else return { backgroundColor: "white" };
+                }
 
-            }
-            }
-            isExternalFilterPresent={isExternalFilterPresent}
-            doesExternalFilterPass={doesExternalFilterPass}
-            domLayout="autoHeight"
-            pagination={viewType === "paid"}
-            onGridReady={(params) => {
-              gridApiRef.current!.api.applyColumnState({
-                state: [{ colId: "time_since_completion", hide: true }, { colId: "submitted", hide: false }],
-                defaultState: { sort: null },
-              });
-              params.api.sizeColumnsToFit();
-            }}
-          />
+              }
+              }
+              isExternalFilterPresent={isExternalFilterPresent}
+              doesExternalFilterPass={doesExternalFilterPass}
+              domLayout="autoHeight"
+              pagination={viewType === "paid"}
+              onGridReady={(params) => {
+                try {
+                  if (params.api) {
+                    params.api.applyColumnState({
+                      state: [{ colId: "time_since_completion", hide: true }, { colId: "submitted", hide: false }],
+                      defaultState: { sort: null },
+                    });
+                    params.api.sizeColumnsToFit();
+                  }
+                } catch (error) {
+                  console.error('Error during grid ready initialization:', error);
+                }
+              }}
+            />
+          ) : (
+            <div style={{ padding: '20px', textAlign: 'center' }}>
+              <p>Error loading table columns. Please refresh the page.</p>
+            </div>
+          )}
         </>
 
       </section>

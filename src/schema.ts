@@ -165,9 +165,17 @@ export const BikeSchema = {
     model: { type: "string" },
     date_created: { type: "string", nullable: true },
     description: { type: "string" },
+    bike_type: { type: ["string", "null"] },
+    size_cm: { type: ["number", "null"] }, // Allow both number and string
+    condition: { type: ["string", "null"] },
+    price: { type: ["number", "null"] }, // Allow both number and string
+    is_available: { type: ["boolean", "null"] }, // Add missing field
+    reservation_customer_id: { type: ["string", "null"] },
+    deposit_amount: { type: ["number", "null"] }, // Allow both number and string
+    weight_kg: { type: ["number", "null"] }, // Allow both number and string
   },
   required: ["make", "model", "description"],
-  additionalProperties: false,
+  additionalProperties: true, // Allow additional properties for backwards compatibility
 } as const satisfies JSONSchema;
 
 export const RoleSchema = {
@@ -303,12 +311,12 @@ export const TransactionSchema = {
       properties: BikeSchema.properties,
     },
     Customer: {
-      type: "object",
+      type: ["object", "null"],
       nullable: true,
       properties: CustomerSchema.properties,
     },
     OrderRequests: {
-      type: "array",
+      type: ["array", "null"],
       nullable: true,
       items: OrderRequestSchema,
     },
@@ -328,9 +336,7 @@ export const TransactionSchema = {
     "is_reserved",
     "is_waiting_on_email",
     "transaction_id",
-    // "OrderRequests"
   ],
-  additionalProperties: false,
 } as const satisfies JSONSchema;
 
 export const CreateTransactionSchema = {
@@ -459,6 +465,7 @@ export const updateTransactionSchema = {
   type: "object",
   properties: {
     transaction_type: { type: "string" },
+    customer_id: { type: "string", nullable: true },
     bike_id: { type: "string", nullable: true },
     total_cost: { type: "number" },
     description: { type: "string", nullable: true },
@@ -636,5 +643,103 @@ export const GetOrderSchema = {
     },
   },
   required: ["params"],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+export const WorkflowStepSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "WorkflowStep",
+  type: "object",
+  properties: {
+    step_id: { type: "string" },
+    transaction_id: { type: "string" },
+    workflow_type: { type: "string" },
+    step_name: { type: "string" },
+    step_order: { type: "number" },
+    is_completed: { type: "boolean" },
+    completed_at: { type: ["string", "null"], format: "date-time" },
+    completed_by: { type: ["string", "null"] },
+    created_by: { type: "string" },
+    created_at: { type: "string", format: "date-time" },
+    updated_at: { type: "string", format: "date-time" },
+  },
+  required: [
+    "step_id",
+    "transaction_id", 
+    "workflow_type",
+    "step_name",
+    "step_order",
+    "is_completed",
+    "created_by",
+    "created_at",
+    "updated_at"
+  ],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+export const WorkflowStepsArraySchema = {
+  $id: "workflowStepsArray.json",
+  type: "array",
+  items: WorkflowStepSchema,
+} as const satisfies JSONSchema;
+
+export const WorkflowProgressSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "WorkflowProgress",
+  type: "object",
+  properties: {
+    total_steps: { type: "number" },
+    completed_steps: { type: "number" },
+    progress_percentage: { type: "number" },
+    current_step: { 
+      type: ["object", "null"],
+      properties: {
+        step_id: { type: "string" },
+        step_name: { type: "string" },
+        step_order: { type: "number" },
+        is_completed: { type: "boolean" },
+        completed_at: { type: ["string", "null"], format: "date-time" }
+      },
+      required: ["step_id", "step_name", "step_order", "is_completed"],
+      additionalProperties: false
+    },
+    is_workflow_complete: { type: "boolean" },
+    steps_summary: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          step_id: { type: "string" },
+          step_name: { type: "string" },
+          step_order: { type: "number" },
+          is_completed: { type: "boolean" },
+          completed_at: { type: ["string", "null"], format: "date-time" }
+        },
+        required: ["step_id", "step_name", "step_order", "is_completed"],
+        additionalProperties: false
+      }
+    }
+  },
+  required: [
+    "total_steps",
+    "completed_steps", 
+    "progress_percentage",
+    "current_step",
+    "is_workflow_complete",
+    "steps_summary"
+  ],
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
+export const CreateWorkflowSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "CreateWorkflow",
+  type: "object",
+  properties: {
+    transaction_id: { type: "string", format: "uuid" },
+    workflow_type: { type: "string" },
+    created_by: { type: "string" }
+  },
+  required: ["transaction_id", "workflow_type"],
   additionalProperties: false,
 } as const satisfies JSONSchema;

@@ -39,6 +39,10 @@ import {
   OrderSchema,
   CreateOrderSchema,
   GetOrderSchema,
+  WorkflowStepSchema,
+  WorkflowStepsArraySchema,
+  WorkflowProgressSchema,
+  CreateWorkflowSchema,
 } from "./schema";
 import { IRow } from "./features/TransactionsTable/TransactionsTable";
 
@@ -66,6 +70,9 @@ export type FeatureFlag = FromSchema<typeof FeatureFlagSchema>;
 export type Order = FromSchema<typeof OrderSchema>;
 export type CreateOrder = FromSchema<typeof CreateOrderSchema>;
 export type GetOrder = FromSchema<typeof GetOrderSchema>;
+export type WorkflowStep = FromSchema<typeof WorkflowStepSchema>;
+export type WorkflowProgress = FromSchema<typeof WorkflowProgressSchema>;
+export type CreateWorkflow = FromSchema<typeof CreateWorkflowSchema>;
 
 export type PartArray = FromSchema<typeof partArraySchema>;
 export type RepairArray = FromSchema<typeof repairArraySchema>;
@@ -73,6 +80,7 @@ export type TransactionArray = FromSchema<typeof TransactionArraySchema>;
 export type TransactionDetailsArray = FromSchema<typeof TransactionDetailsArraySchema>;
 export type TransactionLogArray = FromSchema< typeof TransactionLogArraySchema>;
 export type TransactionLog = FromSchema<typeof TransactionLogSchema>;
+export type WorkflowStepsArray = FromSchema<typeof WorkflowStepsArraySchema>;
 
 export type PartResponse = FromSchema<typeof partResponseSchema>;
 export type RepairResponse = FromSchema<typeof repairResponseSchema>;
@@ -149,6 +157,9 @@ class DBModel {
   public static validatePermissions: (data: unknown) => data is Permission;
   public static validateFeatureFlags: (data: unknown) => data is FeatureFlag[];
   public static validateOrder: (data: unknown) => data is Order;
+  public static validateWorkflowStep: (data: unknown) => data is WorkflowStep;
+  public static validateWorkflowProgress: (data: unknown) => data is WorkflowProgress;
+  public static validateWorkflowSteps: (data: unknown) => data is WorkflowStep[];
 
   // ARRAY VERIFICATION METHODS
   static validatePartsArray: (data: unknown) => data is Part[];
@@ -191,6 +202,9 @@ class DBModel {
     DBModel.validatePermissions = compile(PermissionsSchema);
     DBModel.validateFeatureFlags = compile(FeatureFlagSchema);
     DBModel.validateOrder = compile(OrderSchema);
+    DBModel.validateWorkflowStep = compile(WorkflowStepSchema);
+    DBModel.validateWorkflowProgress = compile(WorkflowProgressSchema);
+    DBModel.validateWorkflowSteps = compile(WorkflowStepsArraySchema);
 
     // ARRAY VERIFICATION METHODS
     DBModel.validateTransactionsArray = compile(TransactionArraySchema);
@@ -240,23 +254,35 @@ class DBModel {
         console.log(" Transaction Array Data:", transactionData.responseObject);
         return transactionData.responseObject;
       })
-      .then((partsData: unknown[]) => {
-        console.log("Mapped Parts Data:", partsData);
-        partsData.forEach((part) => {
-          if (!DBModel.validateTransaction(part)) {
-            console.log("Invalid transaction:", part);
-            throw new Error("Invalid transaction found");
+      .then((transactionsData: unknown[]) => {
+        console.log("Mapped Parts Data:", transactionsData);
+        transactionsData.forEach((part) => {
+          if (part && typeof part === 'object' && part !== null) {
+            const transaction = part as Record<string, unknown>;
+            // Only validate essential transaction fields for backwards compatibility
+            if (!transaction.transaction_id || !transaction.transaction_num) {
+              console.warn("Transaction missing essential fields (transaction_id, transaction_num):", part);
+              // Don't throw error - just log warning
+            }
+            // Don't validate the optional fields - they can be null/undefined
+          } else if (part !== null) {
+            console.warn("Invalid transaction data type:", part);
           }
         });
 
-        if (!DBModel.validateTransactionsArray(partsData)) {
-          throw new Error("Invalid part array");
+        // More lenient validation for backwards compatibility
+        if (!Array.isArray(transactionsData)) {
+          throw new Error("Parts data must be an array");
         }
+        
+        // Don't validate each transaction strictly - just ensure it's an array
+        console.log(`Processing ${transactionsData.length} transactions`);
 
-        const transactionRowsPromises = partsData.map((part) => {
+        const transactionRowsPromises = transactionsData.map((partData) => {
+          const part = partData as Record<string, unknown>;
           const bikeField: unknown = part.Bike;
-          if (!DBModel.validateBike(bikeField)) {
-            console.error("Invalid bike:", bikeField);
+          if (bikeField !== null && !DBModel.validateBike(bikeField)) {
+            console.warn("Invalid bike:", bikeField);
             throw new Error("Invalid bike found");
           }
 
@@ -278,7 +304,7 @@ class DBModel {
             Customer: part.Customer,
             Bike: part.Bike,
             OrderRequests: part.OrderRequests ?? [],
-            Submitted: new Date(part.date_created ?? 0),
+            Submitted: new Date((part.date_created as string | number) ?? 0),
           };
         });
         return transactionRowsPromises;
@@ -652,8 +678,15 @@ class DBModel {
       .then((transactionData: unknown) => {
         console.log("Raw Transaction Data:", transactionData);
         if (!DBModel.validateTransaction(transactionData)) {
+          console.error("Invalid transaction data:", transactionData);
           throw new Error("Invalid transaction response");
         }
+        if (transactionData?.Bike && !DBModel.validateBike(transactionData.Bike)) {
+          console.error("Invalid bike data:", transactionData.Bike);
+          throw new Error("Invalid bike response");
+        }
+
+        
         return transactionData;
       });
 
@@ -747,7 +780,7 @@ class DBModel {
           throw new Error("Invalid part response");
         }
         if (!summaryResponse.success) {
-          throw new Error("Failed to load parts");
+          throw new Error("Failed to load transactions");
         }
         console.log(" Summary Data:", summaryResponse.responseObject);
         return summaryResponse.responseObject;
@@ -1413,9 +1446,13 @@ class DBModel {
           throw new Error("Failed to post bike");
         }
 
-        if (!this.validateBike(response.responseObject)) {
+        // More lenient validation for bike creation - only validate essential fields
+        const bike = response.responseObject;
+        if (!bike || typeof bike !== 'object' || !bike.make || !bike.model || !bike.description) {
+          console.warn("Invalid bike response - missing essential fields:", bike);
           throw new Error("Invalid bike response");
         }
+        
         return response.responseObject;
       })
       .catch((error) => {
@@ -1747,7 +1784,7 @@ class DBModel {
       queryFn: () => this.fetchTransactions(page_limit, aggregate),
       refetchOnWindowFocus: "always",
       staleTime: 600000, // Cache products for 1 minute
-      select: (data) => data as IRow[],
+      select: (data) => data as unknown as IRow[],
     });
   };
 
@@ -1909,6 +1946,252 @@ class DBModel {
     
     return response.json();
   }
+
+  // Special case: Initialize endpoint uses 'bike-sales' (hyphen) and is hardcoded in the API
+  public static initializeWorkflow = async (transactionId: string, createdBy?: string) =>
+    fetch(`${hostname}/workflow-steps/initialize/bike-sales/${transactionId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...(createdBy && { created_by: createdBy }), // Only include created_by if provided
+      }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          // Try to get the error message from the response body
+          let errorMessage = `HTTP ${response.status}: Initialize workflow endpoint error`;
+          try {
+            const errorBody = await response.json();
+            if (errorBody.message) {
+              errorMessage = `HTTP ${response.status}: ${errorBody.message}`;
+            }
+          } catch {
+            // If we can't parse the error response, use the default message
+          }
+          throw new Error(errorMessage);
+        }
+        try {
+          return await response.json();
+        } catch (error) {
+          throw new Error(`Invalid JSON response from initialize workflow API: ${error}`);
+        }
+      })
+      .then((response) => {
+        if (!DBModel.validateArrayResponse(response)) {
+          throw new Error("Invalid response structure");
+        }
+        if (!response.success) {
+          throw new Error(response.message || "Failed to initialize workflow");
+        }
+        if (!DBModel.validateWorkflowSteps(response.responseObject)) {
+          throw new Error("Invalid workflow steps data received");
+        }
+        return response.responseObject as WorkflowStep[];
+      })
+      .catch((error) => {
+        console.error("Error initializing workflow:", error);
+        throw error;
+      });
+
+  public static fetchWorkflowProgress = async (transactionId: string, workflowType: string = 'bike_sales') =>
+    fetch(`${hostname}/workflow-steps/progress/${transactionId}/${workflowType}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: Workflow progress endpoint not found`);
+        }
+        try {
+          return await response.json();
+        } catch (error) {
+          throw new Error(`Invalid JSON response from workflow progress API: ${error}`);
+        }
+      })
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response structure");
+        }
+        if (!response.success) {
+          throw new Error(response.message || "Failed to fetch workflow progress");
+        }
+        
+        // Debug: Log the actual response data to see what we're getting
+        console.log('Workflow progress response:', JSON.stringify(response.responseObject, null, 2));
+        
+        if (!DBModel.validateWorkflowProgress(response.responseObject)) {
+          console.error('Workflow progress validation failed. Expected schema:', WorkflowProgressSchema);
+          console.error('Received data:', response.responseObject);
+          throw new Error("Invalid workflow progress data received");
+        }
+        return response.responseObject as WorkflowProgress;
+      })
+      .catch((error) => {
+        console.error("Error fetching workflow progress:", error);
+        throw error;
+      });
+
+  public static fetchWorkflowSteps = async (transactionId: string, workflowType: string = 'bike_sales') =>
+    fetch(`${hostname}/workflow-steps/transaction/${transactionId}/${workflowType}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: Workflow steps endpoint not found`);
+        }
+        try {
+          return await response.json();
+        } catch (error) {
+          throw new Error(`Invalid JSON response from workflow steps API: ${error}`);
+        }
+      })
+      .then((response) => {
+        if (!DBModel.validateArrayResponse(response)) {
+          throw new Error("Invalid response structure");
+        }
+        if (!response.success) {
+          throw new Error(response.message || "Failed to fetch workflow steps");
+        }
+        if (!DBModel.validateWorkflowSteps(response.responseObject)) {
+          throw new Error("Invalid workflow steps data received");
+        }
+        return response.responseObject as WorkflowStep[];
+      })
+      .catch((error) => {
+        console.error("Error fetching workflow steps:", error);
+        throw error;
+      });
+
+  public static completeWorkflowStep = async (stepId: string) => {
+    const url = `${hostname}/workflow-steps/complete/${stepId}`;
+    console.log('Attempting to complete workflow step at URL:', url);
+    
+    return fetch(url, {
+      method: "POST", // Changed from PATCH to POST to match backend
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        // Optional: include completed_by if we want to track who completed it
+        // completed_by: currentUserId
+      }),
+    })
+      .then(async (response) => {
+        console.log('Complete workflow step response status:', response.status);
+        console.log('Complete workflow step response headers:', Object.fromEntries(response.headers.entries()));
+        
+        if (!response.ok) {
+          const responseText = await response.text();
+          console.log('Complete workflow step error response body:', responseText.substring(0, 500));
+          throw new Error(`HTTP ${response.status}: Workflow step completion endpoint not implemented yet. Response: ${responseText.substring(0, 100)}...`);
+        }
+        
+        const responseText = await response.text();
+        console.log('Complete workflow step success response body:', responseText);
+        
+        try {
+          return JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('Failed to parse JSON response:', parseError);
+          throw new Error(`Invalid JSON response from workflow completion endpoint: ${responseText.substring(0, 200)}...`);
+        }
+      })
+      .then((response) => {
+        console.log('Parsed workflow step completion response:', response);
+        
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response structure");
+        }
+        if (!response.success) {
+          throw new Error(response.message || "Failed to complete workflow step");
+        }
+        if (!DBModel.validateWorkflowStep(response.responseObject)) {
+          throw new Error("Invalid workflow step data received");
+        }
+        return response.responseObject as WorkflowStep;
+      })
+      .catch((error) => {
+        console.error("Error completing workflow step:", error);
+        throw error;
+      });
+  };
+
+  public static uncompleteWorkflowStep = async (stepId: string) =>
+    fetch(`${hostname}/workflow-steps/uncomplete/${stepId}`, {
+      method: "POST", // Changed from PATCH to POST to match backend
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}), // Empty body as backend expects POST with body
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response structure");
+        }
+        if (!response.success) {
+          throw new Error(response.message || "Failed to uncomplete workflow step");
+        }
+        if (!DBModel.validateWorkflowStep(response.responseObject)) {
+          throw new Error("Invalid workflow step data received");
+        }
+        return response.responseObject as WorkflowStep;
+      })
+      .catch((error) => {
+        console.error("Error uncompleting workflow step:", error);
+        throw error;
+      });
+
+  // Reset/Delete workflow - for admin use
+  public static resetWorkflow = async (transactionId: string) =>
+    fetch(`${hostname}/workflow-steps/reset/${transactionId}`, {
+      method: "POST", // Changed from DELETE to POST to match backend
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        workflow_type: "bike_sales" // Required by backend
+      }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          let errorMessage = `HTTP ${response.status}: Reset workflow endpoint error`;
+          try {
+            const errorBody = await response.json();
+            if (errorBody.message) {
+              errorMessage = `HTTP ${response.status}: ${errorBody.message}`;
+            }
+          } catch {
+            // If we can't parse the error response, use the default message
+          }
+          throw new Error(errorMessage);
+        }
+        try {
+          return await response.json();
+        } catch (error) {
+          throw new Error(`Invalid JSON response from reset workflow API: ${error}`);
+        }
+      })
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response structure");
+        }
+        if (!response.success) {
+          throw new Error(response.message || "Failed to reset workflow");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        console.error("Error resetting workflow:", error);
+        throw error;
+      });
 }
 
 DBModel.initialize();

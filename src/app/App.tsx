@@ -5,6 +5,7 @@ import "./App.css";
 import { Button } from "@mui/material";
 import { Routes, Route, Link } from "react-router-dom";
 import TransactionDetail from "../features/TransactionPage/TransactionPage";
+import { BikeTransactionPageWrapper } from "../features/TransactionPage/BikeTransactionPageWrapper";
 import { useState } from "react";
 import AuthPrompt from "../components/AuthPrompt/AuthPrompt";
 import { User } from "../model";
@@ -62,6 +63,10 @@ function App() {
         <Route
           path="/transaction-details/:transaction_id"
           element={<TransactionDetail propUser={user} />}
+        />
+        <Route
+          path="/bike-transaction/:transaction_id"
+          element={<BikeTransactionPageWrapper />}
         />
         <Route
           path="/admin"
