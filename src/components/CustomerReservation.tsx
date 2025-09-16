@@ -203,7 +203,6 @@ export const CustomerReservation: React.FC<CustomerReservationProps> = ({
             // Create new customer - updateTransactionWithCustomer will be called in onSuccess
             createCustomer.mutate(newCustomer);
         }
-
         // Close deposit confirmation dialog
         setDepositConfirmOpen(false);
     };

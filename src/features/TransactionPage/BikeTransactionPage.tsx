@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { queryClient } from '../../app/queryClient';
+import { useMutation } from '@tanstack/react-query';
 import {
     Box,
     Paper,
@@ -30,7 +31,8 @@ import { CreationStep } from '../../components/BikeTransactionSteps/CreationStep
 import { BuildStep } from '../../components/BikeTransactionSteps/BuildStep';
 import { CheckoutStep } from '../../components/BikeTransactionSteps/CheckoutStep';
 import { BikeSelectionStep } from '../../components/BikeTransactionSteps/BikeSelectionStep';
-import { Bike } from '../../model';
+import DBModel, { Bike, UpdateTransaction } from '../../model';
+import { toast } from 'react-toastify';
 
 const SALES_STEPS: Array<{
     key: string;
@@ -68,8 +70,7 @@ const BikeTransactionPageContent: React.FC = () => {
     const { transaction_id } = useParams<{ transaction_id: string }>();
     const navigate = useNavigate();
     const currentUser = useCurrentUser();
-    const queryClient = useQueryClient();
-
+    
     const {
         transaction,
         progress,
@@ -93,7 +94,19 @@ const BikeTransactionPageContent: React.FC = () => {
 
     // Check if current user is admin based on permissions
     const isAdmin = currentUser?.permissions?.some(p => p.name?.toLowerCase().includes('admin')) || false;
+    const updateTransaction = useMutation({
+        mutationFn: async ({transaction_id, data}: {transaction_id: string, data: UpdateTransaction}) => {
+            await DBModel.updateTransaction(transaction_id, data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['transaction', transaction_id] });
 
+        },
+        onError: (error) => {
+            toast.error(`Error occurred during mutation: ${error}`);
+        }
+    });
     const handleAdminMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
         setAdminMenuAnchor(event.currentTarget);
     };
@@ -341,7 +354,10 @@ const BikeTransactionPageContent: React.FC = () => {
             case 'Build':
                 return (
                     <BuildStep
-                        onStepComplete={() => handleNext()}
+                        onStepComplete={() => {
+                            handleNext()
+                            updateTransaction.mutate({transaction_id: transaction.transaction_id, data: { ...transaction, is_completed: true }});
+                        }}
                     />
                 );
 
@@ -355,7 +371,13 @@ const BikeTransactionPageContent: React.FC = () => {
             case 'Checkout':
                 return (
                     <CheckoutStep
-                        onStepComplete={() => console.log('Transaction completed!')}
+                        onStepComplete={() => {
+                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                            const {transaction_num, customer_id, bike_id, Bike, OrderRequests, Customer, ...rest} = transaction
+                            updateTransaction.mutate({transaction_id: transaction.transaction_id, data: { ...rest, is_completed: true, is_paid: true, is_refurb: false }});
+                        
+                            navigate("/");
+                        }}
                     />
                 );
 

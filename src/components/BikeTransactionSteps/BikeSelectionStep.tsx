@@ -153,8 +153,8 @@ export const BikeSelectionStep: React.FC<BikeSelectionStepProps> = ({
 
         // Convert and validate size_cm
         const sizeValue = typeof bikeData.size_cm === 'string' ? parseFloat(bikeData.size_cm) : bikeData.size_cm;
-        if (isNaN(sizeValue) || sizeValue < 30 || sizeValue > 80) {
-            errors.size_cm = 'Size must be a valid number between 30cm and 80cm';
+        if (isNaN(sizeValue) || sizeValue < 0 || sizeValue > 80) {
+            errors.size_cm = 'Size must be a valid number between 0 and 80';
         }
 
         setValidationErrors(errors);
@@ -300,11 +300,11 @@ export const BikeSelectionStep: React.FC<BikeSelectionStepProps> = ({
                 <Grid2 size={6}>
                     <TextField
                         fullWidth
-                        label="Size (cm)"
+                        label="Size"
                         value={bikeData.size_cm}
                         onChange={handleInputChange('size_cm')}
                         error={!!validationErrors.size_cm}
-                        helperText={validationErrors.size_cm || 'Enter size between 30-80cm'}
+                        helperText={validationErrors.size_cm || 'Enter size between 0-80'}
                         placeholder="e.g. 54"
                         required
                     />

@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import { useWorkflowSteps } from '../../hooks/useWorkflowSteps';
-import { ShoppingCart, Receipt, CheckCircle, } from '@mui/icons-material';
+import { ShoppingCart, Receipt, } from '@mui/icons-material';
 import { Customer } from '../../model';
 import { CustomerReservation } from '../CustomerReservation';
 
@@ -23,8 +23,6 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
     const [finalAmount, setFinalAmount] = useState(0);
     const [paymentCompleted, setPaymentCompleted] = useState(false);
     const [receiptGenerated, setReceiptGenerated] = useState(false);
-    const [transactionCompleted, setTransactionCompleted] = useState(false);
-
     // Reservation modal state
     const [customerReserved, setCustomerReserved] = useState(false);
     const [reservedCustomer, setReservedCustomer] = useState<Customer | null>(null);
@@ -69,7 +67,6 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
     };
 
     const handleTransactionComplete = async (completed: boolean) => {
-        setTransactionCompleted(completed);
         if (completed) {
             // In production, this would update the main transaction
             onStepComplete();
@@ -91,7 +88,7 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
         }
     };
 
-    const canAdvance = customerReserved && paymentCompleted && receiptGenerated && transactionCompleted;
+    const canAdvance = customerReserved && paymentCompleted && receiptGenerated;
     const bike = transaction?.Bike;
     const customer = reservedCustomer || transaction?.Customer;
 
@@ -263,41 +260,6 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
                 </CardContent>
             </Card>
 
-            {/* Final Completion */}
-            <Card sx={{ mb: 3 }}>
-                <CardContent>
-                    <Typography variant="h6" sx={{ mb: 2 }}>
-                        <CheckCircle sx={{ mr: 1, verticalAlign: 'middle' }} />
-                        Transaction Completion
-                    </Typography>
-
-                    {!customerReserved && (
-                        <Alert severity="info" sx={{ mb: 2 }}>
-                            Complete customer reservation and payment before finalizing transaction.
-                        </Alert>
-                    )}
-
-                    {customerReserved && paymentCompleted && receiptGenerated && (
-                        <Box sx={{ mb: 2 }}>
-                            <FormControlLabel
-                                control={
-                                    <Checkbox
-                                        checked={transactionCompleted}
-                                        onChange={(e) => handleTransactionComplete(e.target.checked)}
-                                    />
-                                }
-                                label="Mark transaction as completed and bike as sold"
-                            />
-
-                            {transactionCompleted && (
-                                <Alert severity="success" sx={{ mt: 2 }}>
-                                    🎉 Transaction completed successfully! The bike has been sold to the customer.
-                                </Alert>
-                            )}
-                        </Box>
-                    )}
-                </CardContent>
-            </Card>
 
             {/* Status Indicators */}
             <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
@@ -316,11 +278,7 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
                     color={receiptGenerated ? 'success' : 'default'}
                     variant={receiptGenerated ? 'filled' : 'outlined'}
                 />
-                <Chip
-                    label={transactionCompleted ? 'Transaction Complete' : 'Transaction Pending'}
-                    color={transactionCompleted ? 'success' : 'default'}
-                    variant={transactionCompleted ? 'filled' : 'outlined'}
-                />
+
             </Box>
 
             <Divider sx={{ my: 3 }} />
