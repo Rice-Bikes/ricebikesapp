@@ -17,6 +17,7 @@ interface CustomerReservationProps {
     buttonText?: string;
     disabled?: boolean;
     variant?: 'contained' | 'outlined' | 'text';
+    isFinalStep?: boolean;
 }
 
 const filter = createFilterOptions<string>();
@@ -27,7 +28,8 @@ export const CustomerReservation: React.FC<CustomerReservationProps> = ({
     onCustomerAssigned,
     buttonText = "Reserve for Customer",
     disabled = false,
-    variant = "contained"
+    variant = "contained",
+    isFinalStep = false,
 }) => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [depositConfirmOpen, setDepositConfirmOpen] = useState(false);
@@ -136,6 +138,14 @@ export const CustomerReservation: React.FC<CustomerReservationProps> = ({
                 date_completed: transaction.date_completed
             });
 
+            // Update the bike to set deposit amount and mark as unavailable
+            if (transaction.bike_id) {
+                await DBModel.updateBike(transaction.bike_id, {
+                    deposit_amount: 50.00, // Set $50 deposit
+                    is_available: false // Mark bike as reserved/unavailable
+                });
+            }
+
             // Find the customer that was just assigned
             const customer = customers?.find(c => c.customer_id === customer_id);
             if (customer) {
@@ -166,8 +176,13 @@ export const CustomerReservation: React.FC<CustomerReservationProps> = ({
     };
 
     const handleReserve = () => {
-        // Show deposit confirmation dialog instead of immediately processing
-        setDepositConfirmOpen(true);
+        if (isFinalStep) {
+            // For final step, directly proceed with reservation without confirmation dialog
+            handleConfirmDeposit();
+        } else {
+            // Show deposit confirmation dialog instead of immediately processing
+            setDepositConfirmOpen(true);
+        }
     };
 
     const handleConfirmDeposit = () => {
@@ -224,6 +239,14 @@ export const CustomerReservation: React.FC<CustomerReservationProps> = ({
 
             console.log('Attempting to unreserve with data:', updateData);
             await DBModel.updateTransaction(transaction_id, updateData);
+
+            // Clear bike deposit and make available again
+            if (transaction.bike_id) {
+                await DBModel.updateBike(transaction.bike_id, {
+                    deposit_amount: 0, // Clear deposit
+                    is_available: true // Make bike available again
+                });
+            }
 
             setAssignedCustomer(null);
             setIsReserved(false);
@@ -411,7 +434,7 @@ export const CustomerReservation: React.FC<CustomerReservationProps> = ({
 
             {/* Deposit Confirmation Dialog */}
             <Dialog
-                open={depositConfirmOpen}
+                open={depositConfirmOpen && !isFinalStep}
                 onClose={() => setDepositConfirmOpen(false)}
                 maxWidth="sm"
                 fullWidth

@@ -8,7 +8,7 @@ import {
     Typography,
     LinearProgress
 } from '@mui/material';
-import { BikeTransactionStep } from '../types/BikeTransaction';
+import { BikeTransactionStep } from '../../types/BikeTransaction';
 
 interface BikeTransactionStepperProps {
     steps: BikeTransactionStep[];

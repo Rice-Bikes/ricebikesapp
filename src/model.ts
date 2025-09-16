@@ -12,6 +12,7 @@ import {
   partResponseSchema,
   CustomerSchema,
   BikeSchema,
+  UpdateBikeSchema,
   TransactionSchema,
   repairArraySchema,
   repairSchema,
@@ -60,6 +61,7 @@ export type TransactionSummary = FromSchema<typeof TransactionSummarySchema>;
 export type Customer = FromSchema<typeof CustomerSchema>;
 export type CreateCustomer = FromSchema<typeof CreateCustomerSchema>;
 export type Bike = FromSchema<typeof BikeSchema>;
+export type UpdateBike = FromSchema<typeof UpdateBikeSchema>;
 export type User = FromSchema<typeof UserSchema>;
 export type Role = FromSchema<typeof RoleSchema>;
 export type Permission = FromSchema<typeof PermissionsSchema>;
@@ -145,6 +147,7 @@ class DBModel {
   static validateTransaction: (data: unknown) => data is Transaction;
   static validateCustomer: (data: unknown) => data is Customer;
   static validateBike: (data: unknown) => data is Bike;
+  static validateUpdateBike: (data: unknown) => data is UpdateBike;
   static validatePart: (data: unknown) => data is Part;
   static validateRepair: (data: unknown) => data is Repair;
   static validateOrderRequest: (data: unknown) => data is OrderRequest;
@@ -190,6 +193,7 @@ class DBModel {
     DBModel.validateTransactionSummary = compile(TransactionSummarySchema);
     DBModel.validateCustomer = compile(CustomerSchema);
     DBModel.validateBike = compile(BikeSchema);
+    DBModel.validateUpdateBike = compile(UpdateBikeSchema);
     DBModel.validatePart = compile(partSchema);
     DBModel.validateRepair = compile(repairSchema);
     DBModel.validateTransactionDetails = compile(TransactionDetailsSchema);
@@ -1457,6 +1461,35 @@ class DBModel {
       })
       .catch((error) => {
         throw new Error("Error posting bike data: " + error); // More detailed error logging
+      });
+
+  public static updateBike = async (bike_id: string, bikeData: Partial<UpdateBike>) =>
+    fetch(`${hostname}/bikes/${bike_id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(bikeData),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to update bike");
+        }
+
+        // Validate the updated bike response
+        if (!DBModel.validateBike(response.responseObject)) {
+          console.warn("Invalid bike response after update:", response.responseObject);
+          throw new Error("Invalid bike response");
+        }
+        
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error updating bike data: " + error);
       });
 
   public static deleteTransactionDetails = async (

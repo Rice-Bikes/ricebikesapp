@@ -2,7 +2,6 @@
 export type BikeSalesStep = 
   | 'creation'     // Create transaction & select bike
   | 'build'        // Build/prepare bike (includes inspection)
-  | 'reservation'  // Customer reservation with deposit
   | 'checkout';    // Final payment & completion
 
 export type BikeSalesStatus = 
@@ -32,12 +31,7 @@ export interface BikeSalesProcess {
       completed_at?: string;
       inspector_id?: string;
     };
-    reservation?: {
-      deposit_amount: number;
-      deposit_paid: boolean;
-      reservation_expires_at?: string;
-      completed_at?: string;
-    };
+
     checkout?: {
       final_amount: number;
       payment_completed: boolean;
@@ -67,8 +61,6 @@ export const isStepComplete = (process: BikeSalesProcess, step: BikeSalesStep): 
     case 'build':
       return !!(process.step_data.build?.inspection_completed && 
                 process.step_data.build?.quality_check_passed);
-    case 'reservation':
-      return !!(process.step_data.reservation?.deposit_paid);
     case 'checkout':
       return !!(process.step_data.checkout?.payment_completed);
     default:
@@ -77,13 +69,13 @@ export const isStepComplete = (process: BikeSalesProcess, step: BikeSalesStep): 
 };
 
 export const getNextStep = (currentStep: BikeSalesStep): BikeSalesStep | null => {
-  const stepOrder: BikeSalesStep[] = ['creation', 'build', 'reservation', 'checkout'];
+  const stepOrder: BikeSalesStep[] = ['creation', 'build', 'checkout'];
   const currentIndex = stepOrder.indexOf(currentStep);
   return currentIndex < stepOrder.length - 1 ? stepOrder[currentIndex + 1] : null;
 };
 
 export const canAdvanceToStep = (process: BikeSalesProcess, targetStep: BikeSalesStep): boolean => {
-  const stepOrder: BikeSalesStep[] = ['creation', 'build', 'reservation', 'checkout'];
+  const stepOrder: BikeSalesStep[] = ['creation', 'build', 'checkout'];
   const currentIndex = stepOrder.indexOf(process.current_step);
   const targetIndex = stepOrder.indexOf(targetStep);
   

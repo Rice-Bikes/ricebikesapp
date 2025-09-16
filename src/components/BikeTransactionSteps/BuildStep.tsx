@@ -380,7 +380,7 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                 {!hasBuildStarted
                     ? "Bike has arrived. Click 'Start Build Process' to begin actively building this bike."
-                    : "Prepare the bike and complete quality inspection before customer reservation."}
+                    : "Prepare the bike and complete quality inspection."}
             </Typography>
 
             {/* Start Build Section */}
@@ -520,6 +520,10 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
                             transaction={transaction}
                             buttonText="Reserve for Customer"
                             variant="outlined"
+                            onCustomerAssigned={(customer) => {
+                                // Customer assigned callback - reservation handled internally by CustomerReservation
+                                console.log('Customer assigned:', customer);
+                            }}
                         />
                     )}
                 </CardContent>

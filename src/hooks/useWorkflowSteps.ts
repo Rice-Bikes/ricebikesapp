@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import DBModel, { WorkflowStep, WorkflowProgress } from '../model';
 
 // Query keys for React Query
@@ -74,6 +75,15 @@ export const useWorkflowSteps = (numericTransactionId: string) => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+
+  // Auto-complete any Reservation steps since we're removing them from the workflow
+  useEffect(() => {
+    const reservationStep = stepsQuery.data?.find(step => step.step_name === 'Reservation');
+    if (reservationStep && !reservationStep.is_completed) {
+      // Automatically mark the reservation step as complete to skip it
+      DBModel.completeWorkflowStep(reservationStep.step_id).catch(console.error);
+    }
+  }, [stepsQuery.data]);
 
   // Initialize workflow mutation
   const initializeWorkflowMutation = useMutation({
@@ -151,7 +161,7 @@ export const useWorkflowSteps = (numericTransactionId: string) => {
 
   // Helper functions
   const canProceedToStep = (stepName: string): boolean => {
-    const orderedSteps = ['BikeSpec', 'Build', 'Creation', 'Reservation', 'Checkout'];
+    const orderedSteps = ['BikeSpec', 'Build', 'Creation', 'Checkout'];
     const targetIndex = orderedSteps.indexOf(stepName);
     const currentStep = getCurrentStep();
     
@@ -166,10 +176,9 @@ export const useWorkflowSteps = (numericTransactionId: string) => {
 
   const getCurrentStep = (): WorkflowStep | null => {
     if (stepsQuery.data?.length) {
-      // Frontend wants: BikeSpec(1), Build(2), Creation(3), Reservation(4), Checkout(5)  
-      // Backend has: BikeSpec(1), Build(2), Creation(3), Reservation(4), Checkout(5)
-      // Always use our custom frontend order, ignore backend's current_step
-      const frontendOrder = ['BikeSpec', 'Build', 'Creation', 'Reservation', 'Checkout'];
+      // Frontend wants: BikeSpec(1), Build(2), Creation(3), Checkout(4)  
+      // Skip Reservation step if it exists - we're removing it from the workflow
+      const frontendOrder = ['BikeSpec', 'Build', 'Creation', 'Checkout'];
       
       // Find the first incomplete step in our desired frontend order
       for (const stepName of frontendOrder) {

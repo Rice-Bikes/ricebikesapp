@@ -6,7 +6,9 @@ import {
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import { useWorkflowSteps } from '../../hooks/useWorkflowSteps';
-import { ShoppingCart, Receipt, CheckCircle } from '@mui/icons-material';
+import { ShoppingCart, Receipt, CheckCircle, } from '@mui/icons-material';
+import { Customer } from '../../model';
+import { CustomerReservation } from '../CustomerReservation';
 
 interface CheckoutStepProps {
     onStepComplete: () => void;
@@ -23,19 +25,23 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
     const [receiptGenerated, setReceiptGenerated] = useState(false);
     const [transactionCompleted, setTransactionCompleted] = useState(false);
 
-    const depositAmount = 50; // Default deposit amount - in production this would come from transaction data
-    const taxRate = 0.0825; // 8.25% tax rate
+    // Reservation modal state
+    const [customerReserved, setCustomerReserved] = useState(false);
+    const [reservedCustomer, setReservedCustomer] = useState<Customer | null>(null);
 
+    const taxRate = 0.0825; // 8.25% tax rate
+    const isAvailable = transaction?.Bike?.is_available || false;
+    const depositAmount = transaction?.Bike?.deposit_amount || 0;
     // Calculate totals
     useEffect(() => {
         const subtotal = bikePrice;
         const taxAmount = subtotal * taxRate;
         const total = subtotal + taxAmount;
-        const amountDue = Math.max(0, total - depositAmount);
+        const amountDue = isAvailable ? total : Math.max(0, total - depositAmount); // Subtract deposit if reserved
 
         setTax(taxAmount);
         setFinalAmount(amountDue);
-    }, [bikePrice, depositAmount]);
+    }, [bikePrice, isAvailable, depositAmount]);
 
     // Load bike price from transaction
     useEffect(() => {
@@ -44,6 +50,14 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
             setBikePrice(transaction.Bike.price);
         } else {
             setBikePrice(500); // Default bike price
+        }
+    }, [transaction]);
+
+    // Check if customer is already assigned and reserved
+    useEffect(() => {
+        if (transaction?.Customer && transaction?.is_reserved) {
+            setReservedCustomer(transaction.Customer as Customer);
+            setCustomerReserved(true);
         }
     }, [transaction]);
 
@@ -62,6 +76,14 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
         }
     };
 
+    const handleReservationComplete = async (customer: Customer, reservationDetails: { deposit_amount: number; bike_id: string }) => {
+        setReservedCustomer(customer);
+        setCustomerReserved(true);
+
+        // The deposit amount is already accounted for in our calculations
+        console.log('Reservation completed for customer:', customer, 'with deposit:', reservationDetails.deposit_amount);
+    };
+
     const handleAdvanceStep = async () => {
         if (canAdvance) {
             await handleTransactionComplete(true);
@@ -69,9 +91,9 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
         }
     };
 
-    const canAdvance = paymentCompleted && receiptGenerated && transactionCompleted;
+    const canAdvance = customerReserved && paymentCompleted && receiptGenerated && transactionCompleted;
     const bike = transaction?.Bike;
-    const customer = transaction?.Customer;
+    const customer = reservedCustomer || transaction?.Customer;
 
     return (
         <Box>
@@ -83,6 +105,40 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                 Complete the final payment and finalize the bike sale transaction.
             </Typography>
+
+            {/* Customer Reservation Section */}
+            <Card sx={{ mb: 3 }}>
+                <CardContent>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        Customer & Reservation
+                    </Typography>
+
+                    {customerReserved && reservedCustomer ? (
+                        <Box>
+
+                            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                {reservedCustomer.first_name} {reservedCustomer.last_name}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {reservedCustomer.email} | {reservedCustomer.phone}
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <Box>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                A customer reservation with deposit is required before final checkout.
+                            </Typography>
+                            <CustomerReservation
+                                transaction_id={transaction_id ?? ''}
+                                transaction={transaction}
+                                variant="outlined"
+                                isFinalStep={true}
+                                onCustomerAssigned={(customer) => handleReservationComplete(customer, { deposit_amount: bike?.deposit_amount || 0, bike_id: bike?.bike_id || '' })}
+                            />
+                        </Box>
+                    )}
+                </CardContent>
+            </Card>
 
             {/* Transaction Summary */}
             <Card sx={{ mb: 3 }}>
@@ -143,12 +199,12 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
                                 <TableCell><strong>Subtotal</strong></TableCell>
                                 <TableCell align="right"><strong>${(bikePrice + tax).toFixed(2)}</strong></TableCell>
                             </TableRow>
-                            <TableRow>
+                            {<TableRow>
                                 <TableCell>Previous Deposit</TableCell>
                                 <TableCell align="right" sx={{ color: 'success.main' }}>
                                     -${depositAmount.toFixed(2)}
                                 </TableCell>
-                            </TableRow>
+                            </TableRow>}
                             <TableRow>
                                 <TableCell variant="head"><strong>Amount Due</strong></TableCell>
                                 <TableCell align="right" variant="head">
@@ -168,12 +224,19 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
                         Payment Processing
                     </Typography>
 
+                    {!customerReserved && (
+                        <Alert severity="warning" sx={{ mb: 2 }}>
+                            Complete customer reservation before processing payment.
+                        </Alert>
+                    )}
+
                     <Box sx={{ mb: 2 }}>
                         <FormControlLabel
                             control={
                                 <Checkbox
                                     checked={paymentCompleted}
                                     onChange={(e) => handlePaymentComplete(e.target.checked)}
+                                    disabled={!customerReserved}
                                 />
                             }
                             label={`Payment of $${finalAmount.toFixed(2)} received from customer`}
@@ -208,7 +271,13 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
                         Transaction Completion
                     </Typography>
 
-                    {paymentCompleted && receiptGenerated && (
+                    {!customerReserved && (
+                        <Alert severity="info" sx={{ mb: 2 }}>
+                            Complete customer reservation and payment before finalizing transaction.
+                        </Alert>
+                    )}
+
+                    {customerReserved && paymentCompleted && receiptGenerated && (
                         <Box sx={{ mb: 2 }}>
                             <FormControlLabel
                                 control={
@@ -232,6 +301,11 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
 
             {/* Status Indicators */}
             <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
+                <Chip
+                    label={customerReserved ? 'Customer Reserved' : 'Customer Pending'}
+                    color={customerReserved ? 'success' : 'error'}
+                    variant="filled"
+                />
                 <Chip
                     label={paymentCompleted ? 'Payment Complete' : 'Awaiting Payment'}
                     color={paymentCompleted ? 'success' : 'warning'}

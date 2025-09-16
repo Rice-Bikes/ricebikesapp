@@ -11,13 +11,14 @@ import {
     Alert,
     Box
 } from '@mui/material';
-import { EnhancedBike } from '../types/BikeTransaction';
-import { CreateCustomer, Customer } from '../model';
+import { EnhancedBike } from '../../types/BikeTransaction';
+import { CreateCustomer, Customer } from '../../model';
 
 interface BikeReservationModalProps {
     isOpen: boolean;
     onClose: () => void;
     bike: EnhancedBike;
+    customer?: Customer; // Optional pre-filled customer
     onReservationComplete: (customer: Customer, reservationDetails: {
         deposit_amount: number;
         bike_id: string;
@@ -30,13 +31,14 @@ export const BikeReservationModal: React.FC<BikeReservationModalProps> = ({
     isOpen,
     onClose,
     bike,
-    onReservationComplete
+    customer,
+    onReservationComplete,
 }) => {
     const [formState, setFormState] = useState<CreateCustomer>({
-        first_name: '',
-        last_name: '',
-        email: '',
-        phone: ''
+        first_name: customer?.first_name || '',
+        last_name: customer?.last_name || '',
+        email: customer?.email || '',
+        phone: customer?.phone || ''
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -97,9 +99,11 @@ export const BikeReservationModal: React.FC<BikeReservationModalProps> = ({
         setError(null);
 
         try {
-            // Here you would typically create the customer and reservation
-            // For now, we'll simulate the API call
-            const mockCustomer: Customer = {
+            // Use existing customer or create new one
+            const reservationCustomer: Customer = customer ? {
+                ...customer,
+                ...formState // Allow form updates to override existing customer data
+            } : {
                 customer_id: `cust_${Date.now()}`,
                 ...formState
             };
@@ -110,14 +114,14 @@ export const BikeReservationModal: React.FC<BikeReservationModalProps> = ({
             };
 
             // Call the parent handler
-            onReservationComplete(mockCustomer, reservationDetails);
+            onReservationComplete(reservationCustomer, reservationDetails);
 
-            // Reset form
+            // Reset form to original customer data or empty
             setFormState({
-                first_name: '',
-                last_name: '',
-                email: '',
-                phone: ''
+                first_name: customer?.first_name || '',
+                last_name: customer?.last_name || '',
+                email: customer?.email || '',
+                phone: customer?.phone || ''
             });
 
             onClose();
@@ -131,11 +135,12 @@ export const BikeReservationModal: React.FC<BikeReservationModalProps> = ({
 
     const handleClose = () => {
         if (!isSubmitting) {
+            // Reset form to original customer data or empty
             setFormState({
-                first_name: '',
-                last_name: '',
-                email: '',
-                phone: ''
+                first_name: customer?.first_name || '',
+                last_name: customer?.last_name || '',
+                email: customer?.email || '',
+                phone: customer?.phone || ''
             });
             setError(null);
             onClose();
@@ -248,7 +253,7 @@ export const BikeReservationModal: React.FC<BikeReservationModalProps> = ({
                                 <Typography variant="body2"><strong>Condition:</strong> {bike.condition}</Typography>
                             </Grid2>
                             <Grid2 size={6}>
-                                <Typography variant="body2"><strong>Price:</strong> ${bike.price.toFixed(2)}</Typography>
+                                <Typography variant="body2"><strong>Price:</strong> ${bike.price ? bike.price.toFixed(2) : '0.00'}</Typography>
                             </Grid2>
                             <Grid2 size={6}>
                                 <Typography variant="body2"><strong>Deposit:</strong> ${DEPOSIT_AMOUNT.toFixed(2)}</Typography>

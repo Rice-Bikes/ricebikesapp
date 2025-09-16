@@ -178,6 +178,44 @@ export const BikeSchema = {
   additionalProperties: true, // Allow additional properties for backwards compatibility
 } as const satisfies JSONSchema;
 
+export const UpdateBikeSchema = {
+  $schema: "http://json-schema.org/draft-07/schema",
+  title: "UpdateBike",
+  type: "object",
+  properties: {
+    make: { type: "string", minLength: 1 },
+    model: { type: "string", minLength: 1 },
+    description: { type: ["string", "null"] },
+    bike_type: { type: ["string", "null"], maxLength: 50 },
+    size_cm: { 
+      type: ["number", "null"], 
+      minimum: 30, 
+      maximum: 80 
+    },
+    condition: { 
+      type: "string",
+      enum: ["New", "Refurbished", "Used"]
+    },
+    price: { 
+      type: ["number", "null"], 
+      minimum: 0 
+    },
+    is_available: { type: "boolean" },
+    weight_kg: { 
+      type: ["number", "null"], 
+      minimum: 0.1 
+    },
+    reservation_customer_id: { 
+      type: ["string", "null"] 
+    },
+    deposit_amount: { 
+      type: ["number", "null"], 
+      minimum: 0 
+    },
+  },
+  additionalProperties: false,
+} as const satisfies JSONSchema;
+
 export const RoleSchema = {
   $schema: "http://json-schema.org/draft-07/schema",
   title: "Role",

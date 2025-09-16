@@ -23,12 +23,11 @@ import {
     DialogActions,
     DialogContentText
 } from '@mui/material';
-import { ArrowBack, Build, BookmarkBorder, Payment, MoreVert, Refresh, Delete, DirectionsBike, Check } from '@mui/icons-material';
+import { ArrowBack, Build, Payment, MoreVert, Refresh, Delete, DirectionsBike, Check } from '@mui/icons-material';
 import { useWorkflowSteps } from '../../hooks/useWorkflowSteps';
 import { useCurrentUser } from '../../hooks/useUserQuery';
 import { CreationStep } from '../../components/BikeTransactionSteps/CreationStep';
 import { BuildStep } from '../../components/BikeTransactionSteps/BuildStep';
-import { ReservationStep } from '../../components/BikeTransactionSteps/ReservationStep';
 import { CheckoutStep } from '../../components/BikeTransactionSteps/CheckoutStep';
 import { BikeSelectionStep } from '../../components/BikeTransactionSteps/BikeSelectionStep';
 import { Bike } from '../../model';
@@ -55,13 +54,7 @@ const SALES_STEPS: Array<{
             key: 'Creation',
             label: 'Confirmation and Safety Check',
             icon: <Check />,
-            description: 'Confirm state of bike and check build quality before reservation'
-        },
-        {
-            key: 'Reservation',
-            label: 'Reservation',
-            icon: <BookmarkBorder />,
-            description: 'Customer reservation with deposit'
+            description: 'Confirm state of bike and check build quality'
         },
         {
             key: 'Checkout',
@@ -134,32 +127,14 @@ const BikeTransactionPageContent: React.FC = () => {
     const currentStep = getCurrentStep();
     const currentStepIndex = SALES_STEPS.findIndex(step => step.key === currentStep?.step_name);
 
-    // Debug logging for step calculation
-    console.log('🔍 Step calculation debug:', {
-        currentStep: currentStep?.step_name,
-        currentStepIndex,
-        allSteps: steps.map(s => ({ name: s.step_name, completed: s.is_completed })),
-        SALES_STEPS: SALES_STEPS.map(s => s.key)
-    });
-
     const handleNext = async () => {
-        console.log('handleNext called');
-        console.log('currentStepIndex:', currentStepIndex);
-        console.log('currentStep:', currentStep);
-        console.log('SALES_STEPS.length:', SALES_STEPS.length);
-
         const nextStepIndex = currentStepIndex + 1;
         if (nextStepIndex < SALES_STEPS.length && currentStep) {
             const nextStepType = SALES_STEPS[nextStepIndex].key;
-            console.log('nextStepType:', nextStepType);
-            console.log('canProceedToStep(nextStepType):', canProceedToStep(nextStepType));
 
             if (canProceedToStep(nextStepType)) {
-                console.log('Calling markStepComplete with stepId:', currentStep.step_id);
-                console.log('Complete workflow step URL:', `${window.location.origin}/workflow-steps/complete/${currentStep.step_id}`);
                 try {
                     await markStepComplete(currentStep.step_id);
-                    console.log('markStepComplete completed successfully');
                 } catch (error) {
                     console.error('Error in markStepComplete:', error);
                 }
@@ -169,87 +144,84 @@ const BikeTransactionPageContent: React.FC = () => {
 
     const handlePrevious = async () => {
         if (currentStepIndex > 0) {
-            // Find the current step that we want to mark as incomplete
-            const currentStepToRevert = SALES_STEPS[currentStepIndex].key;
-            const stepToRevert = getStepByName(currentStepToRevert);
+            // To go back, we need to find the most recently completed step and mark it as incomplete
+            // This will make the workflow think we're on the previous step
+
+            // Look for completed steps in reverse order (from current step backwards)
+            let stepToRevert = null;
+
+            for (let i = currentStepIndex; i >= 0; i--) {
+                const stepKey = SALES_STEPS[i].key;
+                const step = getStepByName(stepKey);
+
+                if (step && step.is_completed) {
+                    stepToRevert = step;
+                    break;
+                }
+            }
 
             if (stepToRevert) {
                 try {
-                    console.log('Reverting current step to go back:', currentStepToRevert);
-                    // Mark the current step as incomplete to go back to the previous step
-                    // This should work regardless of whether the step is currently completed or not
+                    // Mark the completed step as incomplete to go back
                     await markStepIncomplete(stepToRevert.step_id);
 
-                    // Manually invalidate queries to ensure UI updates
-                    if (transaction?.transaction_id) {
-                        queryClient.invalidateQueries({ queryKey: ['workflow', transaction.transaction_id] });
-                        queryClient.invalidateQueries({ queryKey: ['workflow-progress', transaction.transaction_id] });
-                        queryClient.invalidateQueries({ queryKey: ['workflow-steps', transaction.transaction_id] });
-                    }
+                    // Use the correct query keys - the hook uses the numeric transaction_id from URL
+                    if (transaction_id) {
+                        // Wait a bit for the backend to process
+                        await new Promise(resolve => setTimeout(resolve, 100));
 
-                    console.log('Successfully reverted to previous step');
+                        // Invalidate queries using the numeric transaction ID (which is what the hook uses)
+                        await Promise.all([
+                            queryClient.invalidateQueries({ queryKey: ['workflow', transaction_id] }),
+                            queryClient.invalidateQueries({ queryKey: ['workflow-progress', transaction?.transaction_id] }),
+                            queryClient.invalidateQueries({ queryKey: ['workflow-steps', transaction?.transaction_id] })
+                        ]);
+                    }
                 } catch (error) {
                     console.error('Error reverting to previous step:', error);
-                    // You might want to show an error notification here
                 }
-            } else {
-                console.warn('Could not find step to revert:', currentStepToRevert);
             }
         }
     };
 
     const handleStepClick = async (targetStepIndex: number) => {
-        console.log(`🔄 Step clicked: target=${targetStepIndex}, current=${currentStepIndex}`);
-        console.log('Current step:', currentStep);
-        console.log('Available steps:', steps.map(s => ({ name: s.step_name, completed: s.is_completed })));
-        console.log('Target step:', SALES_STEPS[targetStepIndex]);
-
         // Check if we can navigate to this step
         const targetStep = SALES_STEPS[targetStepIndex];
         const targetStepEntity = getStepByName(targetStep.key);
-        
+
         if (!targetStepEntity) {
-            console.warn(`⚠️ Target step entity not found: ${targetStep.key}`);
             return;
         }
 
         if (targetStepIndex > currentStepIndex) {
             // Can't navigate forward beyond current step
-            console.log('❌ Cannot navigate to future steps');
             return;
         }
 
         if (targetStepIndex === currentStepIndex) {
             // Already on this step, no action needed
-            console.log('ℹ️ Already on this step');
             return;
         }
 
         // Navigate backwards by reverting steps AFTER the target
         if (targetStepIndex < currentStepIndex) {
-            console.log(`🔙 Navigating backwards to step ${targetStepIndex} (${targetStep.label})`);
-
             // Find all steps after the target that need to be reverted
             const stepsToRevert = [];
             for (let i = targetStepIndex + 1; i <= currentStepIndex; i++) {
                 const stepToRevert = SALES_STEPS[i].key;
                 const stepEntity = getStepByName(stepToRevert);
-                
+
                 if (stepEntity && stepEntity.is_completed) {
                     stepsToRevert.push({ step: SALES_STEPS[i], entity: stepEntity });
                 }
             }
 
-            console.log(`📋 Steps to revert:`, stepsToRevert.map(s => s.step.label));
-
             // Revert all steps after the target
             for (const { step, entity } of stepsToRevert) {
                 try {
-                    console.log(`⏪ Reverting step: ${step.label} (${entity.step_id})`);
                     await markStepIncomplete(entity.step_id);
-                    console.log(`✅ Successfully reverted step: ${step.label}`);
                 } catch (error) {
-                    console.error(`❌ Error reverting step ${step.label}:`, error);
+                    console.error(`Error reverting step ${step.label}:`, error);
                     // Continue reverting other steps even if one fails
                 }
             }
@@ -257,29 +229,23 @@ const BikeTransactionPageContent: React.FC = () => {
             // The target step should now be the "current" step since all steps after it are incomplete
             // Force a refresh to update the UI
             if (transaction?.transaction_id) {
-                console.log('🔄 Refreshing workflow data after step navigation');
-                
                 // Wait a moment for the backend to process the changes
                 await new Promise(resolve => setTimeout(resolve, 100));
-                
+
                 // Invalidate and refetch all workflow-related queries
                 await Promise.all([
                     queryClient.invalidateQueries({ queryKey: ['workflow', transaction.transaction_id] }),
                     queryClient.invalidateQueries({ queryKey: ['workflow-progress', transaction.transaction_id] }),
                     queryClient.invalidateQueries({ queryKey: ['workflow-steps', transaction.transaction_id] })
                 ]);
-                
+
                 // Force immediate refetch
                 await Promise.all([
                     queryClient.refetchQueries({ queryKey: ['workflow', transaction.transaction_id] }),
                     queryClient.refetchQueries({ queryKey: ['workflow-progress', transaction.transaction_id] }),
                     queryClient.refetchQueries({ queryKey: ['workflow-steps', transaction.transaction_id] })
                 ]);
-
-                console.log('🔄 Completed refresh after step navigation');
             }
-            
-            console.log(`🎉 Successfully navigated to step ${targetStepIndex} (${targetStep.label})`);
         }
     };
 
@@ -288,11 +254,6 @@ const BikeTransactionPageContent: React.FC = () => {
     };
 
     const renderStepContent = () => {
-        // Debug logging to understand loading states
-        console.log('Debug - isLoadingTransaction:', isLoadingTransaction);
-        console.log('Debug - transaction:', transaction);
-        console.log('Debug - transaction_id from URL:', transaction_id);
-
         if (error) {
             // Check if this is a workflow API error (endpoints not implemented or no workflow exists)
             const errorMessage = error?.message || 'Unknown error';
@@ -314,25 +275,16 @@ const BikeTransactionPageContent: React.FC = () => {
                             color="primary"
                             size="large"
                             onClick={async () => {
-                                console.log('URL transaction_id:', transaction_id);
-                                console.log('Transaction object:', transaction);
-                                console.log('Transaction UUID (transaction_id field):', transaction?.transaction_id);
-                                console.log('Transaction numeric (transaction_num field):', transaction?.transaction_num);
-                                console.log('Current user:', currentUser);
-
                                 if (!transaction?.transaction_id) {
-                                    console.error('No UUID transaction_id found in transaction object');
                                     return;
                                 }
 
                                 if (!currentUser?.user_id) {
-                                    console.error('No user ID found for workflow initialization');
                                     return;
                                 }
 
                                 try {
                                     await initializeWorkflow(currentUser.user_id);
-                                    console.log('Workflow initialized successfully');
                                 } catch (error) {
                                     console.error('Error initializing workflow:', error);
                                 }
@@ -396,13 +348,6 @@ const BikeTransactionPageContent: React.FC = () => {
             case 'Creation':
                 return (
                     <CreationStep
-                        onStepComplete={() => handleNext()}
-                    />
-                );
-
-            case 'Reservation':
-                return (
-                    <ReservationStep
                         onStepComplete={() => handleNext()}
                     />
                 );
@@ -565,40 +510,44 @@ const BikeTransactionPageContent: React.FC = () => {
                 <Stepper activeStep={currentStepIndex} alternativeLabel>
                     {SALES_STEPS.map((step, index) => {
                         const isCompleted = steps.some(s => s.step_name === step.key && s.is_completed);
-                        const isClickable = index <= currentStepIndex; // Can click on current step or previous steps
-                        
+                        const isCurrent = index === currentStepIndex;
+                        // Can click on completed steps OR the current step, but not future incomplete steps
+                        const isClickable = isCompleted || isCurrent;
+
                         return (
-                            <Step key={step.key} completed={isCompleted}>
-                                <Box
-                                    sx={{
+                            <Step
+                                key={step.key}
+                                completed={isCompleted}
+                                sx={{
+                                    cursor: isClickable ? 'pointer' : 'default',
+                                    '& .MuiStepLabel-root': {
                                         cursor: isClickable ? 'pointer' : 'default',
-                                        '&:hover': isClickable ? {
-                                            '& .MuiStepLabel-label': {
-                                                color: 'primary.main'
-                                            }
-                                        } : {}
-                                    }}
-                                    onClick={isClickable ? () => {
-                                        console.log(`🖱️ Step ${index} (${step.label}) clicked - isClickable: ${isClickable}`);
-                                        console.log(`Current step index: ${currentStepIndex}, Target: ${index}`);
-                                        alert(`Clicked on ${step.label} (step ${index})`);
-                                        handleStepClick(index);
-                                    } : () => {
-                                        console.log(`❌ Step ${index} (${step.label}) clicked but not clickable`);
-                                        alert(`Cannot click on ${step.label} - not available`);
-                                    }}
-                                >
-                                    <StepLabel
-                                        icon={step.icon}
-                                        optional={
-                                            <Typography variant="caption">
-                                                {step.description}
-                                            </Typography>
+                                    },
+                                    '&:hover': isClickable ? {
+                                        '& .MuiStepLabel-label': {
+                                            color: 'primary.main'
                                         }
-                                    >
-                                        {step.label}
-                                    </StepLabel>
-                                </Box>
+                                    } : {}
+                                }}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+
+                                    if (isClickable) {
+                                        handleStepClick(index);
+                                    }
+                                }}
+                            >
+                                <StepLabel
+                                    icon={step.icon}
+                                    optional={
+                                        <Typography variant="caption">
+                                            {step.description}
+                                        </Typography>
+                                    }
+                                >
+                                    {step.label}
+                                </StepLabel>
                             </Step>
                         );
                     })}

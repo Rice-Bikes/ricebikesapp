@@ -2,7 +2,7 @@ import { createContext } from 'react';
 import { Transaction, WorkflowStep, WorkflowProgress } from '../model';
 
 // Bike-specific step types for type safety
-export type BikeStepType = 'Creation' | 'Build' | 'Reservation' | 'Checkout';
+export type BikeStepType = 'Creation' | 'Build' | 'Checkout';
 
 export interface WorkflowStepsContextType {
   steps: WorkflowStep[];

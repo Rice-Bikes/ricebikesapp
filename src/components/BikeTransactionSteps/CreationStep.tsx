@@ -168,32 +168,32 @@ export const CreationStep: React.FC<CreationStepProps> = ({ onStepComplete }) =>
                         Verify all safety-critical components are properly installed and functioning.
                     </Typography>
                     <Stack spacing={2} direction={'row'}>
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                checked={safetyCheckPassed}
-                                onChange={(e) => handleSafetyCheckChange(e.target.checked)}
-                                disabled={!canSafetyCheck}
-                            />
-                        }
-                        label="All safety checks passed - bike is safe to ride"
-                        sx={{ mb: 2 }}
-                    />
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={safetyCheckPassed}
+                                    onChange={(e) => handleSafetyCheckChange(e.target.checked)}
+                                    disabled={!canSafetyCheck}
+                                />
+                            }
+                            label="All safety checks passed - bike is safe to ride"
+                            sx={{ mb: 2 }}
+                        />
 
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                checked={qualityApproved}
-                                onChange={(e) => handleQualityApprovalChange(e.target.checked)}
-                                disabled={!canSafetyCheck || !safetyCheckPassed}
-                            />
-                        }
-                        label="Quality approved - bike meets sale standards"
-                    />
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={qualityApproved}
+                                    onChange={(e) => handleQualityApprovalChange(e.target.checked)}
+                                    disabled={!canSafetyCheck || !safetyCheckPassed}
+                                />
+                            }
+                            label="Quality approved - bike meets sale standards"
+                        />
                     </Stack>
                     {safetyCheckPassed && qualityApproved && canSafetyCheck && (
                         <Alert severity="success" sx={{ mt: 2 }}>
-                            ✅ Bike approved for customer reservation and sale
+                            ✅ Bike approved for sale
                         </Alert>
                     )}
                 </CardContent>
@@ -207,7 +207,7 @@ export const CreationStep: React.FC<CreationStepProps> = ({ onStepComplete }) =>
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         Reserve this bike for a customer after confirming build quality and safety.
-                        Ideal time for reservation is after build completion.
+                        Customer reservations can be made at any time during the process.
                     </Typography>
                     {transaction_id && (
                         <CustomerReservation
@@ -270,7 +270,7 @@ export const CreationStep: React.FC<CreationStepProps> = ({ onStepComplete }) =>
                         size="large"
                         startIcon={<ArrowForward />}
                     >
-                        Approve & Proceed to Reservation →
+                        Approve & Proceed to Checkout →
                     </Button>
                 </ButtonGroup>
             </Box>
