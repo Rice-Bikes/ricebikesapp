@@ -520,10 +520,6 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
                             transaction={transaction}
                             buttonText="Reserve for Customer"
                             variant="outlined"
-                            onCustomerAssigned={(customer) => {
-                                // Customer assigned callback - reservation handled internally by CustomerReservation
-                                console.log('Customer assigned:', customer);
-                            }}
                         />
                     )}
                 </CardContent>
