@@ -368,8 +368,19 @@ const BikeTransactionPageContent: React.FC = () => {
                 return (
                     <BuildStep
                         onStepComplete={() => {
-                            handleNext()
-                            updateTransaction.mutate({ transaction_id: transaction.transaction_id, data: { ...transaction, is_completed: true } });
+                            handleNext();
+                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                            const { transaction_num, customer_id, bike_id, Bike, OrderRequests, Customer, ...rest } = transaction
+                            updateTransaction.mutate({
+                                transaction_id: transaction.transaction_id,
+                                data: {
+                                    ...rest,
+                                    is_completed: false,  // Not fully completed yet
+                                    is_refurb: false,     // No longer in building phase
+                                    is_waiting_on_email: true  // Ready for inspection/email
+                                }
+                            });
+                            toast.success('Bike moved to inspection phase');
                         }}
                     />
                 );
@@ -377,7 +388,10 @@ const BikeTransactionPageContent: React.FC = () => {
             case 'Creation':
                 return (
                     <CreationStep
-                        onStepComplete={() => handleNext()}
+                        onStepComplete={() => {
+                            handleNext()
+                        }
+                        }
                     />
                 );
 

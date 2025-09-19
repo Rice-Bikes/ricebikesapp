@@ -10,6 +10,10 @@ import { useCurrentUser } from '../../hooks/useUserQuery';
 import { CustomerReservation } from '../CustomerReservation';
 import { VerifiedUser, ArrowBack, ArrowForward, Warning } from '@mui/icons-material';
 import { User } from '../../model';
+import DBModel, { UpdateTransaction } from '../../model';
+import { useMutation } from '@tanstack/react-query';
+import { queryClient } from '../../app/queryClient';
+import { toast } from 'react-toastify';
 
 interface CreationStepProps {
     onStepComplete: () => void;
@@ -28,6 +32,22 @@ export const CreationStep: React.FC<CreationStepProps> = ({ onStepComplete }) =>
 
     const [safetyCheckPassed, setSafetyCheckPassed] = useState(false);
     const [qualityApproved, setQualityApproved] = useState(false);
+
+    // Mutation for updating transaction status
+    const updateTransactionMutation = useMutation({
+        mutationFn: async ({ transaction_id, data }: { transaction_id: string, data: UpdateTransaction }) => {
+            await DBModel.updateTransaction(transaction_id, data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            if (transaction_id) {
+                queryClient.invalidateQueries({ queryKey: ['transaction', transaction_id] });
+            }
+        },
+        onError: (error) => {
+            toast.error(`Error updating transaction: ${error}`);
+        }
+    });
 
     // Permission checks
     const canSafetyCheck = currentUser ? checkUserPermissions(currentUser, "safetyCheckBikes") : false;
@@ -62,16 +82,32 @@ export const CreationStep: React.FC<CreationStepProps> = ({ onStepComplete }) =>
         const step = getStepByName(stepName);
         if (step && step.is_completed) {
             try {
+                // Mark the workflow step as incomplete
                 await markStepIncomplete(step.step_id);
-                // You might want to show a success message here
+
+                // If reverting to "Build" step, we need to put bike back in the main queue
+                // This does the opposite of what happens when completing the build step
+                if (stepName === 'Build' && transaction?.transaction_id) {
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const { transaction_num, customer_id, bike_id, Bike, OrderRequests, Customer, ...rest } = transaction
+                    updateTransactionMutation.mutate({
+                        transaction_id: transaction.transaction_id,
+                        data: {
+                            ...rest,
+                            is_completed: false,  // Not fully completed yet
+                            is_refurb: true,     // No longer in building phase
+                            is_waiting_on_email: false  // Ready for inspection/email
+                        }
+                    });
+                }
+
+                // toast.info(`Reverted to ${stepName} step`);
             } catch (error) {
                 console.error('Error reverting step:', error);
-                // You might want to show an error message here
+                toast.error(`Failed to revert to ${stepName} step: ${error}`);
             }
         }
-    };
-
-    const bike = transaction?.Bike;
+    }; const bike = transaction?.Bike;
     const canAdvance = safetyCheckPassed && qualityApproved && canSafetyCheck;
 
     // Get completed steps for reversion options
