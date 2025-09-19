@@ -27,7 +27,7 @@ import {
 import { ArrowBack, Build, Payment, MoreVert, Refresh, Delete, DirectionsBike, Check } from '@mui/icons-material';
 import { useWorkflowSteps } from '../../hooks/useWorkflowSteps';
 import { useCurrentUser } from '../../hooks/useUserQuery';
-import { CreationStep } from '../../components/BikeTransactionSteps/CreationStep';
+import { InspectionStep } from '../../components/BikeTransactionSteps/InspectionStep';
 import { BuildStep } from '../../components/BikeTransactionSteps/BuildStep';
 import { CheckoutStep } from '../../components/BikeTransactionSteps/CheckoutStep';
 import { BikeSelectionStep } from '../../components/BikeTransactionSteps/BikeSelectionStep';
@@ -387,7 +387,7 @@ const BikeTransactionPageContent: React.FC = () => {
 
             case 'Creation':
                 return (
-                    <CreationStep
+                    <InspectionStep
                         onStepComplete={() => {
                             handleNext()
                         }

@@ -1,421 +1,367 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import {
-    Box, Typography, Card, CardContent, FormGroup, FormControlLabel, Checkbox,
-    Button, Alert, Paper, Chip, Grid2, TextField
+    Box, Button, Typography, Alert, Card, CardContent,
+    FormControlLabel, Checkbox, Chip, Divider, ButtonGroup, Stack,
+    TextField
 } from '@mui/material';
-import { EnhancedBike } from '../../types/BikeTransaction';
+import { useParams } from 'react-router-dom';
+import { useWorkflowSteps } from '../../hooks/useWorkflowSteps';
+import { useCurrentUser } from '../../hooks/useUserQuery';
+import { CustomerReservation } from '../CustomerReservation';
+import { VerifiedUser, ArrowBack, ArrowForward, Warning } from '@mui/icons-material';
+import { User } from '../../model';
+import DBModel, { UpdateTransaction } from '../../model';
+import { useMutation } from '@tanstack/react-query';
+import { queryClient } from '../../app/queryClient';
+import { toast } from 'react-toastify';
+import Notes from '../TransactionPage/Notes';
 
 interface InspectionStepProps {
-    bike: EnhancedBike;
-    onInspectionComplete: (inspectionData: InspectionData) => void;
-    existingInspection?: InspectionData;
+    onStepComplete: () => void;
 }
 
-export interface InspectionData {
-    safetyChecks: {
-        brakes: boolean;
-        tires: boolean;
-        chain: boolean;
-        gears: boolean;
-        frame: boolean;
-        handlebars: boolean;
-        seat: boolean;
-        pedals: boolean;
-        lights: boolean; // if applicable
-        reflectors: boolean;
-    };
-    functionalChecks: {
-        shifting: boolean;
-        braking: boolean;
-        steering: boolean;
-        wheelTrueStability: boolean;
-    };
-    cosmeticCondition: {
-        frameCondition: 'excellent' | 'good' | 'fair' | 'poor';
-        componentCondition: 'excellent' | 'good' | 'fair' | 'poor';
-    };
-    maintenanceCompleted: {
-        cleaned: boolean;
-        lubricated: boolean;
-        adjusted: boolean;
-        repaired: boolean;
-    };
-    inspectionNotes: string;
-    inspectorInitials: string;
-    passedInspection: boolean;
-}
+// Permission check utility
+const checkUserPermissions = (user: User, permissionName: string): boolean => {
+    const permissions = user?.permissions?.find((perm) => perm.name === permissionName);
+    return permissions ? true : false;
+};
 
-export const InspectionStep: React.FC<InspectionStepProps> = ({
-    bike,
-    onInspectionComplete,
-    existingInspection
-}) => {
-    const [inspectionData, setInspectionData] = useState<InspectionData>(
-        existingInspection || {
-            safetyChecks: {
-                brakes: false,
-                tires: false,
-                chain: false,
-                gears: false,
-                frame: false,
-                handlebars: false,
-                seat: false,
-                pedals: false,
-                lights: false,
-                reflectors: false,
-            },
-            functionalChecks: {
-                shifting: false,
-                braking: false,
-                steering: false,
-                wheelTrueStability: false,
-            },
-            cosmeticCondition: {
-                frameCondition: 'good',
-                componentCondition: 'good',
-            },
-            maintenanceCompleted: {
-                cleaned: false,
-                lubricated: false,
-                adjusted: false,
-                repaired: false,
-            },
-            inspectionNotes: '',
-            inspectorInitials: '',
-            passedInspection: false,
+export const InspectionStep: React.FC<InspectionStepProps> = ({ onStepComplete }) => {
+    const { transaction_id } = useParams<{ transaction_id: string }>();
+    const { transaction, getStepByName, markStepIncomplete, steps } = useWorkflowSteps(transaction_id || '');
+    const currentUser = useCurrentUser();
+
+    const [safetyCheckPassed, setSafetyCheckPassed] = useState(false);
+    const [qualityApproved, setQualityApproved] = useState(false);
+    const [notes, setNotes] = useState('');
+
+    // Mutation for updating transaction status
+    const updateTransactionMutation = useMutation({
+        mutationFn: async ({ transaction_id, data }: { transaction_id: string, data: UpdateTransaction }) => {
+            await DBModel.updateTransaction(transaction_id, data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            if (transaction_id) {
+                queryClient.invalidateQueries({ queryKey: ['transaction', transaction_id] });
+            }
+        },
+        onError: (error) => {
+            toast.error(`Error updating transaction: ${error}`);
         }
+    });
+
+    // Permission checks
+    const canSafetyCheck = currentUser ? checkUserPermissions(currentUser, "safetyCheckBikes") : false;
+
+    // Load existing data if available
+    useEffect(() => {
+        const currentStep = getStepByName('Creation');
+        if (currentStep?.is_completed) {
+            setSafetyCheckPassed(true);
+            setQualityApproved(true);
+        }
+    }, [getStepByName]);
+
+    const handleSafetyCheckChange = (passed: boolean) => {
+        setSafetyCheckPassed(passed);
+        if (!passed) {
+            setQualityApproved(false); // Can't approve quality if safety check fails
+        }
+    };
+
+    const handleQualityApprovalChange = (approved: boolean) => {
+        setQualityApproved(approved);
+    };
+
+    const handleNotesChange = async (newNotes: string) => {
+        setNotes(newNotes);
+
+        // Save notes to transaction description field
+        if (transaction_id && transaction) {
+            try {
+                await DBModel.updateTransaction(transaction_id, {
+                    ...transaction,
+                    description: newNotes
+                });
+
+                // Invalidate transaction query to refresh data
+                queryClient.invalidateQueries({ queryKey: ['transaction', transaction_id] });
+
+                toast.success('Notes updated successfully');
+            } catch (error) {
+                console.error('Error saving notes:', error);
+                toast.error('Failed to save notes');
+            }
+        }
+    };
+
+    const handleAdvanceStep = async () => {
+        if (canAdvance) {
+            onStepComplete();
+        }
+    };
+
+    const handleRevertStep = async (stepName: string) => {
+        const step = getStepByName(stepName);
+        if (step && step.is_completed) {
+            try {
+                // Mark the workflow step as incomplete
+                await markStepIncomplete(step.step_id);
+
+                // If reverting to "Build" step, we need to put bike back in the main queue
+                // This does the opposite of what happens when completing the build step
+                if (stepName === 'Build' && transaction?.transaction_id) {
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const { transaction_num, customer_id, bike_id, Bike, OrderRequests, Customer, ...rest } = transaction
+                    updateTransactionMutation.mutate({
+                        transaction_id: transaction.transaction_id,
+                        data: {
+                            ...rest,
+                            is_completed: false,  // Not fully completed yet
+                            is_refurb: true,     // No longer in building phase
+                            is_waiting_on_email: false  // Ready for inspection/email
+                        }
+                    });
+                }
+
+                // toast.info(`Reverted to ${stepName} step`);
+            } catch (error) {
+                console.error('Error reverting step:', error);
+                toast.error(`Failed to revert to ${stepName} step: ${error}`);
+            }
+        }
+    }; const bike = transaction?.Bike;
+    const canAdvance = safetyCheckPassed && qualityApproved && canSafetyCheck;
+
+    // Get completed steps for reversion options
+    const completedSteps = steps.filter(step => step.is_completed);
+    const revertibleSteps = completedSteps.filter(step =>
+        ['BikeSpec', 'Build'].includes(step.step_name)
     );
-
-    const [errors, setErrors] = useState<string[]>([]);
-
-    const handleSafetyCheckChange = (check: keyof InspectionData['safetyChecks']) => (
-        event: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        setInspectionData(prev => ({
-            ...prev,
-            safetyChecks: {
-                ...prev.safetyChecks,
-                [check]: event.target.checked
-            }
-        }));
-    };
-
-    const handleFunctionalCheckChange = (check: keyof InspectionData['functionalChecks']) => (
-        event: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        setInspectionData(prev => ({
-            ...prev,
-            functionalChecks: {
-                ...prev.functionalChecks,
-                [check]: event.target.checked
-            }
-        }));
-    };
-
-    const handleMaintenanceChange = (task: keyof InspectionData['maintenanceCompleted']) => (
-        event: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        setInspectionData(prev => ({
-            ...prev,
-            maintenanceCompleted: {
-                ...prev.maintenanceCompleted,
-                [task]: event.target.checked
-            }
-        }));
-    };
-
-    const handleConditionChange = (
-        type: keyof InspectionData['cosmeticCondition'],
-        value: 'excellent' | 'good' | 'fair' | 'poor'
-    ) => {
-        setInspectionData(prev => ({
-            ...prev,
-            cosmeticCondition: {
-                ...prev.cosmeticCondition,
-                [type]: value
-            }
-        }));
-    };
-
-    const validateInspection = (): boolean => {
-        const newErrors: string[] = [];
-
-        // Check if all safety checks are completed
-        const safetyChecksComplete = Object.values(inspectionData.safetyChecks).every(Boolean);
-        if (!safetyChecksComplete) {
-            newErrors.push('All safety checks must be completed');
-        }
-
-        // Check if all functional checks are completed
-        const functionalChecksComplete = Object.values(inspectionData.functionalChecks).every(Boolean);
-        if (!functionalChecksComplete) {
-            newErrors.push('All functional checks must be completed');
-        }
-
-        // Require inspector initials
-        if (!inspectionData.inspectorInitials.trim()) {
-            newErrors.push('Inspector initials are required');
-        }
-
-        setErrors(newErrors);
-        return newErrors.length === 0;
-    };
-
-    const handleSubmit = () => {
-        if (validateInspection()) {
-            const passedInspection =
-                Object.values(inspectionData.safetyChecks).every(Boolean) &&
-                Object.values(inspectionData.functionalChecks).every(Boolean);
-
-            onInspectionComplete({
-                ...inspectionData,
-                passedInspection
-            });
-        }
-    };
-
-    const safetyCheckLabels = {
-        brakes: 'Brakes (front & rear)',
-        tires: 'Tires & tubes',
-        chain: 'Chain condition',
-        gears: 'Gear components',
-        frame: 'Frame integrity',
-        handlebars: 'Handlebars & stem',
-        seat: 'Seat & post',
-        pedals: 'Pedals',
-        lights: 'Lights (if equipped)',
-        reflectors: 'Reflectors'
-    };
-
-    const functionalCheckLabels = {
-        shifting: 'Shifting performance',
-        braking: 'Braking performance',
-        steering: 'Steering alignment',
-        wheelTrueStability: 'Wheel true & stability'
-    };
-
-    const maintenanceLabels = {
-        cleaned: 'Bike cleaned',
-        lubricated: 'Chain lubricated',
-        adjusted: 'Components adjusted',
-        repaired: 'Repairs completed'
-    };
 
     return (
         <Box>
             <Typography variant="h5" gutterBottom>
-                Pre-Sale Inspection
+                <VerifiedUser sx={{ mr: 1, verticalAlign: 'middle' }} />
+                Safety Check & Quality Approval
             </Typography>
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Complete all safety and functional checks before finalizing the sale.
+                Perform safety inspection and quality approval. Only authorized personnel can approve bikes to move forward.
             </Typography>
 
-            {/* Bike Info */}
-            <Card variant="outlined" sx={{ mb: 3 }}>
-                <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                        Inspecting: {bike.make} {bike.model}
+            {/* Permission Check Alert */}
+            {!canSafetyCheck && (
+                <Alert severity="warning" sx={{ mb: 3 }}>
+                    <Typography variant="body2">
+                        ⚠️ You do not have safety check permissions. Only users with "safetyCheckBikes" permission can approve this step.
                     </Typography>
-                    <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                        <Chip label={bike.condition} size="small" />
-                        <Chip label={`${bike.size_cm} cm`} size="small" variant="outlined" />
-                        <Chip label={bike.bike_type} size="small" variant="outlined" />
-                    </Box>
-                </CardContent>
-            </Card>
-
-            {errors.length > 0 && (
-                <Alert severity="error" sx={{ mb: 3 }}>
-                    <ul style={{ margin: 0, paddingLeft: 20 }}>
-                        {errors.map((error, index) => (
-                            <li key={index}>{error}</li>
-                        ))}
-                    </ul>
                 </Alert>
             )}
 
-            <Grid2 container spacing={3}>
-                {/* Safety Checks */}
-                <Grid2 size={6}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                                Safety Checklist
+            {/* Current User Info */}
+            <Card sx={{ mb: 3 }}>
+                <CardContent>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        Inspector Information
+                    </Typography>
+                    <Typography variant="body1">
+                        <strong>Inspector:</strong> {currentUser?.firstname} {currentUser?.lastname}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Safety Check Authorization: {canSafetyCheck ? (
+                            <Chip label="Authorized" color="success" size="small" />
+                        ) : (
+                            <Chip label="Not Authorized" color="error" size="small" />
+                        )}
+                    </Typography>
+                </CardContent>
+            </Card>
+
+            {/* Bike Review Section */}
+            <Card sx={{ mb: 3 }}>
+                <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6">
+                            Bike Configuration
+                        </Typography>
+                        {bike && (
+                            <Chip
+                                label="Configured"
+                                color="success"
+                                size="small"
+                            />
+                        )}
+                    </Box>
+
+                    {bike ? (
+                        <Box>
+                            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                {bike.make} {bike.model}
                             </Typography>
-                            <FormGroup>
-                                {Object.entries(safetyCheckLabels).map(([key, label]) => (
-                                    <FormControlLabel
-                                        key={key}
-                                        control={
-                                            <Checkbox
-                                                checked={inspectionData.safetyChecks[key as keyof typeof inspectionData.safetyChecks]}
-                                                onChange={handleSafetyCheckChange(key as keyof typeof inspectionData.safetyChecks)}
-                                            />
-                                        }
-                                        label={label}
-                                    />
-                                ))}
-                            </FormGroup>
-                        </CardContent>
-                    </Card>
-                </Grid2>
-
-                {/* Functional Checks */}
-                <Grid2 size={6}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                                Functional Tests
+                            <Typography variant="body2" color="text.secondary">
+                                Type: {bike.bike_type} | Size: {bike.size_cm}cm
                             </Typography>
-                            <FormGroup>
-                                {Object.entries(functionalCheckLabels).map(([key, label]) => (
-                                    <FormControlLabel
-                                        key={key}
-                                        control={
-                                            <Checkbox
-                                                checked={inspectionData.functionalChecks[key as keyof typeof inspectionData.functionalChecks]}
-                                                onChange={handleFunctionalCheckChange(key as keyof typeof inspectionData.functionalChecks)}
-                                            />
-                                        }
-                                        label={label}
-                                    />
-                                ))}
-                            </FormGroup>
-                        </CardContent>
-                    </Card>
-                </Grid2>
-
-                {/* Maintenance Completed */}
-                <Grid2 size={6}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                                Maintenance Completed
+                            <Typography variant="body2" color="text.secondary">
+                                Condition: {bike.condition}
                             </Typography>
-                            <FormGroup>
-                                {Object.entries(maintenanceLabels).map(([key, label]) => (
-                                    <FormControlLabel
-                                        key={key}
-                                        control={
-                                            <Checkbox
-                                                checked={inspectionData.maintenanceCompleted[key as keyof typeof inspectionData.maintenanceCompleted]}
-                                                onChange={handleMaintenanceChange(key as keyof typeof inspectionData.maintenanceCompleted)}
-                                            />
-                                        }
-                                        label={label}
-                                    />
-                                ))}
-                            </FormGroup>
-                        </CardContent>
-                    </Card>
-                </Grid2>
-
-                {/* Cosmetic Condition */}
-                <Grid2 size={6}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                                Cosmetic Condition
+                            <Typography variant="body2" color="text.secondary">
+                                Price: ${bike.price || 'TBD'}
                             </Typography>
+                        </Box>
+                    ) : (
+                        <Alert severity="warning">
+                            No bike configuration found. Please complete the previous steps.
+                        </Alert>
+                    )}
+                </CardContent>
+            </Card>
 
-                            <Box sx={{ mb: 2 }}>
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Frame Condition
-                                </Typography>
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                    {(['excellent', 'good', 'fair', 'poor'] as const).map(condition => (
-                                        <Chip
-                                            key={condition}
-                                            label={condition}
-                                            clickable
-                                            color={inspectionData.cosmeticCondition.frameCondition === condition ? 'primary' : 'default'}
-                                            onClick={() => handleConditionChange('frameCondition', condition)}
-                                        />
-                                    ))}
-                                </Box>
-                            </Box>
+            {/* Safety Check Section */}
+            <Card sx={{ mb: 3 }}>
+                <CardContent>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        Safety Inspection
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Verify all safety-critical components are properly installed and functioning.
+                    </Typography>
+                    <Stack spacing={2} direction={'row'}>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={safetyCheckPassed}
+                                    onChange={(e) => handleSafetyCheckChange(e.target.checked)}
+                                    disabled={!canSafetyCheck}
+                                />
+                            }
+                            label="All safety checks passed - bike is safe to ride"
+                            sx={{ mb: 2 }}
+                        />
 
-                            <Box>
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Component Condition
-                                </Typography>
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                    {(['excellent', 'good', 'fair', 'poor'] as const).map(condition => (
-                                        <Chip
-                                            key={condition}
-                                            label={condition}
-                                            clickable
-                                            color={inspectionData.cosmeticCondition.componentCondition === condition ? 'primary' : 'default'}
-                                            onClick={() => handleConditionChange('componentCondition', condition)}
-                                        />
-                                    ))}
-                                </Box>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </Grid2>
-            </Grid2>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={qualityApproved}
+                                    onChange={(e) => handleQualityApprovalChange(e.target.checked)}
+                                    disabled={!canSafetyCheck || !safetyCheckPassed}
+                                />
+                            }
+                            label="Quality approved - bike meets sale standards"
+                        />
+                    </Stack>
+                    {safetyCheckPassed && qualityApproved && canSafetyCheck && (
+                        <Alert severity="success" sx={{ mt: 2 }}>
+                            ✅ Bike approved for sale
+                        </Alert>
+                    )}
+                </CardContent>
+            </Card>
 
-            {/* Notes & Inspector */}
-            <Box sx={{ mt: 3 }}>
-                <Card>
+            {/* Notes Section */}
+            <Card sx={{ mb: 3 }}>
+                <CardContent>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        Inspection Notes
+                    </Typography>
+                    {currentUser && transaction ? (
+                        <Notes
+                            notes={transaction.description || ''}
+                            onSave={handleNotesChange}
+                            user={currentUser}
+                            transaction_num={transaction.transaction_num}
+                        />
+                    ) : (
+                        <TextField
+                            label="Technical Notes"
+                            value={notes}
+                            onChange={(e) => handleNotesChange(e.target.value)}
+                            multiline
+                            rows={4}
+                            fullWidth
+                            placeholder="Document any issues, safety concerns, or special notes about the inspection process..."
+                            helperText="These notes will be included with the transaction record"
+                        />
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Customer Reservation Section */}
+            <Card sx={{ mb: 3 }}>
+                <CardContent>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        Customer Reservation (Optional)
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Reserve this bike for a customer after confirming build quality and safety.
+                        Customer reservations can be made at any time during the process.
+                    </Typography>
+                    {transaction_id && (
+                        <CustomerReservation
+                            transaction_id={transaction_id}
+                            transaction={transaction}
+                            buttonText="Reserve for Customer"
+                            variant="outlined"
+                        />
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Step Management Section */}
+            {canSafetyCheck && revertibleSteps.length > 0 && (
+                <Card sx={{ mb: 3 }}>
                     <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                            Inspection Notes & Sign-off
+                        <Typography variant="h6" sx={{ mb: 2 }}>
+                            <Warning sx={{ mr: 1, verticalAlign: 'middle' }} />
+                            Step Management
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            If issues are found during safety check, you can revert previous steps to address problems.
                         </Typography>
 
-                        <Grid2 container spacing={2}>
-                            <Grid2 size={8}>
-                                <TextField
-                                    label="Inspection Notes"
-                                    value={inspectionData.inspectionNotes}
-                                    onChange={(e) => setInspectionData(prev => ({ ...prev, inspectionNotes: e.target.value }))}
-                                    multiline
-                                    rows={3}
-                                    fullWidth
-                                    placeholder="Any additional notes about the bike's condition or maintenance performed..."
-                                />
-                            </Grid2>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            {revertibleSteps.map(step => (
+                                <Button
+                                    key={step.step_id}
+                                    variant="outlined"
+                                    color="warning"
+                                    size="small"
+                                    startIcon={<ArrowBack />}
+                                    onClick={() => handleRevertStep(step.step_name)}
+                                >
+                                    Revert {step.step_name}
+                                </Button>
+                            ))}
+                        </Box>
 
-                            <Grid2 size={4}>
-                                <TextField
-                                    label="Inspector Initials"
-                                    value={inspectionData.inspectorInitials}
-                                    onChange={(e) => setInspectionData(prev => ({ ...prev, inspectorInitials: e.target.value }))}
-                                    required
-                                    fullWidth
-                                    inputProps={{ maxLength: 5 }}
-                                />
-
-                                <Box sx={{ mt: 2 }}>
-                                    <Paper variant="outlined" sx={{ p: 2, bgcolor: inspectionData.passedInspection ? 'success.light' : 'warning.light' }}>
-                                        <Typography variant="body2" textAlign="center">
-                                            {Object.values(inspectionData.safetyChecks).every(Boolean) &&
-                                                Object.values(inspectionData.functionalChecks).every(Boolean)
-                                                ? '✅ PASSED INSPECTION'
-                                                : '⚠️ INSPECTION INCOMPLETE'}
-                                        </Typography>
-                                    </Paper>
-                                </Box>
-                            </Grid2>
-                        </Grid2>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                            Reverting a step will mark it as incomplete and may require rework.
+                        </Typography>
                     </CardContent>
                 </Card>
-            </Box>
+            )}
 
-            <Box sx={{ mt: 3, textAlign: 'right' }}>
-                <Button
-                    variant="contained"
-                    onClick={handleSubmit}
-                    disabled={
-                        !Object.values(inspectionData.safetyChecks).every(Boolean) ||
-                        !Object.values(inspectionData.functionalChecks).every(Boolean) ||
-                        !inspectionData.inspectorInitials.trim()
-                    }
-                >
-                    Complete Inspection
-                </Button>
+            <Divider sx={{ my: 3 }} />
+
+            {/* Action Buttons */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                    Step 3 of 5: Safety Check & Quality Approval
+                </Typography>
+
+                <ButtonGroup>
+                    <Button
+                        variant="contained"
+                        onClick={handleAdvanceStep}
+                        disabled={!canAdvance}
+                        size="large"
+                        startIcon={<ArrowForward />}
+                    >
+                        Approve & Proceed to Checkout →
+                    </Button>
+                </ButtonGroup>
             </Box>
         </Box>
     );

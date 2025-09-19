@@ -8,7 +8,12 @@ import { useParams } from 'react-router-dom';
 import { useWorkflowSteps } from '../../hooks/useWorkflowSteps';
 import { ShoppingCart, Receipt, } from '@mui/icons-material';
 import { Customer } from '../../model';
+import DBModel from '../../model';
 import { CustomerReservation } from '../CustomerReservation';
+import Notes from '../TransactionPage/Notes';
+import { useCurrentUser } from '../../hooks/useUserQuery';
+import { toast } from 'react-toastify';
+import { queryClient } from '../../app/queryClient';
 
 interface CheckoutStepProps {
     onStepComplete: () => void;
@@ -17,12 +22,14 @@ interface CheckoutStepProps {
 export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) => {
     const { transaction_id } = useParams<{ transaction_id: string }>();
     const { transaction } = useWorkflowSteps(transaction_id || '');
+    const currentUser = useCurrentUser();
 
     const [bikePrice, setBikePrice] = useState(0);
     const [tax, setTax] = useState(0);
     const [finalAmount, setFinalAmount] = useState(0);
     const [paymentCompleted, setPaymentCompleted] = useState(false);
     const [receiptGenerated, setReceiptGenerated] = useState(false);
+    const [notes, setNotes] = useState('');
     // Reservation modal state
     const [customerReserved, setCustomerReserved] = useState(false);
     const [reservedCustomer, setReservedCustomer] = useState<Customer | null>(null);
@@ -81,6 +88,28 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
         console.log('Reservation completed for customer:', customer, 'with deposit:', reservationDetails.deposit_amount);
     };
 
+    const handleNotesChange = async (newNotes: string) => {
+        setNotes(newNotes);
+
+        // Save notes to transaction description field
+        if (transaction_id && transaction) {
+            try {
+                await DBModel.updateTransaction(transaction_id, {
+                    ...transaction,
+                    description: newNotes
+                });
+
+                // Invalidate transaction query to refresh data
+                queryClient.invalidateQueries({ queryKey: ['transaction', transaction_id] });
+
+                toast.success('Notes updated successfully');
+            } catch (error) {
+                console.error('Error saving notes:', error);
+                toast.error('Failed to save notes');
+            }
+        }
+    };
+
     const handleAdvanceStep = async () => {
         if (canAdvance) {
             await handleTransactionComplete(true);
@@ -137,6 +166,8 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
                 </CardContent>
             </Card>
 
+            
+
             {/* Transaction Summary */}
             <Card sx={{ mb: 3 }}>
                 <CardContent>
@@ -163,6 +194,34 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
                             </Typography>
                         </Box>
                     </Box>
+                </CardContent>
+            </Card>
+
+            {/* Notes Section */}
+            <Card sx={{ mb: 3 }}>
+                <CardContent>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        Checkout Notes
+                    </Typography>
+                    {currentUser && transaction ? (
+                        <Notes
+                            notes={transaction.description || ''}
+                            onSave={handleNotesChange}
+                            user={currentUser}
+                            transaction_num={transaction.transaction_num}
+                        />
+                    ) : (
+                        <TextField
+                            label="Checkout Notes"
+                            value={notes}
+                            onChange={(e) => handleNotesChange(e.target.value)}
+                            multiline
+                            rows={4}
+                            fullWidth
+                            placeholder="Add any special notes about this sale, payment arrangements, or customer requests..."
+                            helperText="These notes will be included with the transaction record"
+                        />
+                    )}
                 </CardContent>
             </Card>
 
@@ -260,6 +319,7 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
                 </CardContent>
             </Card>
 
+            
 
             {/* Status Indicators */}
             <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
