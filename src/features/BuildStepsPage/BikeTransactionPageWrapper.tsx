@@ -1,5 +1,5 @@
 import React from 'react';
-import { BikeTransactionPage } from '../BuildStepsPage/BikeTransactionPage';
+import { BikeTransactionPage } from './BikeTransactionPage';
 
 /**
  * Wrapper component for BikeTransactionPage

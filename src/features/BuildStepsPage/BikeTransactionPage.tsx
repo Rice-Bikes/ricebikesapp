@@ -107,6 +107,18 @@ const BikeTransactionPageContent: React.FC = () => {
             toast.error(`Error occurred during mutation: ${error}`);
         }
     });
+    const deleteTransaction = useMutation({
+        mutationFn: async (transaction_id: string) => {
+            await DBModel.deleteTransaction(transaction_id);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            navigate('/');
+        },
+        onError: (error) => {
+            toast.error(`Error occurred during deletion: ${error}`);
+        }
+    });
     const handleAdminMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
         setAdminMenuAnchor(event.currentTarget);
     };
@@ -454,6 +466,13 @@ const BikeTransactionPageContent: React.FC = () => {
                             </>
                         )}
                     </Box>
+                )}
+                {transaction_id && (
+                    <Button variant="contained" color="error" sx={{ ml: 2 }} onClick={() => {
+                        deleteTransaction.mutate(transaction_id);
+                    }}>
+                        Delete
+                    </Button>
                 )}
             </Box>
 

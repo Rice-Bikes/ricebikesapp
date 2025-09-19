@@ -6,7 +6,7 @@ import { useParams } from 'react-router-dom';
 import { useCurrentUser } from '../../hooks/useUserQuery';
 import { Build, CheckCircle, RadioButtonUnchecked, Person } from '@mui/icons-material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import DBModel from '../../model';
+import DBModel, { TransactionDetailsArray } from '../../model';
 import Notes from '../TransactionPage/Notes';
 import { CustomerReservation } from '../CustomerReservation';
 import { useSlackNotifications } from '../../hooks/useSlackNotifications';
@@ -49,6 +49,7 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
         queryKey: ['transactionDetails', transaction_id, 'repair'],
         queryFn: () => transaction_id ? DBModel.fetchTransactionDetails(transaction_id, 'repair') : Promise.resolve([]),
         enabled: !!transaction_id,
+        select: (data) => data as TransactionDetailsArray,
     });
 
     // Fetch transaction data for Notes component
@@ -89,15 +90,31 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
             const buildTaskRepairIds = BUILD_TASKS.map(task => task.repair_id);
 
             if (transactionDetails && transactionDetails.length > 0) {
-                // Filter build tasks from transaction details using the actual repair_ids
-                const buildTaskDetails = transactionDetails.filter((detail) =>
-                    detail.repair_id && buildTaskRepairIds.includes(detail.repair_id)
-                );
+                // Create a map of repair_id to their first occurrence in transactionDetails
+                const repairToDetailMap = new Map();
+
+                // Only store the first occurrence of each repair_id
+                for (const detail of transactionDetails) {
+                    if (
+                        detail?.repair_id &&
+                        buildTaskRepairIds.includes(detail.repair_id) &&
+                        detail.Repair &&
+                        !repairToDetailMap.has(detail.repair_id)
+                    ) {
+                        repairToDetailMap.set(detail.repair_id, detail);
+                    }
+                }
+
+                // Convert map values back to array for further processing
+                const uniqueBuildTaskDetails = Array.from(repairToDetailMap.values());
+
+                // Log how many duplicates were filtered out
+                console.log(`Filtered out ${transactionDetails.length - uniqueBuildTaskDetails.length} duplicate transaction details`);
 
                 // Update task completion states
                 setBuildTasks(prevTasks =>
                     prevTasks.map(task => {
-                        const existingDetail = buildTaskDetails.find((detail) =>
+                        const existingDetail = uniqueBuildTaskDetails.find((detail) =>
                             detail.repair_id === task.repair_id
                         );
                         return {
@@ -107,9 +124,9 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
                     })
                 );
 
-                // Create missing task entries
+                // Create missing task entries (only if not present in uniqueBuildTaskDetails)
                 const missingTasks = BUILD_TASKS.filter(task =>
-                    !buildTaskDetails.some(detail => detail.repair_id === task.repair_id)
+                    !repairToDetailMap.has(task.repair_id)
                 );
 
                 console.log('Missing tasks that need to be created:', missingTasks.map(t => ({ id: t.id, repair_id: t.repair_id })));
@@ -139,7 +156,7 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
                         console.error('Error pre-creating build tasks:', error);
                     }
                 }
-            } else if (currentUser?.user_id) {
+            } else if (currentUser?.user_id && transactionDetails) {
                 // No existing details, create all tasks
                 try {
                     await Promise.all(
@@ -159,7 +176,7 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
                         queryKey: ['transactionDetails', transaction_id, 'repair']
                     });
                 } catch (error) {
-                    console.error('Error creating build tasks:', error);
+                    console.error('Error pre-creating build tasks:', error);
                 }
             }
         };
@@ -190,10 +207,19 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
         );
 
         try {
-            // Find existing transaction detail for this repair (should always exist now)
-            const existingDetail = transactionDetails?.find(detail =>
-                detail.repair_id === task.repair_id
-            );
+            // Find first existing transaction detail for this repair (should always exist now)
+            // Use a map to get only the first occurrence of each repair_id
+            const repairDetailsMap = new Map();
+
+            if (transactionDetails) {
+                for (const detail of transactionDetails) {
+                    if (detail.repair_id && !repairDetailsMap.has(detail.repair_id)) {
+                        repairDetailsMap.set(detail.repair_id, detail);
+                    }
+                }
+            }
+
+            const existingDetail = repairDetailsMap.get(task.repair_id);
 
             console.log('Found existing detail:', existingDetail);
 
@@ -206,16 +232,25 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
                 );
             } else {
                 console.error('No existing transaction detail found for task:', task.id, 'repair_id:', task.repair_id);
-                console.log('Available transaction details:', transactionDetails?.map(d => ({ repair_id: d.repair_id, transaction_detail_id: d.transaction_detail_id })));
-                // This shouldn't happen with pre-creation, but fallback to create if needed
-                console.log('Creating new transaction detail for task:', task.id);
-                await DBModel.postTransactionDetails(
-                    transaction_id,
-                    task.repair_id,
-                    currentUser.user_id,
-                    1,
-                    "repair"
-                );
+                // Check for duplicates in transaction details
+                const duplicates = transactionDetails?.filter(d => d.repair_id === task.repair_id) || [];
+                if (duplicates.length > 0) {
+                    console.warn(`Found ${duplicates.length} duplicate entries for repair_id ${task.repair_id}, using first one`);
+                    await DBModel.updateTransactionDetails(
+                        duplicates[0].transaction_detail_id,
+                        newCompletedState
+                    );
+                } else {
+                    // This shouldn't happen with pre-creation, but fallback to create if needed
+                    console.log('Creating new transaction detail for task:', task.id);
+                    await DBModel.postTransactionDetails(
+                        transaction_id,
+                        task.repair_id,
+                        currentUser.user_id,
+                        1,
+                        "repair"
+                    );
+                }
             }
 
             // Invalidate the query cache to refetch the data

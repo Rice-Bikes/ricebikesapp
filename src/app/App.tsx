@@ -5,7 +5,7 @@ import "./App.css";
 import { Button } from "@mui/material";
 import { Routes, Route, Link } from "react-router-dom";
 import TransactionDetail from "../features/TransactionPage/TransactionPage";
-import { BikeTransactionPageWrapper } from "../features/TransactionPage/BikeTransactionPageWrapper";
+import { BikeTransactionPageWrapper } from "../features/BuildStepsPage/BikeTransactionPageWrapper";
 import { useState } from "react";
 import AuthPrompt from "../components/AuthPrompt/AuthPrompt";
 import { User } from "../model";
