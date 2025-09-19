@@ -8,7 +8,10 @@ import {
 import { useParams } from 'react-router-dom';
 import DBModel, { Bike } from '../../model';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-toastify';
 
+
+type Condition = 'New' | 'Refurbished' | 'Used';
 
 interface BikeSelectionStepProps {
     onBikeCreated: (bike: Bike) => void;
@@ -28,7 +31,7 @@ export const BikeSelectionStep: React.FC<BikeSelectionStepProps> = ({
         description: string;
         bike_type: string;
         size_cm: string | number;
-        condition: string;
+        condition: Condition;
         price: string | number;
     }>({
         make: existingBike?.make || '',
@@ -36,8 +39,8 @@ export const BikeSelectionStep: React.FC<BikeSelectionStepProps> = ({
         description: existingBike?.description || '',
         bike_type: existingBike?.bike_type || 'Road', // Default
         size_cm: existingBike?.size_cm || 50, // Re-enabled now that backend supports it
-        condition: existingBike?.condition || 'Refurbished' as const,
-        price: existingBike?.price || 150 // Default for refurbished
+        condition: existingBike?.condition as Condition || 'New',
+        price: existingBike?.price || 300 // Default for refurbished
     });
 
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -51,7 +54,7 @@ export const BikeSelectionStep: React.FC<BikeSelectionStepProps> = ({
             description: string;
             bike_type: string;
             size_cm: string | number; // Allow both string and number
-            condition: string;
+            condition: Condition;
             price: string | number; // Allow both string and number
         }) => {
             // Ensure proper type conversion for numeric fields
@@ -61,40 +64,73 @@ export const BikeSelectionStep: React.FC<BikeSelectionStepProps> = ({
                 description: bikeFormData.description,
                 bike_type: bikeFormData.bike_type,
                 condition: bikeFormData.condition,
-                // Ensure numeric fields are properly converted
+                // Ensure numeric fields are properly converted - handle empty strings and NaN
                 price: typeof bikeFormData.price === 'string'
-                    ? parseFloat(bikeFormData.price) || 0
-                    : bikeFormData.price,
+                    ? (bikeFormData.price === '' ? 0 : parseFloat(bikeFormData.price) || 0)
+                    : (isNaN(bikeFormData.price) ? 0 : bikeFormData.price),
                 size_cm: typeof bikeFormData.size_cm === 'string'
-                    ? parseFloat(bikeFormData.size_cm) || 0
-                    : bikeFormData.size_cm,
+                    ? (bikeFormData.size_cm === '' ? 0 : parseFloat(bikeFormData.size_cm) || 0)
+                    : (isNaN(bikeFormData.size_cm) ? 0 : bikeFormData.size_cm),
             };
 
             // Create the bike first - now with full backend support
-            const newBike = await DBModel.createBike({
-                make: processedBikeData.make,
-                model: processedBikeData.model,
-                description: processedBikeData.description,
-                bike_type: processedBikeData.bike_type,
-                size_cm: processedBikeData.size_cm,
+            // Ensure values match the server's Zod validation expectations
+            const bikeToCreate = {
+                make: processedBikeData.make.trim(),
+                model: processedBikeData.model.trim(),
+                description: processedBikeData.description.trim() || null,
+                bike_type: processedBikeData.bike_type || 'Road',
+                // Match the server's z.coerce.number().nullable() expectation
+                size_cm: processedBikeData.size_cm !== undefined && bikeFormData.size_cm !== ''
+                    ? Number(processedBikeData.size_cm)
+                    : null,
                 condition: processedBikeData.condition,
-                price: processedBikeData.price,
+                // Match the server's z.coerce.number().min(0).nullable() expectation
+                price: processedBikeData.price !== undefined && bikeFormData.price !== ''
+                    ? Number(processedBikeData.price)
+                    : null,
                 is_available: true
-            } as Bike) as Bike;
+            };
 
+            // Log the data for debugging
+            console.log('Prepared bike data for API:', bikeToCreate);
+
+            let newBike: Bike;
+            const currentTransaction = await DBModel.fetchTransaction(transaction_id ?? '');
+            // Only try to fetch transaction if we have a transaction_id
+
+            // If we have both a transaction_id and a bike_id, update the existing bike
+            if (currentTransaction && currentTransaction.bike_id) {
+                console.log('Updating existing bike:', currentTransaction.bike_id, bikeToCreate);
+                newBike = await DBModel.updateBike(currentTransaction.bike_id, bikeToCreate) as Bike;
+            } else {
+                // Transaction exists but no bike_id, create a new bike
+                console.log('Creating new bike for existing transaction:', bikeToCreate);
+                newBike = await DBModel.createBike(bikeToCreate as Bike) as Bike;
+            }
+          
             // Update the transaction with the new bike_id
             if (transaction_id && newBike && newBike.bike_id) {
                 // Get current transaction to preserve existing fields
-                const currentTransaction = await DBModel.fetchTransaction(transaction_id);
-
                 // Calculate total cost with proper type conversion
-                const bikePrice = typeof processedBikeData.price === 'number' ? processedBikeData.price : 0;
-                const currentCost = typeof currentTransaction.total_cost === 'number'
-                    ? currentTransaction.total_cost
-                    : parseFloat(currentTransaction.total_cost as string) || 0;
+                // Ensure price is properly converted to a number
+                let bikePrice: number;
+                if (typeof processedBikeData.price === 'string') {
+                    bikePrice = processedBikeData.price === '' ? 0 : parseFloat(processedBikeData.price) || 0;
+                } else {
+                    bikePrice = typeof processedBikeData.price === 'number' ? processedBikeData.price : 0;
+                }
+
+                // Ensure current cost is properly converted to a number
+                let currentCost: number;
+                if (typeof currentTransaction.total_cost === 'string') {
+                    currentCost = currentTransaction.total_cost === '' ? 0 : parseFloat(currentTransaction.total_cost) || 0;
+                } else {
+                    currentCost = typeof currentTransaction.total_cost === 'number' ? currentTransaction.total_cost : 0;
+                }
 
                 // Only update the bike_id, preserving other updatable fields
-                await DBModel.updateTransaction(transaction_id, {
+                const updatedBike = await DBModel.updateTransaction(transaction_id, {
                     transaction_type: currentTransaction.transaction_type,
                     bike_id: newBike.bike_id,
                     total_cost: bikePrice || currentCost, // Ensure it's a number
@@ -109,6 +145,10 @@ export const BikeSelectionStep: React.FC<BikeSelectionStepProps> = ({
                     is_waiting_on_email: currentTransaction.is_waiting_on_email,
                     date_completed: currentTransaction.date_completed
                 });
+
+                if (!updatedBike) {
+                    toast.error('Failed to update transaction with new bike_id');
+                }
             }
 
             return newBike;
@@ -118,13 +158,28 @@ export const BikeSelectionStep: React.FC<BikeSelectionStepProps> = ({
                 queryClient.invalidateQueries({ queryKey: ['transaction', transaction_id] });
                 onBikeCreated(createdBike);
                 setIsCreating(false);
+                toast.success('Bike created and transaction updated successfully!');
             } else {
-                console.error('Bike creation returned null');
+                toast.error('Bike creation returned null');
                 setIsCreating(false);
             }
         },
         onError: (error) => {
-            console.error('Error creating bike:', error);
+            console.error('Bike creation/update error:', error);
+
+            // Extract a user-friendly error message
+            let errorMessage = 'An unexpected error occurred';
+            if (error instanceof Error) {
+                errorMessage = error.message;
+                // Try to extract a more specific message from nested errors
+                if (errorMessage.includes('Error posting bike data') ||
+                    errorMessage.includes('Error updating bike data')) {
+                    const nestedMessage = errorMessage.split(':').slice(1).join(':').trim();
+                    if (nestedMessage) errorMessage = nestedMessage;
+                }
+            }
+
+            toast.error(`Error: ${errorMessage}`);
             setIsCreating(false);
         }
     });
@@ -145,14 +200,26 @@ export const BikeSelectionStep: React.FC<BikeSelectionStepProps> = ({
             errors.model = 'Bike model is required';
         }
 
-        // Convert and validate price
-        const priceValue = typeof bikeData.price === 'string' ? parseFloat(bikeData.price) : bikeData.price;
+        // Convert and validate price - handle empty strings and non-numeric values
+        let priceValue: number;
+        if (typeof bikeData.price === 'string') {
+            priceValue = bikeData.price === '' ? 0 : parseFloat(bikeData.price);
+        } else {
+            priceValue = isNaN(bikeData.price as number) ? 0 : bikeData.price as number;
+        }
+
         if (isNaN(priceValue) || priceValue <= 0) {
             errors.price = 'Price must be a valid number greater than $0';
         }
 
-        // Convert and validate size_cm
-        const sizeValue = typeof bikeData.size_cm === 'string' ? parseFloat(bikeData.size_cm) : bikeData.size_cm;
+        // Convert and validate size_cm - handle empty strings and non-numeric values
+        let sizeValue: number;
+        if (typeof bikeData.size_cm === 'string') {
+            sizeValue = bikeData.size_cm === '' ? 0 : parseFloat(bikeData.size_cm);
+        } else {
+            sizeValue = isNaN(bikeData.size_cm as number) ? 0 : bikeData.size_cm as number;
+        }
+
         if (isNaN(sizeValue) || sizeValue < 0 || sizeValue > 80) {
             errors.size_cm = 'Size must be a valid number between 0 and 80';
         }
@@ -170,9 +237,23 @@ export const BikeSelectionStep: React.FC<BikeSelectionStepProps> = ({
         if (field === 'price' || field === 'size_cm') {
             // Keep as string if it's a valid partial float (allows typing decimals)
             const stringValue = value as string;
-            if (stringValue === '' || /^\d*\.?\d*$/.test(stringValue)) {
-                value = stringValue; // Keep as string to preserve typing flow
+
+            // Allow empty string, single decimal point, or valid decimal number
+            if (stringValue === '' || stringValue === '.' || /^-?\d*\.?\d*$/.test(stringValue)) {
+                // If it ends with a decimal point, keep it as string to allow adding decimal places
+                if (stringValue.endsWith('.')) {
+                    value = stringValue;
+                }
+                // If it's a valid number (including empty or just a decimal point), keep as string
+                else if (stringValue === '' || stringValue === '.') {
+                    value = stringValue;
+                }
+                // Otherwise convert to number if possible, or keep as string
+                else {
+                    value = stringValue;
+                }
             } else {
+                // If not a valid number format, try to extract any valid numeric part
                 const numValue = parseFloat(stringValue);
                 value = isNaN(numValue) ? '' : numValue.toString();
             }
@@ -196,24 +277,30 @@ export const BikeSelectionStep: React.FC<BikeSelectionStepProps> = ({
         event: SelectChangeEvent
     ) => {
         const value: string = event.target.value;
-        // Keep value as string for consistency - numeric fields will be converted during validation/submission
 
-        setBikeData(prev => ({
-            ...prev,
-            [field]: value
-        }));
+        // Special handling for condition field to ensure it's correctly typed
+        if (field === 'condition') {
+            // Validate that the condition value is one of the allowed enum values
+            if (['New', 'Refurbished', 'Used'].includes(value)) {
+                setBikeData(prev => ({
+                    ...prev,
+                    [field]: value as Condition
+                }));
+            }
+        } else {
+            // For other fields, just set as string
+            setBikeData(prev => ({
+                ...prev,
+                [field]: value
+            }));
+        }
     };
 
     const handleConfirmBike = async () => {
         if (validateForm()) {
-            if (existingBike) {
-                // If updating existing bike, just call the callback
-                onBikeCreated(existingBike);
-            } else {
-                // Create new bike
-                setIsCreating(true);
-                createBikeMutation.mutate(bikeData);
-            }
+            // Create new bike
+            setIsCreating(true);
+            createBikeMutation.mutate(bikeData);
         }
     };
 

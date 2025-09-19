@@ -92,16 +92,22 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
             if (transactionDetails && transactionDetails.length > 0) {
                 // Create a map of repair_id to their first occurrence in transactionDetails
                 const repairToDetailMap = new Map();
+                const duplicateDetails = [];
 
-                // Only store the first occurrence of each repair_id
+                // Only store the first occurrence of each repair_id and track duplicates
                 for (const detail of transactionDetails) {
                     if (
                         detail?.repair_id &&
                         buildTaskRepairIds.includes(detail.repair_id) &&
-                        detail.Repair &&
-                        !repairToDetailMap.has(detail.repair_id)
+                        detail.Repair
                     ) {
-                        repairToDetailMap.set(detail.repair_id, detail);
+                        if (!repairToDetailMap.has(detail.repair_id)) {
+                            // Keep the first occurrence
+                            repairToDetailMap.set(detail.repair_id, detail);
+                        } else {
+                            // Track duplicates for deletion
+                            duplicateDetails.push(detail);
+                        }
                     }
                 }
 
@@ -109,7 +115,31 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
                 const uniqueBuildTaskDetails = Array.from(repairToDetailMap.values());
 
                 // Log how many duplicates were filtered out
-                console.log(`Filtered out ${transactionDetails.length - uniqueBuildTaskDetails.length} duplicate transaction details`);
+                const duplicateCount = transactionDetails.length - uniqueBuildTaskDetails.length;
+                console.log(`Found ${duplicateCount} duplicate transaction details`);
+
+                // Delete duplicates from the database
+                if (duplicateDetails.length > 0) {
+                    console.log(`Deleting ${duplicateDetails.length} duplicate transaction details...`);
+                    try {
+                        await Promise.all(duplicateDetails.map(async (duplicate) => {
+                            if (duplicate.transaction_detail_id) {
+                                // Delete the duplicate transaction detail from the database
+                                console.log(`Deleting duplicate transaction detail: ${duplicate.transaction_detail_id} (repair_id: ${duplicate.repair_id})`);
+                                await DBModel.deleteTransactionDetails(duplicate.transaction_detail_id);
+                            }
+                        }));
+
+                        console.log(`Successfully deleted ${duplicateDetails.length} duplicate transaction details`);
+
+                        // Invalidate cache to refetch updated data (without duplicates)
+                        queryClient.invalidateQueries({
+                            queryKey: ['transactionDetails', transaction_id, 'repair']
+                        });
+                    } catch (error) {
+                        console.error('Error deleting duplicate transaction details:', error);
+                    }
+                }
 
                 // Update task completion states
                 setBuildTasks(prevTasks =>

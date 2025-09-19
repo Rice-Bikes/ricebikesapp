@@ -1463,21 +1463,51 @@ class DBModel {
         throw new Error("Error posting bike data: " + error); // More detailed error logging
       });
 
-  public static updateBike = async (bike_id: string, bikeData: Partial<UpdateBike>) =>
-    fetch(`${hostname}/bikes/${bike_id}`, {
+  public static updateBike = async (bike_id: string, bikeData: Partial<UpdateBike>) => {
+    // Make sure we have valid data
+    if (!bikeData || Object.keys(bikeData).length === 0) {
+      console.error('Empty bike data provided for update');
+      throw new Error('Cannot update bike with empty data');
+    }
+
+    // Ensure we don't send undefined values - convert them to null for the API
+    const cleanedData: Record<string, string | number | boolean | null> = {};
+    for (const [key, value] of Object.entries(bikeData)) {
+      if (value !== undefined) {
+        cleanedData[key] = value;
+      }
+    }
+
+    // Debug output before sending request
+    console.log(`Updating bike ${bike_id} with data:`, cleanedData);
+    
+    return fetch(`${hostname}/bikes/${bike_id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(bikeData),
+      body: JSON.stringify(cleanedData),
     })
-      .then((response) => response.json())
+      .then(async (response) => {
+        const responseText = await response.text();
+        console.log(`Update bike response (${response.status}):`, responseText);
+        
+        // Try to parse the response as JSON
+        try {
+          return JSON.parse(responseText);
+        } catch (e) {
+          console.error('Failed to parse response as JSON:', e);
+          throw new Error(`Server response is not valid JSON: ${responseText}`);
+        }
+      })
       .then((response) => {
         if (!DBModel.validateObjectResponse(response)) {
-          throw new Error("Invalid response");
+          console.error('Invalid response object:', response);
+          throw new Error("Invalid response structure");
         }
         if (!response.success) {
-          throw new Error("Failed to update bike");
+          console.error('Update bike failed:', response.message);
+          throw new Error(`Failed to update bike: ${response.message || 'Unknown error'}`);
         }
 
         // Validate the updated bike response
@@ -1489,8 +1519,10 @@ class DBModel {
         return response.responseObject;
       })
       .catch((error) => {
+        console.error('Error in updateBike:', error);
         throw new Error("Error updating bike data: " + error);
       });
+  };
 
   public static deleteTransactionDetails = async (
     transaction_detail_id: string
