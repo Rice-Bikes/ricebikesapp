@@ -33,6 +33,7 @@ import { CheckoutStep } from '../../components/BikeTransactionSteps/CheckoutStep
 import { BikeSelectionStep } from '../../components/BikeTransactionSteps/BikeSelectionStep';
 import DBModel, { Bike, UpdateTransaction } from '../../model';
 import { toast } from 'react-toastify';
+import TransactionsLogModal from '../../components/TransactionsLogModal';
 
 const SALES_STEPS: Array<{
     key: string;
@@ -70,7 +71,7 @@ const BikeTransactionPageContent: React.FC = () => {
     const { transaction_id } = useParams<{ transaction_id: string }>();
     const navigate = useNavigate();
     const currentUser = useCurrentUser();
-    
+
     const {
         transaction,
         progress,
@@ -95,7 +96,7 @@ const BikeTransactionPageContent: React.FC = () => {
     // Check if current user is admin based on permissions
     const isAdmin = currentUser?.permissions?.some(p => p.name?.toLowerCase().includes('admin')) || false;
     const updateTransaction = useMutation({
-        mutationFn: async ({transaction_id, data}: {transaction_id: string, data: UpdateTransaction}) => {
+        mutationFn: async ({ transaction_id, data }: { transaction_id: string, data: UpdateTransaction }) => {
             await DBModel.updateTransaction(transaction_id, data);
         },
         onSuccess: () => {
@@ -368,7 +369,7 @@ const BikeTransactionPageContent: React.FC = () => {
                     <BuildStep
                         onStepComplete={() => {
                             handleNext()
-                            updateTransaction.mutate({transaction_id: transaction.transaction_id, data: { ...transaction, is_completed: true }});
+                            updateTransaction.mutate({ transaction_id: transaction.transaction_id, data: { ...transaction, is_completed: true } });
                         }}
                     />
                 );
@@ -385,9 +386,9 @@ const BikeTransactionPageContent: React.FC = () => {
                     <CheckoutStep
                         onStepComplete={() => {
                             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                            const {transaction_num, customer_id, bike_id, Bike, OrderRequests, Customer, ...rest} = transaction
-                            updateTransaction.mutate({transaction_id: transaction.transaction_id, data: { ...rest, is_completed: true, is_paid: true, is_refurb: false }});
-                        
+                            const { transaction_num, customer_id, bike_id, Bike, OrderRequests, Customer, ...rest } = transaction
+                            updateTransaction.mutate({ transaction_id: transaction.transaction_id, data: { ...rest, is_completed: true, is_paid: true, is_refurb: false } });
+
                             navigate("/");
                         }}
                     />
@@ -467,8 +468,11 @@ const BikeTransactionPageContent: React.FC = () => {
                         )}
                     </Box>
                 )}
+                {transaction?.transaction_num && !error && (
+                    <TransactionsLogModal transaction_num={transaction.transaction_num} />
+                )}
                 {transaction_id && (
-                    <Button variant="contained" color="error" sx={{ ml: 2 }} onClick={() => {
+                    <Button variant="contained" color="error" sx={{ ml: 1 }} onClick={() => {
                         deleteTransaction.mutate(transaction_id);
                     }}>
                         Delete

@@ -4,30 +4,21 @@ import { useQuery } from "@tanstack/react-query";
 import DBModel, { TransactionLog } from '../model';
 import { toast } from "react-toastify";
 
-// const fetchTransactionLogs = async () => {
-//     const { data } = await axios.get('/api/transaction-logs');
-//     return data;
-// };
-
 interface TransactionsLogModalProps {
-    // open: boolean;
-    // onClose: () => void;
-    transaction_id: number;
+    transaction_num: number;
 }
 
 const TransactionsLogModal = ({
-    // open,
-    // onClose,
-    transaction_id
+    transaction_num: transaction_num
 }: TransactionsLogModalProps
 
 ) => {
     const [open, setOpen] = useState(false);
     const { data, error } = useQuery({
-        queryKey: ['transactionLogs', transaction_id],
+        queryKey: ['transactionLogs', transaction_num],
         queryFn: async () => {
-            // console.log("fetching transaction logs for", transaction_id);
-            return DBModel.fetchTransactionLogs(transaction_id);
+            // console.log("fetching transaction logs for", transaction_num);
+            return DBModel.fetchTransactionLogs(transaction_num);
         },
         select: (data) => {
             // console.log("transforming logs", data);
@@ -46,7 +37,7 @@ const TransactionsLogModal = ({
 
     return (
         <div>
-            <Button variant="contained" color="primary" onClick={handleOpen}>
+            <Button variant="contained" color="primary" onClick={handleOpen} sx={{ ml: 1 }}>
                 Open Transactions Log
             </Button>
             <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>

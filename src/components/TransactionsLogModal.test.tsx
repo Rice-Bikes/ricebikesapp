@@ -104,7 +104,7 @@ describe('TransactionsLogModal', () => {
 
         render(
             <AllTheProviders>
-                <TransactionsLogModal transaction_id={1} />
+                <TransactionsLogModal transaction_num={1} />
             </AllTheProviders>
         )
 
@@ -119,7 +119,7 @@ describe('TransactionsLogModal', () => {
 
         render(
             <AllTheProviders>
-                <TransactionsLogModal transaction_id={1} />
+                <TransactionsLogModal transaction_num={1} />
             </AllTheProviders>
         )
 
@@ -139,7 +139,7 @@ describe('TransactionsLogModal', () => {
 
         render(
             <AllTheProviders>
-                <TransactionsLogModal transaction_id={1} />
+                <TransactionsLogModal transaction_num={1} />
             </AllTheProviders>
         )
 
@@ -167,7 +167,7 @@ describe('TransactionsLogModal', () => {
 
         render(
             <AllTheProviders>
-                <TransactionsLogModal transaction_id={1} />
+                <TransactionsLogModal transaction_num={1} />
             </AllTheProviders>
         );
 
@@ -195,7 +195,7 @@ describe('TransactionsLogModal', () => {
 
         render(
             <AllTheProviders>
-                <TransactionsLogModal transaction_id={1} />
+                <TransactionsLogModal transaction_num={1} />
             </AllTheProviders>
         );
 
@@ -218,7 +218,7 @@ describe('TransactionsLogModal', () => {
 
         render(
             <AllTheProviders>
-                <TransactionsLogModal transaction_id={1} />
+                <TransactionsLogModal transaction_num={1} />
             </AllTheProviders>
         );
 
@@ -242,7 +242,7 @@ describe('TransactionsLogModal', () => {
 
         render(
             <AllTheProviders>
-                <TransactionsLogModal transaction_id={1} />
+                <TransactionsLogModal transaction_num={1} />
             </AllTheProviders>
         );
 
@@ -271,7 +271,7 @@ describe('TransactionsLogModal', () => {
 
         render(
             <AllTheProviders>
-                <TransactionsLogModal transaction_id={1} />
+                <TransactionsLogModal transaction_num={1} />
             </AllTheProviders>
         );
 
@@ -296,7 +296,7 @@ describe('TransactionsLogModal', () => {
 
         render(
             <AllTheProviders>
-                <TransactionsLogModal transaction_id={1} />
+                <TransactionsLogModal transaction_num={1} />
             </AllTheProviders>
         );
 
@@ -324,7 +324,7 @@ describe('TransactionsLogModal', () => {
 
         render(
             <AllTheProviders>
-                <TransactionsLogModal transaction_id={1} />
+                <TransactionsLogModal transaction_num={1} />
             </AllTheProviders>
         );
 
@@ -360,7 +360,7 @@ describe('TransactionsLogModal', () => {
 
         render(
             <AllTheProviders>
-                <TransactionsLogModal transaction_id={1} />
+                <TransactionsLogModal transaction_num={1} />
             </AllTheProviders>
         );
 
@@ -383,7 +383,7 @@ describe('TransactionsLogModal', () => {
 
         render(
             <AllTheProviders>
-                <TransactionsLogModal transaction_id={42} />
+                <TransactionsLogModal transaction_num={42} />
             </AllTheProviders>
         );
 
