@@ -108,7 +108,7 @@ export const BikeSelectionStep: React.FC<BikeSelectionStepProps> = ({
                 console.log('Creating new bike for existing transaction:', bikeToCreate);
                 newBike = await DBModel.createBike(bikeToCreate as Bike) as Bike;
             }
-          
+
             // Update the transaction with the new bike_id
             if (transaction_id && newBike && newBike.bike_id) {
                 // Get current transaction to preserve existing fields
@@ -185,8 +185,7 @@ export const BikeSelectionStep: React.FC<BikeSelectionStepProps> = ({
     });
 
     const bikeTypes = [
-        'Road', 'Mountain', 'Hybrid', 'Cruiser', 'BMX',
-        'Electric', 'Folding', 'Single Speed', 'Fixed Gear'
+        'Road', 'City Bike', 'Mountain', 'Hybrid', 'Cruiser', 'BMX', 'Folding', 'Single Speed'
     ];
 
     const validateForm = () => {
