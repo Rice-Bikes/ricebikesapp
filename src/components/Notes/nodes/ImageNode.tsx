@@ -129,9 +129,29 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     const { caption } = serializedNode;
 
     const nestedEditor = node.__caption;
-    const editorState = nestedEditor.parseEditorState(caption.editorState);
-    if (!editorState.isEmpty()) {
-      nestedEditor.setEditorState(editorState);
+    // caption may be missing, empty string, or a serialized editor. Be defensive.
+    if (caption && typeof caption === 'object' && caption.editorState) {
+      try {
+        const parsed = caption.editorState;
+        // If editorState was serialized as a string, ensure we pass the string
+        // form to parseEditorState. If it's already an object, stringify it.
+        const editorStateInput =
+          typeof parsed === 'string' ? parsed : JSON.stringify(parsed);
+        const editorState = nestedEditor.parseEditorState(editorStateInput);
+        // Some EditorState representations may not implement isEmpty; guard it.
+        if (typeof (editorState as any).isEmpty === 'function') {
+          if (!(editorState as any).isEmpty()) {
+            nestedEditor.setEditorState(editorState);
+          }
+        } else {
+          // If there's no isEmpty, assume non-empty and set it.
+          nestedEditor.setEditorState(editorState);
+        }
+      } catch (err) {
+        // If parsing fails, skip setting nested editor state to avoid errors.
+        // eslint-disable-next-line no-console
+        console.warn('ImageNode: failed to parse caption editorState', err);
+      }
     }
     return node;
   }

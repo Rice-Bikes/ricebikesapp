@@ -14,3 +14,41 @@ afterEach(() => {
   cleanup()
   document.body.innerHTML = ''
 })
+
+// Minimal window.matchMedia polyfill for JSDOM environments used in tests.
+// Some components and libraries expect this API to exist.
+if (typeof window !== 'undefined' && !window.matchMedia) {
+  // @ts-expect-error - Adding a test-time polyfill to the Window interface
+  window.matchMedia = (query: string) => ({
+    matches: false,
+    media: query,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    onchange: null,
+    dispatchEvent: () => false,
+  })
+}
+
+// Minimal ResizeObserver mock for JSDOM environments. Some components rely
+// on ResizeObserver being present. The mock implements observe/unobserve
+// and disconnect but does not perform real observations.
+if (typeof window !== 'undefined' && !(window as any).ResizeObserver) {
+  class MockResizeObserver {
+    callback: ResizeObserverCallback;
+    constructor(cb: ResizeObserverCallback) {
+      this.callback = cb;
+    }
+    observe() {
+      // no-op
+    }
+    unobserve() {
+      // no-op
+    }
+    disconnect() {
+      // no-op
+    }
+  }
+  ;(window as any).ResizeObserver = MockResizeObserver
+}

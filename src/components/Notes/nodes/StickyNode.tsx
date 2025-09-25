@@ -69,9 +69,24 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     const stickyNode = super.updateFromJSON(serializedNode);
     const caption = serializedNode.caption;
     const nestedEditor = stickyNode.__caption;
-    const editorState = nestedEditor.parseEditorState(caption.editorState);
-    if (!editorState.isEmpty()) {
-      nestedEditor.setEditorState(editorState);
+    // Be defensive: caption may be missing or malformed. Only parse when present.
+    if (caption && typeof caption === 'object' && caption.editorState) {
+      try {
+        const parsed = caption.editorState;
+        const editorStateInput =
+          typeof parsed === 'string' ? parsed : JSON.stringify(parsed);
+        const editorState = nestedEditor.parseEditorState(editorStateInput);
+        if (typeof (editorState as any).isEmpty === 'function') {
+          if (!(editorState as any).isEmpty()) {
+            nestedEditor.setEditorState(editorState);
+          }
+        } else {
+          nestedEditor.setEditorState(editorState);
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('StickyNode: failed to parse caption editorState', err);
+      }
     }
     return stickyNode;
   }
