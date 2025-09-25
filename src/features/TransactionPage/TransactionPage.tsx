@@ -4,7 +4,7 @@ import { Button, Stack, List, ListItem, Grid2, Skeleton } from "@mui/material";
 import { OrderRequest, User } from "../../model";
 import { useNavigate } from "react-router-dom";
 import Item from "../../components/TransactionPage/HeaderItem";
-import Notes from "../../components/TransactionPage/Notes";
+import Notes from "../../components/Notes/Notes";
 import { RowClickedEvent } from "ag-grid-community";
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import {

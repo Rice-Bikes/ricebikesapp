@@ -10,7 +10,7 @@ import { ShoppingCart, Receipt, } from '@mui/icons-material';
 import { Customer } from '../../model';
 import DBModel from '../../model';
 import { CustomerReservation } from '../CustomerReservation';
-import Notes from '../TransactionPage/Notes';
+import Notes from '../Notes/Notes';
 import { useCurrentUser } from '../../hooks/useUserQuery';
 import { toast } from 'react-toastify';
 import { queryClient } from '../../app/queryClient';
@@ -152,7 +152,7 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
                     ) : (
                         <Box>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                A customer reservation with deposit is required before final checkout.
+                                A customer reservation is required before final checkout.
                             </Typography>
                             <CustomerReservation
                                 transaction_id={transaction_id ?? ''}
@@ -166,7 +166,7 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
                 </CardContent>
             </Card>
 
-            
+
 
             {/* Transaction Summary */}
             <Card sx={{ mb: 3 }}>
@@ -319,7 +319,7 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
                 </CardContent>
             </Card>
 
-            
+
 
             {/* Status Indicators */}
             <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>

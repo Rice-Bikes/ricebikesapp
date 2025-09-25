@@ -380,6 +380,12 @@ const BikeTransactionPageContent: React.FC = () => {
                                     is_waiting_on_email: true  // Ready for inspection/email
                                 }
                             });
+                            DBModel.postTransactionLog(
+                                 transaction.transaction_num,
+                                 'moved to inspection',
+                                currentUser?.user_id,
+                                  'completed build step'
+                            );
                             toast.success('Bike moved to inspection phase');
                         }}
                     />
@@ -390,6 +396,12 @@ const BikeTransactionPageContent: React.FC = () => {
                     <InspectionStep
                         onStepComplete={() => {
                             handleNext()
+                            DBModel.postTransactionLog(
+                                 transaction.transaction_num,
+                                 'safety check completed, moved to checkout',
+                                currentUser?.user_id,
+                                  'completed inspection step'
+                            );
                         }
                         }
                     />

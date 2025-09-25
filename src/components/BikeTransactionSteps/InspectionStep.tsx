@@ -15,7 +15,7 @@ import DBModel, { UpdateTransaction } from '../../model';
 import { useMutation } from '@tanstack/react-query';
 import { queryClient } from '../../app/queryClient';
 import { toast } from 'react-toastify';
-import Notes from '../TransactionPage/Notes';
+import Notes from '../Notes/Notes';
 
 interface InspectionStepProps {
     onStepComplete: () => void;

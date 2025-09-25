@@ -2,7 +2,7 @@
 import { TransactionsTable } from "../features/TransactionsTable/TransactionsTable";
 import RiceBikesIcon from "../assets/img/rice-bikes_white.png";
 import "./App.css";
-import { Button } from "@mui/material";
+import { Button, Stack } from "@mui/material";
 import { Routes, Route, Link } from "react-router-dom";
 import TransactionDetail from "../features/TransactionPage/TransactionPage";
 import { BikeTransactionPageWrapper } from "../features/BuildStepsPage/BikeTransactionPageWrapper";
@@ -25,7 +25,7 @@ function App() {
 
   return (
     <>
-      <header id="taskbar">
+      <Stack id="taskbar" direction={"row"} spacing={2} alignItems="center" padding={-5} sx={{ ml: -3, mr: -3 }}>
         <Link to="/">
           <img src={RiceBikesIcon} alt="Rice Bikes Icon" />
         </Link>
@@ -49,7 +49,7 @@ function App() {
             )}
           </h2>{" "}
         </Button>
-      </header>
+      </Stack>
       <AuthPrompt
         setUser={onUserChange}
       />
