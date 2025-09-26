@@ -19,6 +19,7 @@ const port = 1235;
 
 let stringifiedEditorStateJSON = '';
 
+// @ts-expect-error: __DEV__ is a global variable used for development mode
 global.__DEV__ = true;
 
 const editor = createHeadlessEditor({

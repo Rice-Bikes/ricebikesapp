@@ -17,7 +17,6 @@ import {
   $getRoot,
   getDOMSelection,
 } from 'lexical';
-import * as React from 'react';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 
 const copy = (text: string | null) => {

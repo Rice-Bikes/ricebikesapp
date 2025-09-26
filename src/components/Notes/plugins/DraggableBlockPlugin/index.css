@@ -9,6 +9,9 @@
   will-change: transform;
   display: flex;
   gap: 2px;
+  z-index: 12;
+  /* place the menu to the left of the anchor so it doesn't cover content */
+  margin-left: -15px;
 }
 
 .draggable-block-menu .icon {
@@ -43,4 +46,12 @@
   top: 0;
   opacity: 0;
   will-change: transform;
+}
+
+/* Small viewport: place the menu to the right to avoid overflowing off-screen */
+@media (max-width: 420px) {
+  .draggable-block-menu {
+    transform: translateX(0);
+    left: 6px;
+  }
 }

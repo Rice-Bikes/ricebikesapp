@@ -6,7 +6,7 @@
  *
  */
 
-import type {JSX} from 'react';
+import type { JSX } from 'react';
 
 import {
   $getState,
@@ -22,7 +22,7 @@ import {
   StateConfigValue,
   type StateValueOrUpdater,
 } from 'lexical';
-import * as React from 'react';
+import PollComponent from './PollComponent';
 
 export type Options = ReadonlyArray<Option>;
 
@@ -32,7 +32,9 @@ export type Option = Readonly<{
   votes: Array<string>;
 }>;
 
-const PollComponent = React.lazy(() => import('./PollComponent'));
+// PollComponent is only used by the interactive decorator; PollNode now
+// emits static markup during export so the component import isn't required
+// here in the node module.
 
 function createUID(): string {
   return Math.random()
@@ -76,7 +78,7 @@ function $convertPollElement(
   const options = domNode.getAttribute('data-lexical-poll-options');
   if (question !== null && options !== null) {
     const node = $createPollNode(question, JSON.parse(options));
-    return {node};
+    return { node };
   }
   return null;
 }
@@ -116,14 +118,14 @@ export class PollNode extends DecoratorNode<JSX.Element> {
         span: (domNode) =>
           domNode.getAttribute('data-lexical-poll-question') !== null
             ? {
-                conversion: $convertPollElement,
-                priority: 2,
-              }
+              conversion: $convertPollElement,
+              priority: 2,
+            }
             : null,
       }),
       stateConfigs: [
-        {flat: true, stateConfig: questionState},
-        {flat: true, stateConfig: optionsState},
+        { flat: true, stateConfig: questionState },
+        { flat: true, stateConfig: optionsState },
       ],
     });
   }
@@ -189,13 +191,84 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('span');
-    element.setAttribute('data-lexical-poll-question', this.getQuestion());
-    element.setAttribute(
-      'data-lexical-poll-options',
-      JSON.stringify(this.getOptions()),
-    );
-    return {element};
+    // Emit a full, static DOM representation of the poll so headless
+    // exporters and static renderers receive complete HTML that mirrors
+    // the interactive PollComponent. This avoids needing a runtime
+    // React decorator mount in headless/static contexts.
+    const container = document.createElement('div');
+    container.className = 'PollNode__container';
+
+    const inner = document.createElement('div');
+    inner.className = 'PollNode__inner';
+
+    const heading = document.createElement('h2');
+    heading.className = 'PollNode__heading';
+    heading.textContent = this.getQuestion();
+    inner.appendChild(heading);
+
+    const options = this.getOptions() || [];
+    const totalVotes = options.reduce((sum, o) => sum + (Array.isArray(o.votes) ? o.votes.length : 0), 0);
+
+    for (const opt of options) {
+      const optionRow = document.createElement('div');
+      optionRow.className = 'PollNode__optionContainer';
+
+      const checkboxWrapper = document.createElement('div');
+      checkboxWrapper.className = 'PollNode__optionCheckboxWrapper';
+
+      const inputCheckbox = document.createElement('input');
+      inputCheckbox.className = 'PollNode__optionCheckbox';
+      inputCheckbox.setAttribute('type', 'checkbox');
+      inputCheckbox.setAttribute('disabled', 'true');
+      checkboxWrapper.appendChild(inputCheckbox);
+
+      const inputWrapper = document.createElement('div');
+      inputWrapper.className = 'PollNode__optionInputWrapper';
+
+      const votesBar = document.createElement('div');
+      votesBar.className = 'PollNode__optionInputVotes';
+      if (totalVotes > 0) {
+        const pct = ((Array.isArray(opt.votes) ? opt.votes.length : 0) / totalVotes) * 100;
+        votesBar.setAttribute('style', `width: ${pct}%`);
+      }
+
+      const votesCount = document.createElement('span');
+      votesCount.className = 'PollNode__optionInputVotesCount';
+      const v = Array.isArray(opt.votes) ? opt.votes.length : 0;
+      votesCount.textContent = v > 0 ? (v === 1 ? '1 vote' : `${v} votes`) : '';
+
+      const inputText = document.createElement('input');
+      inputText.className = 'PollNode__optionInput';
+      inputText.setAttribute('type', 'text');
+      inputText.setAttribute('value', opt.text || '');
+      inputText.setAttribute('readonly', 'true');
+
+      inputWrapper.appendChild(votesBar);
+      inputWrapper.appendChild(votesCount);
+      inputWrapper.appendChild(inputText);
+
+      optionRow.appendChild(checkboxWrapper);
+      optionRow.appendChild(inputWrapper);
+
+      inner.appendChild(optionRow);
+    }
+
+    const footer = document.createElement('div');
+    footer.className = 'PollNode__footer';
+    inner.appendChild(footer);
+
+    // Attach data attributes for the client-side hydrator to pick up
+    try {
+      container.setAttribute('data-lexical-poll-question', this.getQuestion());
+      container.setAttribute('data-lexical-poll-options', JSON.stringify(options));
+    } catch (err) {
+      // ignore serialization errors
+      console.warn('Failed to set poll data attributes', err);
+    }
+
+    container.appendChild(inner);
+
+    return { element: container };
   }
 
   createDOM(): HTMLElement {

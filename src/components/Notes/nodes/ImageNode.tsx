@@ -139,8 +139,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
           typeof parsed === 'string' ? parsed : JSON.stringify(parsed);
         const editorState = nestedEditor.parseEditorState(editorStateInput);
         // Some EditorState representations may not implement isEmpty; guard it.
-        if (typeof (editorState as any).isEmpty === 'function') {
-          if (!(editorState as any).isEmpty()) {
+        if (typeof (editorState).isEmpty === 'function') {
+          if (!(editorState).isEmpty()) {
             nestedEditor.setEditorState(editorState);
           }
         } else {

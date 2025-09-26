@@ -329,7 +329,29 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
     };
 
     const handleNotesChange = async (newNotes: string) => {
-        setNotes(newNotes);
+        const isValidLexical = (s: string) => {
+            try {
+                const p = JSON.parse(s);
+                return typeof p === 'object' && p !== null;
+            } catch {
+                return false;
+            }
+        };
+
+        const payload = isValidLexical(newNotes)
+            ? newNotes
+            : JSON.stringify({
+                root: {
+                    children: [
+                        {
+                            type: 'paragraph',
+                            children: [{ text: newNotes }],
+                        },
+                    ],
+                },
+            });
+
+        setNotes(payload);
 
         // Save notes to transaction description field
         if (transaction_id && transaction) {
@@ -340,7 +362,7 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
                     total_cost: typeof transaction.total_cost === 'number'
                         ? transaction.total_cost
                         : parseFloat(transaction.total_cost as string) || 0,
-                    description: newNotes, // Update the description with new notes
+                    description: payload, // Update the description with new notes
                     is_completed: transaction.is_completed,
                     is_paid: transaction.is_paid,
                     is_refurb: transaction.is_refurb,

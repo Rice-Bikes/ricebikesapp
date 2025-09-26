@@ -29,7 +29,9 @@ export function setFloatingElemPosition(
   const editorScrollerRect = scrollerElem.getBoundingClientRect();
 
   let top = targetRect.top - floatingElemRect.height - verticalGap;
-  let left = targetRect.left - horizontalOffset;
+  // Prefer to place the floating toolbar to the left of the target (so it
+  // doesn't cover text). We subtract the floating width and a small gap.
+  let left = targetRect.left - floatingElemRect.width - horizontalOffset;
 
   // Check if text is end-aligned
   const selection = window.getSelection();
@@ -45,6 +47,7 @@ export function setFloatingElemPosition(
 
       if (textAlign === 'right' || textAlign === 'end') {
         // For end-aligned text, position the toolbar relative to the text end
+        // (so it doesn't float off the left edge).
         left = targetRect.right - floatingElemRect.width + horizontalOffset;
       }
     }
@@ -58,12 +61,24 @@ export function setFloatingElemPosition(
       verticalGap * (isLink ? 9 : 2);
   }
 
-  if (left + floatingElemRect.width > editorScrollerRect.right) {
-    left = editorScrollerRect.right - floatingElemRect.width - horizontalOffset;
+  // If the preferred left position would overflow the right, clamp it.
+  const maxLeft = editorScrollerRect.right - floatingElemRect.width - horizontalOffset;
+  if (left > maxLeft) {
+    left = maxLeft;
   }
 
-  if (left < editorScrollerRect.left) {
-    left = editorScrollerRect.left + horizontalOffset;
+  // If the preferred left position would overflow the left edge, fall back
+  // to aligning the toolbar just inside the left edge (or place it on top
+  // of the anchor when there's no room to the left).
+  const minLeft = editorScrollerRect.left + horizontalOffset;
+  if (left < minLeft) {
+    // Try placing the toolbar above the target centered horizontally with a
+    // small offset so it doesn't overlap selection when space to the left
+    // is insufficient.
+    left = Math.max(
+      minLeft,
+      targetRect.left + (targetRect.width - floatingElemRect.width) / 2,
+    );
   }
 
   top -= anchorElementRect.top;

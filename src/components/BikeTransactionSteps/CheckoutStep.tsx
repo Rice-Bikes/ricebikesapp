@@ -89,14 +89,40 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({ onStepComplete }) =>
     };
 
     const handleNotesChange = async (newNotes: string) => {
-        setNotes(newNotes);
+        // Ensure we persist valid Lexical JSON. If the incoming string is not
+        // valid JSON (some callers may pass plain text), wrap it in a minimal
+        // Lexical paragraph so we never overwrite saved Canonical JSON with
+        // plain text/HTML and lose decorator nodes like youtube.
+        const isValidLexical = (s: string) => {
+            try {
+                const p = JSON.parse(s);
+                return typeof p === 'object' && p !== null;
+            } catch {
+                return false;
+            }
+        };
+
+        const payload = isValidLexical(newNotes)
+            ? newNotes
+            : JSON.stringify({
+                root: {
+                    children: [
+                        {
+                            type: 'paragraph',
+                            children: [{ text: newNotes }],
+                        },
+                    ],
+                },
+            });
+
+        setNotes(payload);
 
         // Save notes to transaction description field
         if (transaction_id && transaction) {
             try {
                 await DBModel.updateTransaction(transaction_id, {
                     ...transaction,
-                    description: newNotes
+                    description: payload,
                 });
 
                 // Invalidate transaction query to refresh data

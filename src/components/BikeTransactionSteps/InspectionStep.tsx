@@ -76,14 +76,36 @@ export const InspectionStep: React.FC<InspectionStepProps> = ({ onStepComplete }
     };
 
     const handleNotesChange = async (newNotes: string) => {
-        setNotes(newNotes);
+        const isValidLexical = (s: string) => {
+            try {
+                const p = JSON.parse(s);
+                return typeof p === 'object' && p !== null;
+            } catch {
+                return false;
+            }
+        };
+
+        const payload = isValidLexical(newNotes)
+            ? newNotes
+            : JSON.stringify({
+                root: {
+                    children: [
+                        {
+                            type: 'paragraph',
+                            children: [{ text: newNotes }],
+                        },
+                    ],
+                },
+            });
+
+        setNotes(payload);
 
         // Save notes to transaction description field
         if (transaction_id && transaction) {
             try {
                 await DBModel.updateTransaction(transaction_id, {
                     ...transaction,
-                    description: newNotes
+                    description: payload
                 });
 
                 // Invalidate transaction query to refresh data

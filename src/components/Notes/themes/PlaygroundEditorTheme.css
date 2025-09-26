@@ -73,7 +73,7 @@
 }
 
 .PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderline::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   right: 0;
@@ -82,7 +82,7 @@
 }
 
 .PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textStrikethrough::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   right: 0;
@@ -92,7 +92,7 @@
 
 .PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough::before,
 .PlaygroundEditorTheme__tabNode.PlaygroundEditorTheme__textUnderlineStrikethrough::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   right: 0;
@@ -149,7 +149,7 @@
   position: absolute;
 }
 .PlaygroundEditorTheme__blockCursor:after {
-  content: '';
+  content: "";
   display: block;
   position: absolute;
   top: -2px;
@@ -236,7 +236,7 @@
 }
 .PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > th:after,
 .PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > td:after {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   bottom: 0;
@@ -256,7 +256,7 @@
   left: 0;
 }
 .PlaygroundEditorTheme__tableFrozenColumn tr > :first-child::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 0;
@@ -318,16 +318,22 @@
   top: 0;
   background-color: highlight;
   mix-blend-mode: multiply;
-  content: '';
+  content: "";
   pointer-events: none;
 }
 .PlaygroundEditorTheme__tableAddColumns {
   position: absolute;
-  background-color: #eee;
+  background-color: rgba(238, 238, 238, 0.9);
   height: 100%;
   animation: table-controls 0.2s ease;
   border: 0;
   cursor: pointer;
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
 }
 .PlaygroundEditorTheme__tableAddColumns:after {
   background-image: url(../images/icons/plus.svg);
@@ -335,7 +341,7 @@
   background-position: center;
   background-repeat: no-repeat;
   display: block;
-  content: ' ';
+  content: " ";
   position: absolute;
   top: 0;
   left: 0;
@@ -345,15 +351,22 @@
 }
 .PlaygroundEditorTheme__tableAddColumns:hover,
 .PlaygroundEditorTheme__tableAddRows:hover {
-  background-color: #c9dbf0;
+  background-color: #e9f2fb;
+  transform: translateY(-1px);
 }
 .PlaygroundEditorTheme__tableAddRows {
   position: absolute;
   width: calc(100% - 25px);
-  background-color: #eee;
+  background-color: rgba(238, 238, 238, 0.9);
   animation: table-controls 0.2s ease;
   border: 0;
   cursor: pointer;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
 }
 .PlaygroundEditorTheme__tableAddRows:after {
   background-image: url(../images/icons/plus.svg);
@@ -361,7 +374,7 @@
   background-position: center;
   background-repeat: no-repeat;
   display: block;
-  content: ' ';
+  content: " ";
   position: absolute;
   top: 0;
   left: 0;
@@ -391,21 +404,24 @@
   top: 6px;
   position: absolute;
   z-index: 4;
-  width: 20px;
-  height: 20px;
+  width: 36px;
+  height: 36px;
 }
 .PlaygroundEditorTheme__tableCellActionButton {
-  background-color: #eee;
+  background-color: #fff;
   display: block;
-  border: 0;
-  border-radius: 20px;
-  width: 20px;
-  height: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
   color: #222;
   cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
 }
 .PlaygroundEditorTheme__tableCellActionButton:hover {
-  background-color: #ddd;
+  background-color: #fbfcfd;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
 }
 .PlaygroundEditorTheme__characterLimit {
   display: inline;
@@ -415,41 +431,70 @@
   padding: 0;
   margin: 0;
   list-style-position: outside;
+  color: black;
+  list-style-type: decimal !important;
+  padding-left: 1.5em;
 }
+
 .PlaygroundEditorTheme__ol2 {
   padding: 0;
   margin: 0;
   list-style-type: upper-alpha;
   list-style-position: outside;
+  color: black;
+  list-style-type: upper-alpha !important;
 }
 .PlaygroundEditorTheme__ol3 {
   padding: 0;
   margin: 0;
   list-style-type: lower-alpha;
   list-style-position: outside;
+  color: black;
+  list-style-type: lower-alpha !important;
 }
 .PlaygroundEditorTheme__ol4 {
   padding: 0;
   margin: 0;
   list-style-type: upper-roman;
   list-style-position: outside;
+  color: black;
+  list-style-type: upper-roman !important;
 }
 .PlaygroundEditorTheme__ol5 {
   padding: 0;
   margin: 0;
   list-style-type: lower-roman;
   list-style-position: outside;
+  color: black;
+  list-style-type: lower-roman !important;
 }
 .PlaygroundEditorTheme__ul {
   padding: 0;
   margin: 0;
   list-style-position: outside;
+  color: black;
+  /* Ensure markers show even if a global `li { list-style-type: none }` exists */
+  list-style-type: disc !important;
+  padding-left: 1.2em;
 }
 .PlaygroundEditorTheme__listItem {
   margin: 0 32px;
   font-family: var(--listitem-marker-font-family);
   font-size: var(--listitem-marker-font-size);
   background-color: var(--listitem-marker-background-color);
+  color: black;
+}
+.PlaygroundEditorTheme__ul > li.PlaygroundEditorTheme__listItem {
+  /* Unordered list items: show bullets */
+  list-style-type: disc !important;
+  margin: 0;
+  display: list-item;
+}
+.PlaygroundEditorTheme__ol1 > li.PlaygroundEditorTheme__listItem {
+  /* Ordered list items: show numbers */
+  list-style-type: decimal !important;
+  margin: 0;
+  display: list-item;
 }
 .PlaygroundEditorTheme__listItem::marker {
   color: var(--listitem-marker-color);
@@ -475,7 +520,7 @@
 }
 .PlaygroundEditorTheme__listItemUnchecked:before,
 .PlaygroundEditorTheme__listItemChecked:before {
-  content: '\200B';
+  content: "\200B";
   width: 0.9em;
   height: 0.9em;
   top: 50%;
@@ -505,7 +550,7 @@
   background-repeat: no-repeat;
 }
 .PlaygroundEditorTheme__listItemChecked:after {
-  content: '';
+  content: "";
   cursor: pointer;
   border-color: #fff;
   border-style: solid;
@@ -520,6 +565,7 @@
 }
 .PlaygroundEditorTheme__nestedListItem {
   list-style-type: none;
+  color: black;
 }
 .PlaygroundEditorTheme__nestedListItem:before,
 .PlaygroundEditorTheme__nestedListItem:after {
@@ -605,7 +651,7 @@
   cursor: pointer;
 }
 .PlaygroundEditorTheme__hr:after {
-  content: '';
+  content: "";
   display: block;
   height: 2px;
   background-color: #ccc;

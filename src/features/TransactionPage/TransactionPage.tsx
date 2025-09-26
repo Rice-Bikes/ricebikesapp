@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { Button, Stack, List, ListItem, Grid2, Skeleton } from "@mui/material";
 import { OrderRequest, User } from "../../model";
@@ -190,11 +190,24 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const [isEmployee, setIsEmployee] = useState<boolean>(false);
 
   // const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
+  // Remember last checked netid to avoid repeatedly calling fetchUser for
+  // the same customer when transactionData updates (prevents noisy requests
+  // like `/users/eesanders25` on every transaction refetch).
+  const lastCheckedNetIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (transactionData?.Customer?.email)
-      if (transactionType !== "Retrospec") checkUser.mutate(transactionData.Customer.email.split("@")[0]);
+    try {
+      const email = transactionData?.Customer?.email;
+      if (!email) return;
+      const netId = email.split("@")[0];
+      if (transactionType === "Retrospec") return;
+      if (lastCheckedNetIdRef.current === netId) return;
+      lastCheckedNetIdRef.current = netId;
+      checkUser.mutate(netId);
+    } catch {
+      // ignore
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactionData]);
+  }, [transactionData, transactionType]);
 
   const sendCheckoutEmail = useMutation({
     mutationFn: (customer: Customer) => {
@@ -667,7 +680,23 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     queryClient.resetQueries({
       queryKey: ["transactionLogs", transaction_id],
     });
-    setDescription(newNotes);
+    // Ensure we store valid Lexical JSON. If the incoming notes are plain
+    // text, wrap them in a minimal Lexical paragraph node to avoid
+    // overwriting canonical editor JSON (which may contain decorator nodes).
+    const isValidLexical = (s: string) => {
+      try {
+        const p = JSON.parse(s);
+        return typeof p === 'object' && p !== null;
+      } catch {
+        return false;
+      }
+    };
+
+    const payload = isValidLexical(newNotes)
+      ? newNotes
+      : JSON.stringify({ root: { children: [{ type: 'paragraph', children: [{ text: newNotes }] }] } });
+
+    setDescription(payload);
   };
 
   useEffect(() => {

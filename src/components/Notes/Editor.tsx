@@ -26,7 +26,6 @@ import { TabIndentationPlugin } from '@lexical/react/LexicalTabIndentationPlugin
 import { TablePlugin } from '@lexical/react/LexicalTablePlugin';
 import { useLexicalEditable } from '@lexical/react/useLexicalEditable';
 import { CAN_USE_DOM } from '@lexical/utils';
-import * as React from 'react';
 import { useEffect, useState } from 'react';
 
 import { useSettings } from './context/SettingsContext';
@@ -74,7 +73,7 @@ type EditorProps = {
   onSave: (html: string) => void;
 };
 
-export default function Editor({  onSave }: EditorProps): JSX.Element {
+export default function Editor({ onSave }: EditorProps): JSX.Element {
   const { historyState } = useSharedHistoryContext();
   const {
     settings: {
@@ -97,9 +96,9 @@ export default function Editor({  onSave }: EditorProps): JSX.Element {
     },
   } = useSettings();
   const isEditable = useLexicalEditable();
-  const placeholder =  isRichText
-      ? 'Enter some rich text...'
-      : 'Enter some plain text...';
+  const placeholder = isRichText
+    ? 'Enter some rich text...'
+    : 'Enter some plain text...';
   const [floatingAnchorElem, setFloatingAnchorElem] =
     useState<HTMLDivElement | null>(null);
   const [isSmallWidthViewport, setIsSmallWidthViewport] =
@@ -130,6 +129,21 @@ export default function Editor({  onSave }: EditorProps): JSX.Element {
       window.removeEventListener('resize', updateViewPortWidth);
     };
   }, [isSmallWidthViewport]);
+
+  // Expose the active editor on window for integration points (save path)
+  // so callers outside the composer can access the small helper installed by
+  // AttributionPlugin. This is a pragmatic, low-risk shim for now.
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).__currentLexicalEditor = editor;
+    return () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((window as any).__currentLexicalEditor === editor) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (window as any).__currentLexicalEditor;
+      }
+    };
+  }, [editor]);
 
   return (
     <>

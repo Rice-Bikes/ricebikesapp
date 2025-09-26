@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import DBModel, { User } from "../../model";
 import { Button, Box, Typography, Paper } from "@mui/material";
 import { EditorApp } from "./EditorContainer";
+import LexicalStaticRenderer from "./LexicalStaticRenderer";
 import { toast } from "react-toastify";
 
 
@@ -69,19 +70,26 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) =
               borderRadius: 1
             }}
           >
-            <Typography
-              variant="body2"
-              component="div"
-              sx={{
-                fontFamily: 'monospace',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                margin: 0,
-                fontSize: '14px',
-                lineHeight: 1.5
-              }}
-              dangerouslySetInnerHTML={{ __html: editorState || "No notes yet. Click 'Add Notes' to get started." }}
-            />
+            {editorState ? (
+              <Box sx={{ minHeight: 120 }}>
+                <LexicalStaticRenderer initialValue={editorState} />
+              </Box>
+            ) : (
+              <Typography
+                variant="body2"
+                component="div"
+                sx={{
+                  fontFamily: 'monospace',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  margin: 0,
+                  fontSize: '14px',
+                  lineHeight: 1.5
+                }}
+              >
+                No notes yet. Click 'Add Notes' to get started.
+              </Typography>
+            )}
           </Paper>
           <Button
             onClick={() => setIsEditing(true)}
@@ -96,5 +104,6 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) =
     </Box>
   );
 };
+
 
 export default Notes;

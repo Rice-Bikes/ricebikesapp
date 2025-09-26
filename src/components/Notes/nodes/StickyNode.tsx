@@ -16,11 +16,11 @@ import type {
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
-import type {JSX} from 'react';
+import type { JSX } from 'react';
 
-import {$setSelection, createEditor, DecoratorNode} from 'lexical';
+import { $setSelection, createEditor, DecoratorNode } from 'lexical';
 import * as React from 'react';
-import {createPortal} from 'react-dom';
+import { createPortal } from 'react-dom';
 
 const StickyComponent = React.lazy(() => import('./StickyComponent'));
 
@@ -76,8 +76,8 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
         const editorStateInput =
           typeof parsed === 'string' ? parsed : JSON.stringify(parsed);
         const editorState = nestedEditor.parseEditorState(editorStateInput);
-        if (typeof (editorState as any).isEmpty === 'function') {
-          if (!(editorState as any).isEmpty()) {
+        if (typeof (editorState).isEmpty === 'function') {
+          if (!(editorState).isEmpty()) {
             nestedEditor.setEditorState(editorState);
           }
         } else {

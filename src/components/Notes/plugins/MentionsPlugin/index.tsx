@@ -6,21 +6,24 @@
  *
  */
 
-import type {JSX} from 'react';
+import type { JSX } from 'react';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import {
   LexicalTypeaheadMenuPlugin,
   MenuOption,
   MenuTextMatch,
   useBasicTypeaheadTriggerMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
-import {TextNode} from 'lexical';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import { TextNode } from 'lexical';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import { useQuery } from '@tanstack/react-query';
 
-import {$createMentionNode} from '../../nodes/MentionNode';
+import { $createMentionNode } from '../../nodes/MentionNode';
+import DBModel, { User } from '../../../../model';
+import { queryClient } from '../../../../app/queryClient';
 
 const PUNCTUATION =
   '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';
@@ -53,16 +56,16 @@ const LENGTH_LIMIT = 75;
 
 const AtSignMentionsRegex = new RegExp(
   '(^|\\s|\\()(' +
-    '[' +
-    TRIGGERS +
-    ']' +
-    '((?:' +
-    VALID_CHARS +
-    VALID_JOINS +
-    '){0,' +
-    LENGTH_LIMIT +
-    '})' +
-    ')$',
+  '[' +
+  TRIGGERS +
+  ']' +
+  '((?:' +
+  VALID_CHARS +
+  VALID_JOINS +
+  '){0,' +
+  LENGTH_LIMIT +
+  '})' +
+  ')$',
 );
 
 // 50 is the longest alias length limit.
@@ -71,15 +74,15 @@ const ALIAS_LENGTH_LIMIT = 50;
 // Regex used to match alias.
 const AtSignMentionsRegexAliasRegex = new RegExp(
   '(^|\\s|\\()(' +
-    '[' +
-    TRIGGERS +
-    ']' +
-    '((?:' +
-    VALID_CHARS +
-    '){0,' +
-    ALIAS_LENGTH_LIMIT +
-    '})' +
-    ')$',
+  '[' +
+  TRIGGERS +
+  ']' +
+  '((?:' +
+  VALID_CHARS +
+  '){0,' +
+  ALIAS_LENGTH_LIMIT +
+  '})' +
+  ')$',
 );
 
 // At most, 5 suggestions are shown in the popup.
@@ -493,13 +496,20 @@ const dummyMentionsData = [
   'Zuckuss',
 ];
 
-const dummyLookupService = {
+const userLookupService = {
   search(string: string, callback: (results: Array<string>) => void): void {
+    const users: User[] = queryClient.getQueryData(['users']) ?? new Array<User>();
     setTimeout(() => {
-      const results = dummyMentionsData.filter((mention) =>
+      const results = users.map((user: User) => user.firstname + ' ' + user.lastname).filter((mention: string) =>
         mention.toLowerCase().includes(string.toLowerCase()),
       );
-      callback(results);
+      if (results.length === 0) {
+        // If no results from user list, show dummy data
+        callback(dummyMentionsData.filter((mention: string) =>
+          mention.toLowerCase().includes(string.toLowerCase())));
+      } else {
+        callback(results);
+      }
     }, 500);
   },
 };
@@ -523,7 +533,7 @@ function useMentionLookupService(mentionString: string | null) {
     }
 
     mentionsCache.set(mentionString, null);
-    dummyLookupService.search(mentionString, (newResults) => {
+    userLookupService.search(mentionString, (newResults) => {
       mentionsCache.set(mentionString, newResults);
       setResults(newResults);
     });
@@ -590,6 +600,13 @@ function MentionsTypeaheadMenuItem({
   if (isSelected) {
     className += ' selected';
   }
+
+  useQuery({
+    queryKey: ['users'],
+    queryFn: async () => await DBModel.fetchUsers(),
+  });
+
+
   return (
     <li
       key={option.key}
@@ -666,31 +683,31 @@ export default function NewMentionsPlugin(): JSX.Element | null {
       options={options}
       menuRenderFn={(
         anchorElementRef,
-        {selectedIndex, selectOptionAndCleanUp, setHighlightedIndex},
+        { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex },
       ) =>
         anchorElementRef.current && results.length
           ? ReactDOM.createPortal(
-              <div className="typeahead-popover mentions-menu">
-                <ul>
-                  {options.map((option, i: number) => (
-                    <MentionsTypeaheadMenuItem
-                      index={i}
-                      isSelected={selectedIndex === i}
-                      onClick={() => {
-                        setHighlightedIndex(i);
-                        selectOptionAndCleanUp(option);
-                      }}
-                      onMouseEnter={() => {
-                        setHighlightedIndex(i);
-                      }}
-                      key={option.key}
-                      option={option}
-                    />
-                  ))}
-                </ul>
-              </div>,
-              anchorElementRef.current,
-            )
+            <div className="typeahead-popover mentions-menu">
+              <ul>
+                {options.map((option, i: number) => (
+                  <MentionsTypeaheadMenuItem
+                    index={i}
+                    isSelected={selectedIndex === i}
+                    onClick={() => {
+                      setHighlightedIndex(i);
+                      selectOptionAndCleanUp(option);
+                    }}
+                    onMouseEnter={() => {
+                      setHighlightedIndex(i);
+                    }}
+                    key={option.key}
+                    option={option}
+                  />
+                ))}
+              </ul>
+            </div>,
+            anchorElementRef.current,
+          )
           : null
       }
     />

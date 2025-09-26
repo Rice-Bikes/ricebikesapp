@@ -221,7 +221,7 @@ export function EditorApp({ initialValue, onSave }: EditorAppProps): JSX.Element
 
   let editorState;
   if (initialValue && isValidLexicalState(initialValue)) {
-    editorState = JSON.parse(initialValue);
+    editorState = initialValue;
   } else {
     if (initialValue && initialValue.trim() !== "") {
       console.warn("EditorApp: initialValue is not valid Lexical JSON. Ignoring and using empty state.", initialValue);

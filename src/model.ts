@@ -1048,8 +1048,17 @@ class DBModel {
       .catch((error) => {
         throw new Error("Error deleting repair data: " + error); // More detailed error logging
       });
-  public static fetchUser = async (netid: string) =>
-    fetch(`${hostname}/users/${netid}`)
+  public static fetchUser = async (netid: string) => {
+    try {
+      // Lightweight instrumentation: log who is being fetched and the API host.
+      // This helps trace where requests like `/users/eesanders25` are coming from.
+      // The stack trace provides an initiator hint in the browser console.
+      // Remove this logging after debugging.
+  console.log('DBModel.fetchUser called', { netid, hostname, stack: new Error().stack });
+    } catch {
+      // ignore logging failures
+    }
+    return fetch(`${hostname}/users/${netid}`)
       .then((response) => response.json())
       .then((itemsData: unknown) => {
         console.log("Raw users Data:", itemsData);
@@ -1073,6 +1082,7 @@ class DBModel {
       .catch((error) => {
         throw new Error("Error loading server data: " + error); // More detailed error logging
       });
+  };
   public static fetchUsers = async () =>
     fetch(`${hostname}/users`)
       .then((response) => response.json())
@@ -1121,8 +1131,15 @@ class DBModel {
       .catch((error) => {
         throw new Error("Error posting user data: " + error); // More detailed error logging
       });
-  public static updateUser = async (user: User) =>
-    fetch(`${hostname}/users/${user.user_id}`, {
+  public static updateUser = async (user: User) => {
+    try {
+      // Lightweight instrumentation: log which user object is being updated.
+      // Useful for tracking down unexpected PATCHes to /users/:id
+  console.log('DBModel.updateUser called', { user_id: user?.user_id, hostname, stack: new Error().stack });
+    } catch {
+      // ignore logging failures
+    }
+    return fetch(`${hostname}/users/${user.user_id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -1142,6 +1159,7 @@ class DBModel {
       .catch((error) => {
         throw new Error("Error patching user data: " + error); // More detailed error logging
       });
+  };
   public static deleteUser = async (netid: string) =>
     fetch(`${hostname}/users/${netid}`, {
       method: "DELETE",

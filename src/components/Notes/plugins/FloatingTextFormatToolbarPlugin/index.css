@@ -21,6 +21,10 @@
   transition: opacity 0.5s;
   height: 35px;
   will-change: transform;
+  /* Move the popup fully to the left of its anchor so it doesn't overlap
+     editor content. We subtract a small offset so there's a gap. */
+  --floating-left-offset: 8px;
+  transform: translateX(calc(-100% - var(--floating-left-offset)));
 }
 
 .floating-text-format-popup button.popup-item {
@@ -76,6 +80,7 @@
   vertical-align: middle;
   -webkit-appearance: none;
   -moz-appearance: none;
+  appearance: none;
   width: 70px;
   font-size: 14px;
   color: #777;
@@ -137,5 +142,14 @@
 @media (max-width: 1024px) {
   .floating-text-format-popup button.insert-comment {
     display: none;
+  }
+}
+
+/* On small viewports there's less room to the left — fall back to placing
+   the toolbar on top of the anchor (to avoid being clipped off-screen). */
+@media (max-width: 420px) {
+  .floating-text-format-popup {
+    transform: translateX(0);
+    left: 6px;
   }
 }
