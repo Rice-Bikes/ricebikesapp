@@ -3,8 +3,8 @@ import { createHeadlessEditor } from '@lexical/headless';
 import { LexicalEditor } from 'lexical';
 import { $generateHtmlFromNodes } from '@lexical/html';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
-import ReadOnlyEditor from './ReadOnlyEditor';
 import hydratePolls from './hydratePolls';
+import './headless.css';
 
 interface Props {
     initialValue: string;
@@ -55,15 +55,10 @@ export default function LexicalStaticRenderer({ initialValue, className }: Props
                     // environment the editor-scoped CSS (e.g. .editor ol ::marker)
                     // may not be present. Inject a minimal, self-contained style
                     // block so ordered lists render correctly in the exported HTML.
-                    const listStyle = `\n<style>
-/* Minimal ordered-list styles for exported/static HTML */
-ol { margin: 0 0 1em 1.6em; padding-left: 0; }
-ol li { margin: 0.1em 0; }
-/* Use ::marker where supported for modern browsers */
-ol li::marker { font-weight: 500; color: #444; }
-/* Fallback for environments that don't support ::marker */
-ol li { list-style: decimal; }
-</style>\n`;
+                    // Instead of embedding a large inline style block we link to
+                    // a dedicated static CSS file served from /lexical-static.css.
+                    // This keeps the exported HTML cleaner and allows caching.
+                    const listStyle = `\n<link rel="stylesheet" href="/lexical-static.css" />\n`;
 
                     // we'll build final HTML into 'out' (listStyle is prepended later)
 
@@ -76,6 +71,180 @@ ol li { list-style: decimal; }
                     try {
                         const parserContainer = document.createElement('div');
                         parserContainer.innerHTML = out;
+
+                        // --- Normalize checklist / checkbox rendering ---
+                        // Lexical may export checklist items as spans/divs with
+                        // role/attributes indicating checked state. Detect common
+                        // patterns and replace them with an accessible
+                        // checkbox + label structure so static HTML shows checked
+                        // state and can be styled consistently.
+                        try {
+                            // Patterns to look for:
+                            // 1. <li class="check-list-item">...<span data-checked="true" ...> or similar
+                            // 2. <span data-lexical-checklistchecked> or role="checkbox" aria-checked
+                            const checklistItems = Array.from(parserContainer.querySelectorAll('li, div, span'));
+                            for (const el of checklistItems) {
+                                try {
+                                    // If there's already an input[type=checkbox] inside this element,
+                                    // preserve its checked state and make it non-interactive.
+                                    if (el.querySelector) {
+                                        const existingInput = el.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
+                                        if (existingInput) {
+                                            try {
+                                                // Determine checked state from attribute or property
+                                                const attrChecked = existingInput.getAttribute && existingInput.getAttribute('checked');
+                                                const ariaChecked = existingInput.getAttribute && existingInput.getAttribute('aria-checked');
+                                                const checked = (existingInput.checked === true) || attrChecked === 'true' || attrChecked === 'checked' || ariaChecked === 'true';
+                                                existingInput.disabled = true;
+                                                existingInput.classList.add('LexicalStatic__checklistInput');
+                                                // Ensure checked property reflects state
+                                                try {
+                                                    existingInput.checked = !!checked;
+                                                } catch {
+                                                    // ignore if not settable
+                                                }
+
+                                                // If there's no explicit label ancestor, wrap non-input
+                                                // children in a label and ensure the checkbox stays
+                                                // inside the same list item element. This preserves
+                                                // semantic <ul>/<ol> structures when the element is an <li>.
+                                                const hasLabelAncestor = existingInput.closest && existingInput.closest('label');
+                                                if (!hasLabelAncestor) {
+                                                    // Build a label containing everything except the input
+                                                    const label = document.createElement('label');
+                                                    label.className = 'LexicalStatic__checklistLabel';
+                                                    const children = Array.from(el.childNodes || []);
+                                                    for (const node of children) {
+                                                        if (node === existingInput) continue;
+                                                        label.appendChild(node.cloneNode(true));
+                                                    }
+
+                                                    // Remove existing child nodes (we'll re-append)
+                                                    while (el.firstChild) el.removeChild(el.firstChild);
+
+                                                    // Append the (disabled) input and the label into the original element
+                                                    const inputClone = existingInput.cloneNode(true) as HTMLElement;
+                                                    (inputClone as HTMLInputElement).disabled = true;
+                                                    inputClone.classList.add('LexicalStatic__checklistInput');
+                                                    (inputClone as HTMLInputElement).checked = !!((existingInput as HTMLInputElement).checked);
+
+                                                    el.appendChild(inputClone);
+                                                    el.appendChild(label);
+                                                }
+                                                // Move to next element since we've handled this one
+                                                continue;
+                                            } catch {
+                                                // fall through to other heuristics on error
+                                            }
+                                        }
+                                    }
+                                    // Prefer explicit aria-checked/role or data-checked attributes
+                                    const role = el.getAttribute && el.getAttribute('role');
+                                    const ariaChecked = el.getAttribute && el.getAttribute('aria-checked');
+                                    const dataChecked = el.getAttribute && el.getAttribute('data-checked');
+                                    const dataLexical = el.getAttribute && el.getAttribute('data-lexical-checklist-checked');
+                                    const hasCheckboxClass = el.className && /check|checkbox|checklist|Checklist/i.test(el.className as string);
+
+                                    let isCheckboxLike = false;
+                                    let checked = false;
+
+                                    if (role === 'checkbox') {
+                                        isCheckboxLike = true;
+                                        checked = ariaChecked === 'true' || ariaChecked === '1' || ariaChecked === 'checked';
+                                    }
+                                    if (!isCheckboxLike && (dataChecked === 'true' || dataChecked === '1' || dataChecked === 'checked' || dataLexical === 'true')) {
+                                        isCheckboxLike = true;
+                                        checked = true;
+                                    }
+                                    // detect inner marker spans like <span class="checkbox">✓</span>
+                                    if (!isCheckboxLike && hasCheckboxClass) {
+                                        // if the element contains a child with typical marker characters
+                                        const innerText = (el.textContent || '').trim();
+                                        if (/^[✓✔xX]$/.test(innerText) || innerText === '\u2713') {
+                                            isCheckboxLike = true;
+                                            checked = true;
+                                        }
+                                    }
+
+                                    if (isCheckboxLike) {
+                                        // Build input + label markup. If the element is an <li>
+                                        // we must preserve the tag so native list markers remain
+                                        // visible; otherwise fall back to wrapping with a div.
+                                        const isLi = (el && (el as Element).tagName && (el as Element).tagName.toLowerCase() === 'li');
+
+                                        const input = document.createElement('input');
+                                        input.type = 'checkbox';
+                                        input.disabled = true;
+                                        if (checked) input.checked = true;
+                                        input.className = 'LexicalStatic__checklistInput';
+
+                                        const label = document.createElement('label');
+                                        label.className = 'LexicalStatic__checklistLabel';
+
+                                        // Extract content and strip marker characters from the start
+                                        let contentHtml = el.innerHTML || '';
+                                        contentHtml = contentHtml.replace(/^\s*(?:[\u2713\u2714\u2715xX]|\[[xX ]\])\s*/i, '');
+                                        label.innerHTML = contentHtml;
+
+                                        if (isLi) {
+                                            // Mutate the existing <li> in-place to preserve list markers
+                                            try {
+                                                const li = el as Element;
+                                                // Clear existing children
+                                                while (li.firstChild) li.removeChild(li.firstChild);
+                                                // Add a marker class to the li so editor CSS can target it
+                                                li.classList.add('LexicalStatic__checklistItem');
+                                                li.appendChild(input);
+                                                li.appendChild(label);
+                                            } catch {
+                                                // On any error fallback to wrapper replacement below
+                                                const wrapper = document.createElement('div');
+                                                wrapper.className = 'LexicalStatic__checklistItem';
+                                                wrapper.appendChild(input);
+                                                wrapper.appendChild(label);
+                                                el.replaceWith(wrapper);
+                                            }
+                                        } else {
+                                            const wrapper = document.createElement('div');
+                                            wrapper.className = 'LexicalStatic__checklistItem';
+                                            wrapper.appendChild(input);
+                                            wrapper.appendChild(label);
+                                            el.replaceWith(wrapper);
+                                        }
+                                    }
+                                } catch {
+                                    // ignore per-element failures
+                                }
+                            }
+                        } catch (checkboxErr) {
+                            // keep original HTML if checklist transform fails
+                            console.warn('Checklist normalization failed', checkboxErr);
+                        }
+
+                        // Repair invalid serialization cases where a <div> was inserted
+                        // directly under a <ul> (e.g. <ul><div class="LexicalStatic__checklistItem">...</div></ul>)
+                        // Convert those divs into <li> elements to preserve correct list semantics.
+                        try {
+                            const uls = Array.from(parserContainer.querySelectorAll('ul'));
+                            for (const ul of uls) {
+                                const children = Array.from(ul.children || []);
+                                for (const child of children) {
+                                    if (child.nodeType === 1 && child.classList && child.classList.contains('LexicalStatic__checklistItem') && child.tagName.toLowerCase() === 'div') {
+                                        const li = document.createElement('li');
+                                        // copy classes (keep the checklist item class)
+                                        li.className = child.className || '';
+                                        // move all children over
+                                        while (child.firstChild) {
+                                            li.appendChild(child.firstChild);
+                                        }
+                                        ul.replaceChild(li, child);
+                                    }
+                                }
+                            }
+                        } catch (repairErr) {
+                            // don't block export for repair failures
+                            console.warn('Failed to repair list structure for static render', repairErr);
+                        }
                         const pollSpans = Array.from(
                             parserContainer.querySelectorAll('span[data-lexical-poll-question]'),
                         );
@@ -226,6 +395,32 @@ ol li { list-style: decimal; }
                             }
                         }
 
+                        try {
+                            const quoteSelectors = [
+                                'blockquote',
+                                'div.QuoteNode',
+                                'div.QuoteNode__content',
+                                'span.quote',
+                                'div.quote',
+                            ].join(',');
+                            const quoteEls = Array.from(parserContainer.querySelectorAll(quoteSelectors));
+                            for (const qe of quoteEls) {
+                                try {
+                                    const text = (qe.textContent || '').trim();
+                                    if (!text) continue;
+                                    const bq = document.createElement('blockquote');
+                                    bq.className = 'QuoteNode__html';
+                                    // Preserve inner HTML where possible (links, formatting)
+                                    bq.innerHTML = qe.innerHTML || text;
+                                    qe.replaceWith(bq);
+                                } catch {
+                                    // ignore individual quote transform failures
+                                }
+                            }
+                        } catch {
+                            // ignore overall quote transform
+                        }
+
                         out = parserContainer.innerHTML;
                     } catch (parseErr) {
                         // ignore parser failures and continue with original out
@@ -256,7 +451,43 @@ ol li { list-style: decimal; }
                             const parsed = JSON.parse(initialValue);
                             const meta = parsed.__meta || {};
                             const at = meta.attributions || {};
-                            const summary = Object.keys(at).map((k) => ({ key: k, name: at[k].lastEditedBy?.name || 'unknown', at: at[k].lastEditedAt || '' }));
+                            const defaultAt = meta.defaultAttribution || { lastEditedBy: null, lastEditedAt: '' };
+
+                            // Prefer node-level attribution when the serialized children
+                            // include an `attribution` property (our AttributedParagraphNode)
+                            const nodeMap: Record<string, unknown> = {};
+                            try {
+                                if (parsed.root && Array.isArray(parsed.root.children)) {
+                                    for (const child of parsed.root.children) {
+                                        try {
+                                            const key = child && (child.key || child.id || child._key);
+                                            if (typeof key === 'string') {
+                                                if (child && child.attribution) {
+                                                    nodeMap[key] = child.attribution;
+                                                }
+                                            }
+                                        } catch {
+                                            // ignore malformed child
+                                        }
+                                    }
+                                }
+                            } catch {
+                                // ignore
+                            }
+
+                            const keys = Array.from(new Set([...Object.keys(at), ...Object.keys(nodeMap)]));
+                            const summary = keys.map((k) => {
+                                const nodeRecRaw = nodeMap[k] || null;
+                                if (nodeRecRaw) {
+                                    const nodeRec = nodeRecRaw as { lastEditedBy?: { id?: string; name?: string } | null; lastEditedAt?: string };
+                                    const name = (nodeRec && nodeRec.lastEditedBy && (nodeRec.lastEditedBy.name || nodeRec.lastEditedBy.id)) || 'unknown';
+                                    return ({ key: k, name, at: nodeRec.lastEditedAt || '' });
+                                }
+                                const rec = at[k] || null;
+                                const name = (rec && rec.lastEditedBy && (rec.lastEditedBy.name || rec.lastEditedBy.id)) || (defaultAt.lastEditedBy && (defaultAt.lastEditedBy.name || defaultAt.lastEditedBy.id)) || 'unknown';
+                                const atTime = (rec && rec.lastEditedAt) || defaultAt.lastEditedAt || '';
+                                return ({ key: k, name, at: atTime });
+                            });
                             setAttributionsSummary(summary);
                         } catch (err) {
                             console.warn('Failed to parse attributions for static renderer (post export)', err);
@@ -293,7 +524,6 @@ ol li { list-style: decimal; }
                         </ul>
                     </div>
                 )}
-                <ReadOnlyEditor initialValue={initialValue} />
             </div>
         );
     }

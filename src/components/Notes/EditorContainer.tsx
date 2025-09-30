@@ -6,9 +6,8 @@
  *
  */
 
-import { $createLinkNode } from '@lexical/link';
 import { $createListItemNode, $createListNode } from '@lexical/list';
-import { $createHeadingNode, $createQuoteNode } from '@lexical/rich-text';
+import { $createHeadingNode } from '@lexical/rich-text';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import {
   $createParagraphNode,
@@ -37,6 +36,7 @@ import TypingPerfPlugin from './plugins/TypingPerfPlugin';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
 import { parseAllowedColor } from './ui/ColorPicker';
+import { User } from '../../model';
 
 const playgroundConfig = {
   namespace: 'PlaygroundEditor',
@@ -50,87 +50,74 @@ const playgroundConfig = {
   html: { import: buildImportMap() },
 };
 
-console.warn(
-  'If you are profiling the playground app, please ensure you turn off the debug view. You can disable it by pressing on the settings control in the bottom-left of your screen and toggling the debug view setting.',
-);
 
 function $prepopulatedRichText() {
   const root = $getRoot();
   if (root.getFirstChild() === null) {
     const heading = $createHeadingNode('h1');
-    heading.append($createTextNode('Welcome to the playground'));
+    heading.append($createTextNode('Repair Inspection & Approved Repairs'));
     root.append(heading);
-    const quote = $createQuoteNode();
-    quote.append(
+
+    const intro = $createParagraphNode();
+    intro.append(
       $createTextNode(
-        `In case you were wondering what the black box at the bottom is – it's the debug view, showing the current state of the editor. ` +
-        `You can disable it by pressing on the settings control in the bottom-left of your screen and toggling the debug view setting.`,
+        'Use this template to record the bike inspection, the repairs approved by the customer, and any notes that the service technician should communicate to the customer.',
       ),
     );
-    root.append(quote);
-    const paragraph = $createParagraphNode();
-    paragraph.append(
-      $createTextNode('The playground is a demo environment built with '),
-      $createTextNode('@lexical/react').toggleFormat('code'),
-      $createTextNode('.'),
-      $createTextNode(' Try typing in '),
-      $createTextNode('some text').toggleFormat('bold'),
-      $createTextNode(' with '),
-      $createTextNode('different').toggleFormat('italic'),
-      $createTextNode(' formats.'),
+    root.append(intro);
+
+    // Inspection details
+    const inspectionHeading = $createHeadingNode('h2');
+    inspectionHeading.append($createTextNode('Inspection Details'));
+    root.append(inspectionHeading);
+
+    const inspectionPara = $createParagraphNode();
+    inspectionPara.append(
+      $createTextNode('Please enter a clear, concise summary of the inspection performed. Include observed issues, severity, and any diagnostic steps taken.'),
     );
-    root.append(paragraph);
-    const paragraph2 = $createParagraphNode();
-    paragraph2.append(
+    root.append(inspectionPara);
+
+    const inspectionList = $createListNode('bullet');
+    inspectionList.append(
+      $createListItemNode().append($createTextNode('Observed issue (location on bike):')),
+      $createListItemNode().append($createTextNode('Severity (minor/major/safety):')),
+      $createListItemNode().append($createTextNode('Diagnostic steps performed:')),
+    );
+    root.append(inspectionList);
+
+    // Approved repairs
+    const approvedHeading = $createHeadingNode('h2');
+    approvedHeading.append($createTextNode('Approved Repairs'));
+    root.append(approvedHeading);
+
+    const approvedPara = $createParagraphNode();
+    approvedPara.append($createTextNode('List the repairs approved by the customer, including parts, labor, and estimates.'));
+    root.append(approvedPara);
+
+    const approvedList = $createListNode('bullet');
+    approvedList.append(
+      $createListItemNode().append($createTextNode('Repair 1: (description, parts required, estimate)')),
+      $createListItemNode().append($createTextNode('Repair 2: (description, parts required, estimate)')),
+    );
+    root.append(approvedList);
+
+    // Parts and notes
+    const partsHeading = $createHeadingNode('h3');
+    partsHeading.append($createTextNode('Parts & Materials'));
+    root.append(partsHeading);
+
+    // Customer-facing notes
+    const customerHeading = $createHeadingNode('h2');
+    customerHeading.append($createTextNode('Customer Notes / Potential Issues'));
+    root.append(customerHeading);
+
+    const customerPara = $createParagraphNode();
+    customerPara.append(
       $createTextNode(
-        'Make sure to check out the various plugins in the toolbar. You can also use #hashtags or @-mentions too!',
+        'Summarize anything the customer should be aware of: safety concerns, follow-up maintenance, items that may require future attention, or optional upgrades.',
       ),
     );
-    root.append(paragraph2);
-    const paragraph3 = $createParagraphNode();
-    paragraph3.append(
-      $createTextNode(`If you'd like to find out more about Lexical, you can:`),
-    );
-    root.append(paragraph3);
-    const list = $createListNode('bullet');
-    list.append(
-      $createListItemNode().append(
-        $createTextNode(`Visit the `),
-        $createLinkNode('https://lexical.dev/').append(
-          $createTextNode('Lexical website'),
-        ),
-        $createTextNode(` for documentation and more information.`),
-      ),
-      $createListItemNode().append(
-        $createTextNode(`Check out the code on our `),
-        $createLinkNode('https://github.com/facebook/lexical').append(
-          $createTextNode('GitHub repository'),
-        ),
-        $createTextNode(`.`),
-      ),
-      $createListItemNode().append(
-        $createTextNode(`Playground code can be found `),
-        $createLinkNode(
-          'https://github.com/facebook/lexical/tree/main/packages/lexical-playground',
-        ).append($createTextNode('here')),
-        $createTextNode(`.`),
-      ),
-      $createListItemNode().append(
-        $createTextNode(`Join our `),
-        $createLinkNode('https://discord.com/invite/KmG4wQnnD9').append(
-          $createTextNode('Discord Server'),
-        ),
-        $createTextNode(` and chat with the team.`),
-      ),
-    );
-    root.append(list);
-    const paragraph4 = $createParagraphNode();
-    paragraph4.append(
-      $createTextNode(
-        `Lastly, we're constantly adding cool new features to this playground. So make sure you check back here when you next get a chance :).`,
-      ),
-    );
-    root.append(paragraph4);
+    root.append(customerPara);
   }
 }
 
@@ -200,11 +187,12 @@ function buildImportMap(): DOMConversionMap {
 }
 
 type EditorAppProps = Readonly<{
+  user: User;
   initialValue: string;
   onSave: (html: string) => void;
 }>;
 
-export function EditorApp({ initialValue, onSave }: EditorAppProps): JSX.Element {
+export function EditorApp({ user, initialValue, onSave }: EditorAppProps): JSX.Element {
   const {
     settings: { measureTypingPerf },
   } = useSettings();
@@ -224,9 +212,27 @@ export function EditorApp({ initialValue, onSave }: EditorAppProps): JSX.Element
     editorState = initialValue;
   } else {
     if (initialValue && initialValue.trim() !== "") {
-      console.warn("EditorApp: initialValue is not valid Lexical JSON. Ignoring and using empty state.", initialValue);
+      // Preserve raw user data that isn't valid Lexical JSON by
+      // inserting it as plain text into the editor. This prevents
+      // overwriting user content with the repair template.
+      // The function here will be executed by Lexical to initialize
+      // editor state when the editor mounts.
+      editorState = () => {
+        const root = $getRoot();
+        if (root.getFirstChild() === null) {
+          const p = $createParagraphNode();
+          // Insert the raw string as a single text node. If the
+          // string contains HTML, it will be preserved as text; if
+          // you prefer HTML-to-node import, we can add a parser
+          // path later.
+          p.append($createTextNode(initialValue));
+          root.append(p);
+        }
+      };
+    } else {
+      // No initial content provided: fall back to the repair template
+      editorState = $prepopulatedRichText;
     }
-    editorState = $prepopulatedRichText;
   }
 
   const actualConfig = {
@@ -234,7 +240,7 @@ export function EditorApp({ initialValue, onSave }: EditorAppProps): JSX.Element
     editorState: editorState === "" ? undefined : editorState,
   };
 
-  console.warn("EditorApp rendered with initialValue: " + (actualConfig.editorState ? JSON.stringify(actualConfig.editorState) : "empty"));
+  // console.warn("EditorApp rendered with initialValue: " + (actualConfig.editorState ? JSON.stringify(actualConfig.editorState) : "empty"));
 
   return (
     <SettingsContext>
@@ -244,7 +250,7 @@ export function EditorApp({ initialValue, onSave }: EditorAppProps): JSX.Element
             <TableContext>
               <ToolbarContext>
                 <div className="editor-shell">
-                  <Editor onSave={onSave} />
+                  <Editor onSave={onSave} user={user} />
                 </div>
                 <Settings />
                 {isDevPlayground ? <DocsPlugin /> : null}

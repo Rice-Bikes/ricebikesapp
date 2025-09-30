@@ -477,6 +477,9 @@
   list-style-type: disc !important;
   padding-left: 1.2em;
 }
+ul.PlaygroundEditorTheme__ul.PlaygroundEditorTheme__checklist {
+  list-style-type: none !important;
+}
 .PlaygroundEditorTheme__listItem {
   margin: 0 32px;
   font-family: var(--listitem-marker-font-family);

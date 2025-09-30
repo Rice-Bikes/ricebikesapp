@@ -6,28 +6,25 @@
  *
  */
 
-import type {LexicalEditor, NodeKey} from 'lexical';
-import type {JSX} from 'react';
+import type { LexicalEditor, NodeKey } from 'lexical';
+import type { JSX } from 'react';
 
 import './StickyNode.css';
 
-import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
-import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
-import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
-import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
-import {calculateZoomLevel} from '@lexical/utils';
-import {$getNodeByKey} from 'lexical';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
+import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
+import { LexicalNestedComposer } from '@lexical/react/LexicalNestedComposer';
+import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin';
+import { calculateZoomLevel } from '@lexical/utils';
+import { $getNodeByKey } from 'lexical';
 import * as React from 'react';
-import {useEffect, useLayoutEffect, useRef} from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
-import {createWebsocketProvider} from '../collaboration';
-import {useSharedHistoryContext} from '../context/SharedHistoryContext';
+import { useSharedHistoryContext } from '../context/SharedHistoryContext';
 import StickyEditorTheme from '../themes/StickyEditorTheme';
 import ContentEditable from '../ui/ContentEditable';
-import {$isStickyNode} from './StickyNode';
+import { $isStickyNode } from './StickyNode';
 
 type Positioning = {
   isDragging: boolean;
@@ -73,7 +70,7 @@ export default function StickyComponent({
     x: 0,
     y: 0,
   });
-  const {isCollabActive} = useCollaborationContext();
+  const { isCollabActive } = useCollaborationContext();
 
   useEffect(() => {
     const position = positioningRef.current;
@@ -91,7 +88,7 @@ export default function StickyComponent({
     const resizeObserver = new ResizeObserver((entries) => {
       for (let i = 0; i < entries.length; i++) {
         const entry = entries[i];
-        const {target} = entry;
+        const { target } = entry;
         position.rootElementRect = target.getBoundingClientRect();
         const stickyContainer = stickyContainerRef.current;
         if (stickyContainer !== null) {
@@ -141,6 +138,41 @@ export default function StickyComponent({
       }, 500);
     }
   }, []);
+
+  // Listen for updates inside the nested caption editor and mark the parent
+  // sticky node as dirty for attribution purposes. This ensures edits inside
+  // the nested composer are visible to the AttributionPlugin's dirty set.
+  useEffect(() => {
+    if (!caption) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let removeListener: any = null;
+    try {
+      removeListener = caption.registerUpdateListener(() => {
+        try {
+          // Try to call the helper on the outer editor to mark this node key
+          // as dirty. The outer editor exposes __markAttributionDirty via
+          // AttributionPlugin when mounted.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const outer = (editor as any);
+          if (outer && typeof outer.__markAttributionDirty === 'function') {
+            outer.__markAttributionDirty(nodeKey);
+          }
+        } catch {
+          // swallow errors to avoid breaking nested editor
+        }
+      });
+    } catch {
+      // ignore registration errors
+    }
+
+    return () => {
+      try {
+        if (typeof removeListener === 'function') removeListener();
+      } catch {
+        // ignore
+      }
+    };
+  }, [caption, editor, nodeKey]);
 
   const handlePointerMove = (event: PointerEvent) => {
     const stickyContainer = stickyContainerRef.current;
@@ -195,7 +227,7 @@ export default function StickyComponent({
     });
   };
 
-  const {historyState} = useSharedHistoryContext();
+  const { historyState } = useSharedHistoryContext();
 
   return (
     <div ref={stickyContainerRef} className="sticky-note-container">
@@ -214,7 +246,7 @@ export default function StickyComponent({
           const stickContainer = stickyContainer;
           const positioning = positioningRef.current;
           if (stickContainer !== null) {
-            const {top, left} = stickContainer.getBoundingClientRect();
+            const { top, left } = stickContainer.getBoundingClientRect();
             const zoom = calculateZoomLevel(stickContainer);
             positioning.offsetX = event.clientX / zoom - left;
             positioning.offsetY = event.clientY / zoom - top;
@@ -242,13 +274,7 @@ export default function StickyComponent({
         <LexicalNestedComposer
           initialEditor={caption}
           initialTheme={StickyEditorTheme}>
-          {isCollabActive ? (
-            <CollaborationPlugin
-              id={caption.getKey()}
-              providerFactory={createWebsocketProvider}
-              shouldBootstrap={true}
-            />
-          ) : (
+          {(
             <HistoryPlugin externalHistoryState={historyState} />
           )}
           <PlainTextPlugin

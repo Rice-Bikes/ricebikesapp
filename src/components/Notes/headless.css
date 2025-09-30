@@ -1,0 +1,171 @@
+/* Headless editor static styles for checklist items
+	 - Pure CSS only. No DOM mutation required.
+	 - Targets checklist <li> elements emitted by Lexical with:
+			 role="checkbox" and aria-checked="true|false"
+		 and input.checkbox state when present.
+	 - Keeps native list markers by not replacing <li> display.
+*/
+
+ul li {
+  list-style: disc;
+}
+
+ol li {
+  list-style: decimal;
+}
+
+/* Base layout for checklist li when Lexical emits checklist nodes */
+li[role="checkbox"].LexicalStatic__checklistItem,
+li[role="checkbox"] {
+  display: list-item; /* preserve native marker */
+  /* keep native list markers visible */
+  list-style: none;
+  list-style-position: outside;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+  margin-left: -1.5rem;
+  position: relative;
+}
+
+/* Hide the native checkbox input visually but keep it available for assistive tech.
+	 We'll style a custom visual on the label or the li itself. */
+li[role="checkbox"] .LexicalStatic__checklistInput,
+li[role="checkbox"] input[type="checkbox"] {
+  position: absolute;
+  left: 0.3rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  opacity: 0; /* keep accessible but visually hidden */
+  pointer-events: none;
+}
+
+/* Visual checkbox square rendered via ::before on the label or li */
+li[role="checkbox"] .LexicalStatic__checklistLabel,
+li[role="checkbox"] label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-left: 2rem; /* allow space for the visual box + extra gap */
+  cursor: pointer;
+}
+
+/* The box */
+li[role="checkbox"] .LexicalStatic__checklistLabel::before,
+li[role="checkbox"] label::before {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  border-radius: 3px;
+  border: 2px solid #bdbdbd;
+  background: white;
+  box-sizing: border-box;
+}
+
+/* Checked state: either the native input is :checked OR the li has aria-checked="true" */
+li[role="checkbox"]
+  input[type="checkbox"]:checked
+  + .LexicalStatic__checklistLabel::before,
+li[role="checkbox"][aria-checked="true"] .LexicalStatic__checklistLabel::before,
+li[role="checkbox"][aria-checked="true"] label::before {
+  background: #1976d2; /* primary blue */
+  border-color: #1976d2;
+}
+
+/* Strike-through the label text when checked (either via native input or aria attribute) */
+li[role="checkbox"]
+  input[type="checkbox"]:checked
+  + .LexicalStatic__checklistLabel
+  span,
+li[role="checkbox"][aria-checked="true"] .LexicalStatic__checklistLabel span,
+li[role="checkbox"] input[type="checkbox"]:checked + label span,
+li[role="checkbox"][aria-checked="true"] label span {
+  text-decoration: line-through;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+/* More robust strike-through: ensure span is inline and the decoration is visible
+   even if other styles interfere. This selector is intentionally specific and
+   placed after the previous rules to increase priority. */
+li[role="checkbox"][aria-checked="true"] .LexicalStatic__checklistLabel span,
+li[role="checkbox"]
+  input[type="checkbox"]:checked
+  + .LexicalStatic__checklistLabel
+  span,
+li[role="checkbox"][aria-checked="true"] label span,
+li[role="checkbox"] input[type="checkbox"]:checked + label span {
+  display: inline; /* ensure text-decoration applies */
+  text-decoration-line: line-through;
+  text-decoration-color: rgba(0, 0, 0, 0.65);
+  text-decoration-thickness: 2px;
+  text-decoration-skip-ink: none;
+}
+
+/* Extra-high-specificity fallback: apply to the label and span with !important
+   in case other editor/global rules override text-decoration. */
+li[role="checkbox"][aria-checked="true"] .LexicalStatic__checklistLabel span,
+li[role="checkbox"]
+  input[type="checkbox"]:checked
+  + .LexicalStatic__checklistLabel
+  span,
+li[role="checkbox"][aria-checked="true"] label span,
+li[role="checkbox"] input[type="checkbox"]:checked + label span {
+  text-decoration: line-through !important;
+  text-decoration-color: rgba(0, 0, 0, 0.65) !important;
+}
+
+/* Also apply a muted color to the whole label when checked */
+li[role="checkbox"][aria-checked="true"] .LexicalStatic__checklistLabel,
+li[role="checkbox"]
+  input[type="checkbox"]:checked
+  + .LexicalStatic__checklistLabel,
+li[role="checkbox"][aria-checked="true"] label,
+li[role="checkbox"] input[type="checkbox"]:checked + label {
+  color: rgba(0, 0, 0, 0.65) !important;
+}
+
+/* Checkmark using an SVG data-uri so we don't depend on extra markup */
+li[role="checkbox"]
+  input[type="checkbox"]:checked
+  + .LexicalStatic__checklistLabel::after,
+li[role="checkbox"][aria-checked="true"] .LexicalStatic__checklistLabel::after,
+li[role="checkbox"][aria-checked="true"] label::after {
+  content: "";
+  position: absolute;
+  left: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.9rem;
+  height: 0.9rem;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>');
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+}
+
+/* Focus and hover styles for keyboard and mouse affordance */
+li[role="checkbox"]:focus-within .LexicalStatic__checklistLabel::before,
+li[role="checkbox"]:hover .LexicalStatic__checklistLabel::before,
+li[role="checkbox"]:focus .LexicalStatic__checklistLabel::before {
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.12);
+  border-color: #1976d2;
+}
+
+/* Disabled visual treatment */
+li[role="checkbox"][aria-disabled="true"]
+  .LexicalStatic__checklistLabel::before,
+li[role="checkbox"][aria-disabled="true"] label::before {
+  opacity: 0.6;
+  border-color: #e0e0e0;
+}
+
+/* Ensure long text wraps nicely */
+li[role="checkbox"] .LexicalStatic__checklistLabel span {
+  white-space: pre-wrap;
+}

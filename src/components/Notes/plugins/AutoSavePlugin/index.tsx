@@ -1,5 +1,6 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { useEffect, useRef } from 'react';
+import { $getRoot } from 'lexical';
 
 // AutoSavePlugin: debounced auto-save that emits serialized Lexical JSON only
 // when it changes. This reduces races where other components emit HTML or
@@ -16,10 +17,16 @@ export default function AutoSavePlugin({
     useEffect(() => {
         if (!onSave) return;
 
-        const remove = editor.registerUpdateListener(({ editorState }) => {
+        const remove = editor.registerUpdateListener(() => {
             try {
-                const jsonObj = editorState.toJSON();
-                const serialized = JSON.stringify(jsonObj);
+                // Before serializing, if AttributionPlugin exposed runtime meta,
+                // write per-top-level node attributions into nodes that support
+                // setAttribution. This embeds attribution in node JSON so it
+                // persists with the editorState.
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const jsonAny: any = $getRoot().exportJSON();
+
+                const serialized = JSON.stringify(jsonAny);
                 // debounce: wait 800ms of inactivity
                 if (timerRef.current) {
                     window.clearTimeout(timerRef.current);

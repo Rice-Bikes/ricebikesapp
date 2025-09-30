@@ -33,6 +33,7 @@ import {PageBreakNode} from './PageBreakNode';
 import {PollNode} from './PollNode';
 import {SpecialTextNode} from './SpecialTextNode';
 import {StickyNode} from './StickyNode';
+import {AttributionNode} from './AttributionNode';
 import {YouTubeNode} from './YouTubeNode';
 
 const PlaygroundNodes: Array<Klass<LexicalNode>> = [
@@ -66,6 +67,7 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   LayoutItemNode,
   SpecialTextNode,
   DateTimeNode,
+  AttributionNode,
 ];
 
 export default PlaygroundNodes;

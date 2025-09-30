@@ -27,15 +27,71 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) =
   }, [notes]);
 
   // Save handler: called by Save Notes button
-  const handleSave = () => {
-    // Save current editor content
-    toast.success("Notes saved." + (editorState));
-    onSave((editorState));
+  const handleSave = async () => {
+    // Prefer to capture a fresh serialized editor state from the
+    // mounted editor (if available) so we include attribution meta
+    // even if AutoSavePlugin's debounce hasn't fired yet. Fall back
+    // to the last onSave-provided editorState.
+    let payload = editorState;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const e: any = (window as any).__currentLexicalEditor;
+      if (e && typeof e.getEditorState === 'function') {
+        try {
+          // If the AttributionPlugin exposed a helper, apply attribution lines
+          // into edited paragraph nodes before serializing so the saved JSON
+          // contains the inline "Last edited by: NAME" lines.
+          try {
+            if (typeof e.__applyAttributionLines === 'function') {
+              // await to ensure the inline lines are applied before serialization
+              await e.__applyAttributionLines(user.firstname + " " + user.lastname || '');
+            }
+          } catch {
+            // ignore attribution apply failures
+          }
+          const jsonObj = e.getEditorState().toJSON();
+          // Attach attribution meta if helper available
+          try {
+            if (typeof e.__getAttributionMeta === 'function') {
+              const meta = e.__getAttributionMeta();
+              jsonObj.__meta = jsonObj.__meta || { attributions: {} };
+              const now = new Date().toISOString();
+              if (meta && Array.isArray(meta.dirtyKeys)) {
+                for (const k of meta.dirtyKeys) {
+                  try {
+                    jsonObj.__meta.attributions[k] = {
+                      lastEditedBy: meta.lastEditedBy || null,
+                      lastEditedAt: now,
+                    };
+                  } catch {
+                    // ignore per-key failures
+                  }
+                }
+              }
+              if (meta && meta.lastEditedBy) {
+                jsonObj.lastEditedBy = meta.lastEditedBy;
+                jsonObj.lastEditedAt = meta.lastEditedAt || now;
+              }
+            }
+          } catch {
+            // ignore attribution helper failures
+          }
+          payload = JSON.stringify(jsonObj);
+        } catch {
+          // if serialization fails, fallback to editorState
+        }
+      }
+    } catch {
+      // ignore global editor lookup failures
+    }
+
+    toast.success('Notes saved.');
+    onSave(payload);
     DBModel.postTransactionLog(
       transaction_num,
       user.user_id,
-      `"${editorState.trim()}"`,
-      "updated"
+      `"${String(payload).trim()}"`,
+      'updated'
     );
     setIsEditing(false);
   };
@@ -50,7 +106,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) =
     <Box sx={{ width: '100%' }}>
       {isEditing ? (
         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-          <EditorApp initialValue={editorState} onSave={handleEditorChange}
+          <EditorApp user={user} initialValue={editorState} onSave={handleEditorChange}
           />
           <Button
             onClick={handleSave}

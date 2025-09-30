@@ -22,6 +22,21 @@ body {
   padding: 0 20px;
 }
 
+/* Attribution node styling */
+.attribution {
+  display: block;
+  margin-top: 4px;
+}
+.attribution-text {
+  color: #666;
+  font-size: 12px;
+}
+.attribution-time {
+  display: block;
+  color: #999;
+  font-size: 11px;
+}
+
 header {
   max-width: 580px;
   margin: auto;
@@ -387,6 +402,42 @@ pre::-webkit-scrollbar-thumb {
   background: rgba(34, 197, 94, 0.06);
   color: rgb(34, 197, 94);
   font-weight: 500;
+}
+
+/* Static-rendered blockquote style */
+.QuoteNode__html {
+  display: block;
+  margin: 0.8em 0;
+  padding: 0.6em 1em;
+  border-left: 4px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.02);
+  color: #333;
+  font-style: italic;
+  border-radius: 4px;
+}
+
+/* Ensure static checklist markup renders correctly inside the live editor */
+.editor li.LexicalStatic__checklistItem,
+.editor .LexicalStatic__checklistItem {
+  display: inline-flex; /* keep native marker visible */
+  align-items: flex-start;
+  gap: 12px;
+}
+.editor .LexicalStatic__checklistInput {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border-radius: 3px;
+  border: 1px solid #cfcfcf;
+  background: #fff;
+}
+.editor .LexicalStatic__checklistInput:checked {
+  background: #1976d2;
+  border-color: #1976d2;
+}
+.editor .LexicalStatic__checklistLabel {
+  font-size: 15px;
+  color: #222;
 }
 
 .auto-embed-menu {

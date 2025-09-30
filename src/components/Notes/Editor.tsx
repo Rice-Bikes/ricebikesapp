@@ -54,6 +54,7 @@ import { MaxLengthPlugin } from './plugins/MaxLengthPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
 import PageBreakPlugin from './plugins/PageBreakPlugin';
 import PollPlugin from './plugins/PollPlugin';
+import InlineBlameBadges from './InlineBlameBadges';
 import ShortcutsPlugin from './plugins/ShortcutsPlugin';
 import SpecialTextPlugin from './plugins/SpecialTextPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
@@ -67,10 +68,13 @@ import TreeViewPlugin from './plugins/TreeViewPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
 import AutoSavePlugin from './plugins/AutoSavePlugin';
+import AttributionPlugin from './plugins/AttributionPlugin';
+import { User } from '../../model';
 
 
 type EditorProps = {
   onSave: (html: string) => void;
+  user: User;
 };
 
 export default function Editor({ onSave }: EditorProps): JSX.Element {
@@ -155,6 +159,7 @@ export default function Editor({ onSave }: EditorProps): JSX.Element {
           setIsLinkEditMode={setIsLinkEditMode}
         />
       )}
+      <InlineBlameBadges />
       {isRichText && (
         <ShortcutsPlugin
           editor={activeEditor}
@@ -180,6 +185,7 @@ export default function Editor({ onSave }: EditorProps): JSX.Element {
         <AutoLinkPlugin />
         <DateTimePlugin />
         <AutoSavePlugin onSave={onSave} />
+        <AttributionPlugin />
 
         {isRichText ? (
           <>
