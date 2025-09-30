@@ -53,7 +53,7 @@ async function downloadFile(path: string, filename: string, type: "excel" | "jso
             if (!contentType || !contentType.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
                 // Try to parse error message
                 let text = await res.text();
-                try { text = JSON.parse(text).message || text; } catch { }
+                text = JSON.parse(text).message || text;
                 throw new Error("Server did not return a valid Excel file. " + text);
             }
             const blob = await res.blob();
