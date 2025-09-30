@@ -178,7 +178,7 @@ export default function DataExportButtons() {
                     </Select>
                 </FormControl>
             </Box>
-            <Stack direction={"row"} >
+            <Stack direction={"row"} gap={2} >
                 {EXPORT_ENDPOINTS.map((ep) => (
                     <Button
                         key={ep.path + ep.type}
