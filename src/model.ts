@@ -47,7 +47,7 @@ import {
 } from "./schema";
 import { IRow } from "./features/TransactionsTable/TransactionsTable";
 
-const hostname = import.meta.env.VITE_API_URL;
+export const hostname = import.meta.env.VITE_API_URL;
 
 export type Part = FromSchema<typeof partSchema>;
 export type ItemDetails = FromSchema<typeof ItemDetailsSchema>;

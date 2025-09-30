@@ -4,6 +4,7 @@ import { Button, Grid2 } from '@mui/material';
 import DBModel, { User } from '../../model';
 import { toast } from 'react-toastify';
 import { AdminFeatureFlags } from '../FeatureFlags/AdminFeatureFlags';
+import DataExportButtons from './DataExportButtons';
 // import PdfViewer from '../../components/PdfViewer';
 import RepairsPage from './RepairsPage';
 import ItemsTable from './ItemCataloguePage';
@@ -64,9 +65,9 @@ const AdminPage: React.FC<AdminPageProps> = ({ user }) => {
 
     return (
         <div style={{ padding: '0 5vw', paddingBottom: '100px' }}>
-
             <h1>Admin Page</h1>
             <AdminFeatureFlags />
+            <DataExportButtons />
             <Grid2 sx={{ backgroundColor: 'white', padding: '2rem', borderRadius: '1rem', marginBottom: '2rem', height: '100%' }} container spacing={2}>
                 <Grid2 size={4}>
                     {checkPermission(user, "updateCatalog") && <>
