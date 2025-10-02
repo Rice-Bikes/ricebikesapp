@@ -6,34 +6,26 @@
  *
  */
 
-import type {JSX} from 'react';
+import type { JSX } from "react";
 
-import {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
+import { ReactNode, useCallback, useEffect, useState } from "react";
 
-import FlashMessage from '../ui/FlashMessage';
+import FlashMessage from "../ui/FlashMessage";
+import { FLASH_MESSAGE_CONSTANTS } from "./flashMessageConstants";
+import { createContext } from "react";
 
 export type ShowFlashMessage = (
   message?: React.ReactNode,
   duration?: number,
 ) => void;
 
-interface FlashMessageProps {
-  message?: React.ReactNode;
-  duration?: number;
-}
+// Create context directly here to avoid circular dependency
+export const FlashMessageContextInstance = createContext<
+  ShowFlashMessage | undefined
+>(undefined);
+const { INITIAL_STATE, DEFAULT_DURATION } = FLASH_MESSAGE_CONSTANTS;
 
-const Context = createContext<ShowFlashMessage | undefined>(undefined);
-const INITIAL_STATE: FlashMessageProps = {};
-const DEFAULT_DURATION = 1000;
-
-export const FlashMessageContext = ({
+export const FlashMessageProvider = ({
   children,
 }: {
   children: ReactNode;
@@ -41,7 +33,7 @@ export const FlashMessageContext = ({
   const [props, setProps] = useState(INITIAL_STATE);
   const showFlashMessage = useCallback<ShowFlashMessage>(
     (message, duration) =>
-      setProps(message ? {duration, message} : INITIAL_STATE),
+      setProps(message ? { duration, message } : INITIAL_STATE),
     [],
   );
   useEffect(() => {
@@ -54,17 +46,23 @@ export const FlashMessageContext = ({
     }
   }, [props]);
   return (
-    <Context.Provider value={showFlashMessage}>
+    <FlashMessageContextInstance.Provider value={showFlashMessage}>
       {children}
       {props.message && <FlashMessage>{props.message}</FlashMessage>}
-    </Context.Provider>
+    </FlashMessageContextInstance.Provider>
   );
 };
 
+// Define hook here to avoid circular dependency
+import { useContext } from "react";
+
 export const useFlashMessageContext = (): ShowFlashMessage => {
-  const ctx = useContext(Context);
+  const ctx = useContext(FlashMessageContextInstance);
   if (!ctx) {
-    throw new Error('Missing FlashMessageContext');
+    throw new Error("Missing FlashMessageContext");
   }
   return ctx;
 };
+
+// Export FlashMessageContext component as default for backwards compatibility
+export default FlashMessageProvider;

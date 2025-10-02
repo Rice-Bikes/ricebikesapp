@@ -6,22 +6,22 @@
  *
  */
 
-import type { LexicalCommand, LexicalEditor, NodeKey } from 'lexical';
-import type { JSX } from 'react';
+import type { LexicalCommand, LexicalEditor, NodeKey } from "lexical";
+import type { JSX } from "react";
 
-import './ImageNode.css';
+import "./ImageNode.css";
 
-import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
-import { useCollaborationContext } from '@lexical/react/LexicalCollaborationContext';
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
-import { HashtagPlugin } from '@lexical/react/LexicalHashtagPlugin';
-import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
-import { LexicalNestedComposer } from '@lexical/react/LexicalNestedComposer';
-import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
-import { useLexicalEditable } from '@lexical/react/useLexicalEditable';
-import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection';
-import { mergeRegister } from '@lexical/utils';
+import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
+import { useCollaborationContext } from "@lexical/react/LexicalCollaborationContext";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+import { HashtagPlugin } from "@lexical/react/LexicalHashtagPlugin";
+import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
+import { LexicalNestedComposer } from "@lexical/react/LexicalNestedComposer";
+import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import { useLexicalEditable } from "@lexical/react/useLexicalEditable";
+import { useLexicalNodeSelection } from "@lexical/react/useLexicalNodeSelection";
+import { mergeRegister } from "@lexical/utils";
 import {
   $getNodeByKey,
   $getSelection,
@@ -35,8 +35,8 @@ import {
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
   SELECTION_CHANGE_COMMAND,
-} from 'lexical';
-import * as React from 'react';
+} from "lexical";
+import * as React from "react";
 import {
   Suspense,
   useCallback,
@@ -44,19 +44,19 @@ import {
   useMemo,
   useRef,
   useState,
-} from 'react';
+} from "react";
 
-import { useSettings } from '../context/SettingsContext';
-import { useSharedHistoryContext } from '../context/SharedHistoryContext';
-import brokenImage from '../images/image-broken.svg';
-import EmojisPlugin from '../plugins/EmojisPlugin';
-import KeywordsPlugin from '../plugins/KeywordsPlugin';
-import LinkPlugin from '../plugins/LinkPlugin';
-import MentionsPlugin from '../plugins/MentionsPlugin';
-import TreeViewPlugin from '../plugins/TreeViewPlugin';
-import ContentEditable from '../ui/ContentEditable';
-import ImageResizer from '../ui/ImageResizer';
-import { $isImageNode } from './ImageNode';
+import { useSettings } from "../context/SettingsContext";
+import { useSharedHistoryContext } from "../context/SharedHistoryContext";
+import brokenImage from "../images/image-broken.svg";
+import EmojisPlugin from "../plugins/EmojisPlugin";
+import KeywordsPlugin from "../plugins/KeywordsPlugin";
+import LinkPlugin from "../plugins/LinkPlugin";
+import MentionsPlugin from "../plugins/MentionsPlugin";
+import TreeViewPlugin from "../plugins/TreeViewPlugin";
+import ContentEditable from "../ui/ContentEditable";
+import ImageResizer from "../ui/ImageResizer";
+import { $isImageNode } from "./ImageNode";
 
 type ImageStatus =
   | { error: true }
@@ -65,11 +65,11 @@ type ImageStatus =
 const imageCache = new Map<string, Promise<ImageStatus> | ImageStatus>();
 
 export const RIGHT_CLICK_IMAGE_COMMAND: LexicalCommand<MouseEvent> =
-  createCommand('RIGHT_CLICK_IMAGE_COMMAND');
+  createCommand("RIGHT_CLICK_IMAGE_COMMAND");
 
 function useSuspenseImage(src: string): ImageStatus {
   let cached = imageCache.get(src);
-  if (cached && 'error' in cached && typeof cached.error === 'boolean') {
+  if (cached && "error" in cached && typeof cached.error === "boolean") {
     return cached;
   } else if (!cached) {
     cached = new Promise<ImageStatus>((resolve) => {
@@ -93,7 +93,7 @@ function useSuspenseImage(src: string): ImageStatus {
 }
 
 function isSVG(src: string): boolean {
-  return src.toLowerCase().endsWith('.svg');
+  return src.toLowerCase().endsWith(".svg");
 }
 
 function LazyImage({
@@ -108,11 +108,11 @@ function LazyImage({
 }: {
   altText: string;
   className: string | null;
-  height: 'inherit' | number;
+  height: "inherit" | number;
   imageRef: { current: null | HTMLImageElement };
   maxWidth: number;
   src: string;
-  width: 'inherit' | number;
+  width: "inherit" | number;
   onError: () => void;
 }): JSX.Element {
   const isSVGImage = isSVG(src);
@@ -197,7 +197,7 @@ function BrokenImage(): JSX.Element {
   );
 }
 
-function noop() { }
+function noop() {}
 
 export default function ImageComponent({
   src,
@@ -213,13 +213,13 @@ export default function ImageComponent({
 }: {
   altText: string;
   caption: LexicalEditor;
-  height: 'inherit' | number;
+  height: "inherit" | number;
   maxWidth: number;
   nodeKey: NodeKey;
   resizable: boolean;
   showCaption: boolean;
   src: string;
-  width: 'inherit' | number;
+  width: "inherit" | number;
   captionsEnabled: boolean;
 }): JSX.Element {
   const imageRef = useRef<null | HTMLImageElement>(null);
@@ -227,7 +227,9 @@ export default function ImageComponent({
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState<boolean>(false);
-  const { isCollabActive } = useCollaborationContext();
+  // Collaboration context still needed for setup even though we don't use its values
+  // We import the hook but don't need its return value
+  useCollaborationContext();
   const [editor] = useLexicalComposerContext();
   const activeEditorRef = useRef<LexicalEditor | null>(null);
   const [isLoadError, setIsLoadError] = useState<boolean>(false);
@@ -320,7 +322,7 @@ export default function ImageComponent({
         const latestSelection = $getSelection();
         const domElement = event.target as HTMLElement;
         if (
-          domElement.tagName === 'IMG' &&
+          domElement.tagName === "IMG" &&
           $isRangeSelection(latestSelection) &&
           latestSelection.getNodes().length === 1
         ) {
@@ -379,9 +381,9 @@ export default function ImageComponent({
         rootCleanup();
         rootCleanup = noop;
         if (rootElement) {
-          rootElement.addEventListener('contextmenu', onRightClick);
+          rootElement.addEventListener("contextmenu", onRightClick);
           rootCleanup = () =>
-            rootElement.removeEventListener('contextmenu', onRightClick);
+            rootElement.removeEventListener("contextmenu", onRightClick);
         }
       }),
       () => rootCleanup(),
@@ -398,8 +400,8 @@ export default function ImageComponent({
   };
 
   const onResizeEnd = (
-    nextWidth: 'inherit' | number,
-    nextHeight: 'inherit' | number,
+    nextWidth: "inherit" | number,
+    nextHeight: "inherit" | number,
   ) => {
     // Delay hiding the resize bars for click case
     setTimeout(() => {
@@ -435,7 +437,7 @@ export default function ImageComponent({
             <LazyImage
               className={
                 isFocused
-                  ? `focused ${isInNodeSelection ? 'draggable' : ''}`
+                  ? `focused ${isInNodeSelection ? "draggable" : ""}`
                   : null
               }
               src={src}
@@ -458,9 +460,7 @@ export default function ImageComponent({
               <EmojisPlugin />
               <HashtagPlugin />
               <KeywordsPlugin />
-              {(
-                <HistoryPlugin externalHistoryState={historyState} />
-              )}
+              {<HistoryPlugin externalHistoryState={historyState} />}
               <RichTextPlugin
                 contentEditable={
                   <ContentEditable

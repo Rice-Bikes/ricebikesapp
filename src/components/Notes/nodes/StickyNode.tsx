@@ -7,7 +7,6 @@
  */
 
 import type {
-  EditorConfig,
   LexicalEditor,
   LexicalNode,
   LexicalUpdateJSON,
@@ -15,16 +14,16 @@ import type {
   SerializedEditor,
   SerializedLexicalNode,
   Spread,
-} from 'lexical';
-import type { JSX } from 'react';
+} from "lexical";
+import type { JSX } from "react";
 
-import { $setSelection, createEditor, DecoratorNode } from 'lexical';
-import * as React from 'react';
-import { createPortal } from 'react-dom';
+import { $setSelection, createEditor, DecoratorNode } from "lexical";
+import * as React from "react";
+import { createPortal } from "react-dom";
 
-const StickyComponent = React.lazy(() => import('./StickyComponent'));
+const StickyComponent = React.lazy(() => import("./StickyComponent"));
 
-type StickyNoteColor = 'pink' | 'yellow';
+type StickyNoteColor = "pink" | "yellow";
 
 export type SerializedStickyNode = Spread<
   {
@@ -43,7 +42,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   __caption: LexicalEditor;
 
   static getType(): string {
-    return 'sticky';
+    return "sticky";
   }
 
   static clone(node: StickyNode): StickyNode {
@@ -70,22 +69,21 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     const caption = serializedNode.caption;
     const nestedEditor = stickyNode.__caption;
     // Be defensive: caption may be missing or malformed. Only parse when present.
-    if (caption && typeof caption === 'object' && caption.editorState) {
+    if (caption && typeof caption === "object" && caption.editorState) {
       try {
         const parsed = caption.editorState;
         const editorStateInput =
-          typeof parsed === 'string' ? parsed : JSON.stringify(parsed);
+          typeof parsed === "string" ? parsed : JSON.stringify(parsed);
         const editorState = nestedEditor.parseEditorState(editorStateInput);
-        if (typeof (editorState).isEmpty === 'function') {
-          if (!(editorState).isEmpty()) {
+        if (typeof editorState.isEmpty === "function") {
+          if (!editorState.isEmpty()) {
             nestedEditor.setEditorState(editorState);
           }
         } else {
           nestedEditor.setEditorState(editorState);
         }
       } catch (err) {
-        // eslint-disable-next-line no-console
-        console.warn('StickyNode: failed to parse caption editorState', err);
+        console.warn("StickyNode: failed to parse caption editorState", err);
       }
     }
     return stickyNode;
@@ -94,7 +92,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   constructor(
     x: number,
     y: number,
-    color: 'pink' | 'yellow',
+    color: "pink" | "yellow",
     caption?: LexicalEditor,
     key?: NodeKey,
   ) {
@@ -115,9 +113,9 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
-    const div = document.createElement('div');
-    div.style.display = 'contents';
+  createDOM(): HTMLElement {
+    const div = document.createElement("div");
+    div.style.display = "contents";
     return div;
   }
 
@@ -134,10 +132,10 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
 
   toggleColor(): void {
     const writable = this.getWritable();
-    writable.__color = writable.__color === 'pink' ? 'yellow' : 'pink';
+    writable.__color = writable.__color === "pink" ? "yellow" : "pink";
   }
 
-  decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {
+  decorate(): JSX.Element {
     return createPortal(
       <StickyComponent
         color={this.__color}
@@ -165,5 +163,5 @@ export function $createStickyNode(
   xOffset: number,
   yOffset: number,
 ): StickyNode {
-  return new StickyNode(xOffset, yOffset, 'yellow');
+  return new StickyNode(xOffset, yOffset, "yellow");
 }

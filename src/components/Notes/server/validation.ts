@@ -6,24 +6,24 @@
  *
  */
 
-import {createHeadlessEditor} from '@lexical/headless';
-import {$isMarkNode, $unwrapMarkNode} from '@lexical/mark';
-import * as http from 'http';
-import {$getRoot, $isElementNode, LexicalNode} from 'lexical';
-import * as url from 'url';
+import { createHeadlessEditor } from "@lexical/headless";
+import { $isMarkNode, $unwrapMarkNode } from "@lexical/mark";
+import * as http from "http";
+import { $getRoot, $isElementNode, LexicalNode } from "lexical";
+import * as url from "url";
 
-import PlaygroundNodes from '../nodes/PlaygroundNodes';
+import PlaygroundNodes from "../nodes/PlaygroundNodes";
 
-const hostname = 'localhost';
+const hostname = "localhost";
 const port = 1235;
 
-let stringifiedEditorStateJSON = '';
+let stringifiedEditorStateJSON = "";
 
 // @ts-expect-error: __DEV__ is a global variable used for development mode
 global.__DEV__ = true;
 
 const editor = createHeadlessEditor({
-  namespace: 'validation',
+  namespace: "validation",
   nodes: [...PlaygroundNodes],
   onError: (error) => {
     console.error(error);
@@ -34,14 +34,13 @@ const getJSONData = (req: http.IncomingMessage): Promise<string> => {
   const body: Array<Uint8Array> = [];
   return new Promise((resolve) => {
     req
-      .on('data', (chunk: Uint8Array) => {
+      .on("data", (chunk: Uint8Array) => {
         body.push(chunk);
       })
-      .on('end', () => {
+      .on("end", () => {
         resolve(Buffer.concat(body).toString());
       })
-      .on('error', (error: Error) => {
-        // eslint-disable-next-line no-console
+      .on("error", (error: Error) => {
         console.log(error);
       });
   });
@@ -78,13 +77,11 @@ const validateEditorState = async (
   const assertion = JSON.stringify(editor.getEditorState().toJSON());
   const success = assertion === stringifiedEditorStateJSON;
   if (success) {
-    // eslint-disable-next-line no-console
-    console.log('Editor state updated successfully.');
+    console.log("Editor state updated successfully.");
     editor.setEditorState(nextEditorState);
     stringifiedEditorStateJSON = assertion;
   } else {
-    // eslint-disable-next-line no-console
-    console.log('Editor state was rejected!');
+    console.log("Editor state was rejected!");
     editor.setEditorState(prevEditorState);
   }
   return success;
@@ -92,26 +89,26 @@ const validateEditorState = async (
 
 const server = http.createServer(async (req, res) => {
   const pathname = url.parse(req.url!).pathname;
-  const {method} = req;
-  res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Request-Method', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST, GET');
-  res.setHeader('Access-Control-Allow-Headers', '*');
+  const { method } = req;
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Request-Method", "*");
+  res.setHeader("Access-Control-Allow-Methods", "OPTIONS, POST, GET");
+  res.setHeader("Access-Control-Allow-Headers", "*");
 
-  if (method === 'OPTIONS') {
+  if (method === "OPTIONS") {
     res.end();
     return;
   }
 
-  if (method === 'POST' && pathname === '/setEditorState') {
+  if (method === "POST" && pathname === "/setEditorState") {
     const stringifiedJSON = await getJSONData(req);
     const editorState = editor.parseEditorState(stringifiedJSON);
     editor.setEditorState(editorState);
     stringifiedEditorStateJSON = stringifiedJSON;
     res.statusCode = 200;
     res.end();
-  } else if (method === 'POST' && pathname === '/validateEditorState') {
+  } else if (method === "POST" && pathname === "/validateEditorState") {
     const stringifiedJSON = await getJSONData(req);
     if (await validateEditorState(stringifiedJSON)) {
       res.statusCode = 200;
@@ -126,7 +123,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, hostname, () => {
-  // eslint-disable-next-line no-console
   console.log(
     `Read-only validation server running at http://${hostname}:${port}/`,
   );

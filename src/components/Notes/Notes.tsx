@@ -1,11 +1,9 @@
-
 import { useEffect, useState } from "react";
-import DBModel, { User } from "../../model";
+import { User } from "../../model";
 import { Button, Box, Typography, Paper } from "@mui/material";
 import { EditorApp } from "./EditorContainer";
 import LexicalStaticRenderer from "./LexicalStaticRenderer";
 import { toast } from "react-toastify";
-
 
 interface NotesProps {
   notes: string;
@@ -14,16 +12,18 @@ interface NotesProps {
   transaction_num: number;
 }
 
-
-
-
-const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) => {
+const Notes: React.FC<NotesProps> = ({
+  notes,
+  onSave,
+  user,
+  transaction_num,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editorState, setEditorState] = useState<string>(notes || '');
+  const [editorState, setEditorState] = useState<string>(notes || "");
 
   // When notes prop changes (e.g. after save), update editorState
   useEffect(() => {
-    setEditorState(notes || '');
+    setEditorState(notes || "");
   }, [notes]);
 
   // Save handler: called by Save Notes button
@@ -36,15 +36,17 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) =
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const e: any = (window as any).__currentLexicalEditor;
-      if (e && typeof e.getEditorState === 'function') {
+      if (e && typeof e.getEditorState === "function") {
         try {
           // If the AttributionPlugin exposed a helper, apply attribution lines
           // into edited paragraph nodes before serializing so the saved JSON
           // contains the inline "Last edited by: NAME" lines.
           try {
-            if (typeof e.__applyAttributionLines === 'function') {
+            if (typeof e.__applyAttributionLines === "function") {
               // await to ensure the inline lines are applied before serialization
-              await e.__applyAttributionLines(user.firstname + " " + user.lastname || '');
+              await e.__applyAttributionLines(
+                user.firstname + " " + user.lastname || "",
+              );
             }
           } catch {
             // ignore attribution apply failures
@@ -52,7 +54,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) =
           const jsonObj = e.getEditorState().toJSON();
           // Attach attribution meta if helper available
           try {
-            if (typeof e.__getAttributionMeta === 'function') {
+            if (typeof e.__getAttributionMeta === "function") {
               const meta = e.__getAttributionMeta();
               jsonObj.__meta = jsonObj.__meta || { attributions: {} };
               const now = new Date().toISOString();
@@ -85,14 +87,8 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) =
       // ignore global editor lookup failures
     }
 
-    toast.success('Notes saved.');
+    toast.success("Notes saved.");
     onSave(payload);
-    DBModel.postTransactionLog(
-      transaction_num,
-      user.user_id,
-      `"${String(payload).trim()}"`,
-      'updated'
-    );
     setIsEditing(false);
   };
 
@@ -101,29 +97,29 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) =
     setEditorState(html);
   };
 
-
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ width: "100%" }}>
       {isEditing ? (
-        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-          <EditorApp user={user} initialValue={editorState} onSave={handleEditorChange}
+        <Box sx={{ display: "flex", flexDirection: "column" }}>
+          <EditorApp
+            user={user}
+            initialValue={editorState}
+            onSave={handleEditorChange}
+            transaction_num={transaction_num}
           />
-          <Button
-            onClick={handleSave}
-            variant="contained"
-          >
+          <Button onClick={handleSave} variant="contained">
             Save Notes
           </Button>
         </Box>
       ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', mt: 2 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", mt: 2 }}>
           <Paper
             variant="outlined"
             sx={{
               p: 3,
               minHeight: 120,
-              backgroundColor: 'grey.50',
-              borderRadius: 1
+              backgroundColor: "grey.50",
+              borderRadius: 1,
             }}
           >
             {editorState ? (
@@ -135,12 +131,12 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) =
                 variant="body2"
                 component="div"
                 sx={{
-                  fontFamily: 'monospace',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
+                  fontFamily: "monospace",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
                   margin: 0,
-                  fontSize: '14px',
-                  lineHeight: 1.5
+                  fontSize: "14px",
+                  lineHeight: 1.5,
                 }}
               >
                 No notes yet. Click 'Add Notes' to get started.
@@ -153,13 +149,12 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, user, transaction_num }) =
             fullWidth
             sx={{ mt: 0 }}
           >
-            {editorState ? 'Edit Notes' : 'Add Notes'}
+            {editorState ? "Edit Notes" : "Add Notes"}
           </Button>
         </Box>
       )}
     </Box>
   );
 };
-
 
 export default Notes;

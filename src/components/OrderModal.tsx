@@ -120,9 +120,9 @@ const OrderModal: React.FC<OrderModalProps> = ({ user, order }) => {
 
     return (
         <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <Stack direction={'column'} sx={{ mb: 0.5 }}>
-                <Button variant="contained" color='success' onClick={() => setOpen(true)}>Next Order Date: {orderToUse?.order_date ? new Date(orderToUse.order_date).toLocaleDateString() : 'N/A'} </Button>
-                <Button variant="contained" color='secondary' onClick={() => setOpen(true)} sx={{ mb: 2 }}>Next Delivery: {orderToUse?.estimated_delivery ? new Date(orderToUse.estimated_delivery).toLocaleDateString() : 'N/A'} </Button>
+            <Stack direction={'row'} sx={{ mb: 0 }} alignContent={"center"}>
+                <Button variant="contained" color='success' onClick={() => setOpen(true)} sx={{ margin: "2 0" }}>Next Order Date: {orderToUse?.order_date ? new Date(orderToUse.order_date).toLocaleDateString() : 'N/A'} </Button>
+                <Button variant="contained" color='secondary' onClick={() => setOpen(true)} sx={{ margin: "2 0" }}>Next Delivery: {orderToUse?.estimated_delivery ? new Date(orderToUse.estimated_delivery).toLocaleDateString() : 'N/A'} </Button>
             </Stack>
             <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>

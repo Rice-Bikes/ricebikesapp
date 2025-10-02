@@ -2,7 +2,7 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  padding: 20px 0;
 }
 
 .tags {
@@ -16,17 +16,35 @@ header {
   background-color: bisque;
 }
 
+#indicators {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 1%;
+  width: 35vw;
+}
+
 #indicators button {
   pointer-events: none;
   color: white;
   text-decoration: white;
   margin-left: 5px;
+  width: fit-content;
+}
+
+#nav-buttons {
+  width: 35vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 main {
   padding: 0 10vw;
   max-width: 80vw;
 }
+
+
 
 #transactionsContent {
   width: 100%;

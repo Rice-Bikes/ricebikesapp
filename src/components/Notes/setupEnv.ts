@@ -6,7 +6,7 @@
  *
  */
 
-import {INITIAL_SETTINGS, Settings} from './appSettings';
+import { INITIAL_SETTINGS, Settings } from "./appSettings";
 
 // Export a function so this is not tree-shaken,
 // but evaluate it immediately so it executes before
@@ -18,7 +18,7 @@ export default (() => {
   for (const param of Object.keys(INITIAL_SETTINGS)) {
     if (urlSearchParams.has(param)) {
       try {
-        const value = JSON.parse(urlSearchParams.get(param) ?? 'true');
+        const value = JSON.parse(urlSearchParams.get(param) ?? "true");
         INITIAL_SETTINGS[param as keyof Settings] = Boolean(value);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (_error) {
@@ -28,10 +28,9 @@ export default (() => {
   }
 
   if (INITIAL_SETTINGS.disableBeforeInput) {
-    // @ts-expect-error
+    // @ts-expect-error - InputEvent prototype modification required for Lexical editor compatibility
     delete window.InputEvent.prototype.getTargetRanges;
   }
-
 
   return INITIAL_SETTINGS;
 })();

@@ -6,25 +6,26 @@
  *
  */
 
-import type { LexicalEditor, NodeKey } from 'lexical';
-import type { JSX } from 'react';
+import type { LexicalEditor, NodeKey } from "lexical";
+import type { JSX } from "react";
 
-import './StickyNode.css';
+import "./StickyNode.css";
 
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
-import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
-import { LexicalNestedComposer } from '@lexical/react/LexicalNestedComposer';
-import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin';
-import { calculateZoomLevel } from '@lexical/utils';
-import { $getNodeByKey } from 'lexical';
-import * as React from 'react';
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
+import { LexicalNestedComposer } from "@lexical/react/LexicalNestedComposer";
+import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
+import { useCollaborationContext } from "@lexical/react/LexicalCollaborationContext";
+import { calculateZoomLevel } from "@lexical/utils";
+import { $getNodeByKey } from "lexical";
+import * as React from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 
-import { useSharedHistoryContext } from '../context/SharedHistoryContext';
-import StickyEditorTheme from '../themes/StickyEditorTheme';
-import ContentEditable from '../ui/ContentEditable';
-import { $isStickyNode } from './StickyNode';
+import { useSharedHistoryContext } from "../context/SharedHistoryContext";
+import StickyEditorTheme from "../themes/StickyEditorTheme";
+import ContentEditable from "../ui/ContentEditable";
+import { $isStickyNode } from "./StickyNode";
 
 type Positioning = {
   isDragging: boolean;
@@ -43,8 +44,8 @@ function positionSticky(
   const rootElementRect = positioning.rootElementRect;
   const rectLeft = rootElementRect !== null ? rootElementRect.left : 0;
   const rectTop = rootElementRect !== null ? rootElementRect.top : 0;
-  style.top = rectTop + positioning.y + 'px';
-  style.left = rectLeft + positioning.x + 'px';
+  style.top = rectTop + positioning.y + "px";
+  style.left = rectLeft + positioning.x + "px";
 }
 
 export default function StickyComponent({
@@ -55,7 +56,7 @@ export default function StickyComponent({
   caption,
 }: {
   caption: LexicalEditor;
-  color: 'pink' | 'yellow';
+  color: "pink" | "yellow";
   nodeKey: NodeKey;
   x: number;
   y: number;
@@ -70,7 +71,8 @@ export default function StickyComponent({
     x: 0,
     y: 0,
   });
-  const { isCollabActive } = useCollaborationContext();
+  // Collaboration context still needed for setup even though we don't use its values
+  useCollaborationContext();
 
   useEffect(() => {
     const position = positioningRef.current;
@@ -117,10 +119,10 @@ export default function StickyComponent({
       }
     };
 
-    window.addEventListener('resize', handleWindowResize);
+    window.addEventListener("resize", handleWindowResize);
 
     return () => {
-      window.removeEventListener('resize', handleWindowResize);
+      window.removeEventListener("resize", handleWindowResize);
       removeRootListener();
     };
   }, [editor]);
@@ -132,8 +134,8 @@ export default function StickyComponent({
       // transition on load of the sticky.
       setTimeout(() => {
         stickyContainer.style.setProperty(
-          'transition',
-          'top 0.3s ease 0s, left 0.3s ease 0s',
+          "transition",
+          "top 0.3s ease 0s, left 0.3s ease 0s",
         );
       }, 500);
     }
@@ -153,8 +155,8 @@ export default function StickyComponent({
           // as dirty. The outer editor exposes __markAttributionDirty via
           // AttributionPlugin when mounted.
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const outer = (editor as any);
-          if (outer && typeof outer.__markAttributionDirty === 'function') {
+          const outer = editor as any;
+          if (outer && typeof outer.__markAttributionDirty === "function") {
             outer.__markAttributionDirty(nodeKey);
           }
         } catch {
@@ -167,7 +169,7 @@ export default function StickyComponent({
 
     return () => {
       try {
-        if (typeof removeListener === 'function') removeListener();
+        if (typeof removeListener === "function") removeListener();
       } catch {
         // ignore
       }
@@ -192,12 +194,12 @@ export default function StickyComponent({
     }
   };
 
-  const handlePointerUp = (event: PointerEvent) => {
+  const handlePointerUp = () => {
     const stickyContainer = stickyContainerRef.current;
     const positioning = positioningRef.current;
     if (stickyContainer !== null) {
       positioning.isDragging = false;
-      stickyContainer.classList.remove('dragging');
+      stickyContainer.classList.remove("dragging");
       editor.update(() => {
         const node = $getNodeByKey(nodeKey);
         if ($isStickyNode(node)) {
@@ -205,8 +207,8 @@ export default function StickyComponent({
         }
       });
     }
-    document.removeEventListener('pointermove', handlePointerMove);
-    document.removeEventListener('pointerup', handlePointerUp);
+    document.removeEventListener("pointermove", handlePointerMove);
+    document.removeEventListener("pointerup", handlePointerUp);
   };
 
   const handleDelete = () => {
@@ -251,32 +253,34 @@ export default function StickyComponent({
             positioning.offsetX = event.clientX / zoom - left;
             positioning.offsetY = event.clientY / zoom - top;
             positioning.isDragging = true;
-            stickContainer.classList.add('dragging');
-            document.addEventListener('pointermove', handlePointerMove);
-            document.addEventListener('pointerup', handlePointerUp);
+            stickContainer.classList.add("dragging");
+            document.addEventListener("pointermove", handlePointerMove);
+            document.addEventListener("pointerup", handlePointerUp);
             event.preventDefault();
           }
-        }}>
+        }}
+      >
         <button
           onClick={handleDelete}
           className="delete"
           aria-label="Delete sticky note"
-          title="Delete">
+          title="Delete"
+        >
           X
         </button>
         <button
           onClick={handleColorChange}
           className="color"
           aria-label="Change sticky note color"
-          title="Color">
+          title="Color"
+        >
           <i className="bucket" />
         </button>
         <LexicalNestedComposer
           initialEditor={caption}
-          initialTheme={StickyEditorTheme}>
-          {(
-            <HistoryPlugin externalHistoryState={historyState} />
-          )}
+          initialTheme={StickyEditorTheme}
+        >
+          {<HistoryPlugin externalHistoryState={historyState} />}
           <PlainTextPlugin
             contentEditable={
               <ContentEditable

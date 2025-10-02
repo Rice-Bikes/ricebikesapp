@@ -17,7 +17,7 @@ import {
   type SerializedTextNode,
   type Spread,
   TextNode,
-} from 'lexical';
+} from "lexical";
 
 export type SerializedMentionNode = Spread<
   {
@@ -30,11 +30,11 @@ function $convertMentionElement(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
   const textContent = domNode.textContent;
-  const mentionName = domNode.getAttribute('data-lexical-mention-name');
+  const mentionName = domNode.getAttribute("data-lexical-mention-name");
 
   if (textContent !== null) {
     const node = $createMentionNode(
-      typeof mentionName === 'string' ? mentionName : textContent,
+      typeof mentionName === "string" ? mentionName : textContent,
       textContent,
     );
     return {
@@ -45,12 +45,12 @@ function $convertMentionElement(
   return null;
 }
 
-const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';
+const mentionStyle = "background-color: rgba(24, 119, 232, 0.2)";
 export class MentionNode extends TextNode {
   __mention: string;
 
   static getType(): string {
-    return 'mention';
+    return "mention";
   }
 
   static clone(node: MentionNode): MentionNode {
@@ -77,26 +77,26 @@ export class MentionNode extends TextNode {
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
     dom.style.cssText = mentionStyle;
-    dom.className = 'mention';
+    dom.className = "mention";
     dom.spellcheck = false;
 
     return dom;
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('span');
-    element.setAttribute('data-lexical-mention', 'true');
+    const element = document.createElement("span");
+    element.setAttribute("data-lexical-mention", "true");
     if (this.__text !== this.__mention) {
-      element.setAttribute('data-lexical-mention-name', this.__mention);
+      element.setAttribute("data-lexical-mention-name", this.__mention);
     }
     element.textContent = this.__text;
-    return {element};
+    return { element };
   }
 
   static importDOM(): DOMConversionMap | null {
     return {
       span: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-mention')) {
+        if (!domNode.hasAttribute("data-lexical-mention")) {
           return null;
         }
         return {
@@ -120,12 +120,9 @@ export class MentionNode extends TextNode {
   }
 }
 
-export function $createMentionNode(
-  mentionName: string,
-  textContent?: string,
-): MentionNode {
-  const mentionNode = new MentionNode(mentionName, (textContent = mentionName));
-  mentionNode.setMode('segmented').toggleDirectionless();
+export function $createMentionNode(mentionName: string): MentionNode {
+  const mentionNode = new MentionNode(mentionName, mentionName);
+  mentionNode.setMode("segmented").toggleDirectionless();
   return $applyNodeReplacement(mentionNode);
 }
 

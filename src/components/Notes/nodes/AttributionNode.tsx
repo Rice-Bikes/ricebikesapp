@@ -2,7 +2,6 @@ import type { JSX } from 'react';
 import type { LexicalNode, NodeKey, SerializedLexicalNode } from 'lexical';
 
 import { DecoratorNode } from 'lexical';
-import * as React from 'react';
 
 export type SerializedAttributionNode = SerializedLexicalNode & {
   author: string | null;

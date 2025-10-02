@@ -97,7 +97,6 @@ export function TransactionsTable({
   user,
 }: TransactionTableProps): JSX.Element {
 
-  //TODO: sell view
   const navigate = useNavigate();
   const currDate: Date = new Date();
   const [viewType, setViewType] = useState<string>("main");
@@ -540,15 +539,12 @@ export function TransactionsTable({
 
   return (
     <main style={{ width: "100vw" }}>
-      <Button></Button>
-      <header style={{ display: "flex", justifyContent: "space-between" }}>
-
+      <Stack direction={"row"} mt={2} mb={2} alignContent={"center"} >
         <ButtonGroup id="nav-buttons" variant="outlined">
           <CreateTransactionDropdown user={user} />
-          <Button onClick={() => navigate("/whiteboard")}>Whiteboard</Button>
-          <Button onClick={() => setShowPriceCheckModal(!showPriceCheckModal)}>Price Check</Button>
+          <Button onClick={() => navigate("/whiteboard")} sx={{ height: "100%" }}>Whiteboard</Button>
+          <Button onClick={() => setShowPriceCheckModal(!showPriceCheckModal)} sx={{ height: "100%" }}>Price Check</Button>
         </ButtonGroup>
-        <PriceCheckModal open={showPriceCheckModal} onClose={() => { setShowPriceCheckModal(false) }} />
         <article id="indicators">
           <Button style={{ backgroundColor: "blue" }}>
             {summaryData?.quantity_incomplete} Incomplete Bikes
@@ -562,11 +558,15 @@ export function TransactionsTable({
           {summaryData?.quantity_waiting_on_safety_check !== 0 && <Button style={{ backgroundColor: "orange" }}>
             {summaryData?.quantity_waiting_on_safety_check} Bikes to Safety Check
           </Button>}
+
         </article>
         <OrderModal
           user={user}
         />
-      </header>
+
+      </Stack>
+      <PriceCheckModal open={showPriceCheckModal} onClose={() => { setShowPriceCheckModal(false) }} />
+
       <section
         id="transactions-table"
       >
@@ -600,7 +600,7 @@ export function TransactionsTable({
               getRowStyle={({ data }) => {
                 const transaction = data?.Transaction as Transaction;
                 if (transaction.date_created && transaction.transaction_type != null && (transaction.is_completed === false
-                  &&( transaction.transaction_type !== "retrospec" && transaction.transaction_type !== "Retrospec" )
+                  && (transaction.transaction_type !== "retrospec" && transaction.transaction_type !== "Retrospec")
                   && transaction.is_employee === false
                   && transaction.is_refurb === false ||
                   transaction.is_beer_bike === true
