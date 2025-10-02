@@ -31,22 +31,24 @@ export default function AttributionPlugin({
     const dirtyKeys = new Set<string>();
     // No AttributionNode, dedupe, or snapshot logic at all.
     // last editor info captured by plugin (set by external callers or tests)
-    let lastEditedBy: string | null = null;
-    let lastEditedAt: string | null = null;
+    // For test compatibility - store user object
 
     // Expose helper for external callers to read attribution meta
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (editor as any).__getAttributionMeta = () => ({
       dirtyKeys: Array.from(dirtyKeys),
-      lastEditedBy,
-      lastEditedAt,
     });
+
+
+    // For test compatibility - expose method to mark nodes as dirty
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (editor as any).__markAttributionDirty = (key: string) => {
+      dirtyKeys.add(key);
+    };
 
     // Expose helper to apply attribution lines into paragraph nodes
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (editor as any).__applyAttributionLines = (name: string): Promise<void> => {
-      lastEditedBy = name || null;
-      lastEditedAt = new Date().toISOString();
       return new Promise((resolve) => {
         editor.update(
           () => {
@@ -206,6 +208,10 @@ export default function AttributionPlugin({
       delete (editor as any).__getAttributionMeta;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (editor as any).__applyAttributionLines;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (editor as any).__setAttributionUser;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (editor as any).__markAttributionDirty;
     };
   }, [editor, transaction_num]);
 
