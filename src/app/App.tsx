@@ -1,82 +1,87 @@
-// import { useState } from "react";
+import { useState } from "react";
 import { TransactionsTable } from "../features/TransactionsTable/TransactionsTable";
-import RiceBikesIcon from "../assets/img/rice-bikes_white.png";
+// import RiceBikesIcon from "../assets/img/rice-bikes_white.png";
+import { Routes, Route } from "react-router-dom";
 import "./App.css";
-import { Button, Stack } from "@mui/material";
-import { Routes, Route, Link } from "react-router-dom";
 import TransactionDetail from "../features/TransactionPage/TransactionPage";
 import { BikeTransactionPageWrapper } from "../features/BuildStepsPage/BikeTransactionPageWrapper";
-import { useState } from "react";
+import { UserProvider } from "../contexts/UserContext";
 import AuthPrompt from "../components/AuthPrompt/AuthPrompt";
-import { User } from "../model";
 import AdminPage from "../features/AdminPage/AdminPage";
 import WhiteboardPage from "../features/WhiteboardPage";
 import { ToastContainer } from "react-toastify";
-import { queryClient } from "./queryClient";
+import { Typography, Stack, Grid2 } from "@mui/material";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { CollapsedRail } from "./CollapsedRail";
+import { themeOptions } from "./theme";
+import AppDrawer from "./Drawer";
 
-
-
+const theme = createTheme(themeOptions);
 function App() {
-  const [user, setNewUser] = useState<User>({} as User);
+  return (
+    <ThemeProvider theme={theme}>
+      <UserProvider>
+        <AppContent />
+      </UserProvider>
+    </ThemeProvider>
+  );
+}
 
-  const onUserChange = (user: User) => {
-    setNewUser(user);
+function AppContent() {
+  const [title, setTitle] = useState<string>("All bikes");
+  const [open, setOpen] = useState(false);
+
+  const toggleDrawer = (newOpen: boolean) => () => {
+    setOpen(newOpen);
   };
 
   return (
-    <>
-      <Stack id="taskbar" direction={"row"} spacing={2} alignItems="center" padding={-5} sx={{ ml: -3, mr: -3 }}>
-        <Link to="/">
-          <img src={RiceBikesIcon} alt="Rice Bikes Icon" />
-        </Link>
-        <h2>Rice Bikes App</h2>
-        <Button
-          id="logout"
-          variant="contained"
-          style={{ backgroundColor: "black" }}
-          onClick={() => {
-            queryClient.removeQueries({ queryKey: ["user"] });
-          }}
+    <Grid2 style={{ margin: 0, padding: 0 }}>
+      <Stack direction={"row"}>
+        <Stack sx={{ width: "5vw" }}>
+          <CollapsedRail open={open} toggleDrawer={toggleDrawer} />
+          <AppDrawer open={open} toggleDrawer={toggleDrawer} />
+        </Stack>
+        <Stack
+          direction={"column"}
+          sx={{ width: "95vw", mt: 2, mb: 2 }}
+          alignItems="center"
         >
-          {" "}
-          <h2>
-            {user === null ? (
-              <Link to="https://idp.rice.edu/idp/profile/cas/login?service=https://ricebikesapp.rice.edu/auth">
-                {"Login"}
-              </Link>
-            ) : (
-              "Logout"
-            )}
-          </h2>{" "}
-        </Button>
+          <Stack
+            direction={"row"}
+            alignItems="space-between"
+            sx={{ width: "90vw" }}
+          >
+            <Typography variant="h2" noWrap width="20vw">
+              {title}
+            </Typography>
+            <AuthPrompt />
+          </Stack>
+          <Routes>
+            <Route path="/" element={<TransactionsTable />} />
+            <Route
+              path="/transaction-details/:transaction_id"
+              element={<TransactionDetail />}
+              // action={() => setTitle("Your bike")}
+            />
+            <Route
+              path="/bike-transaction/:transaction_id"
+              element={<BikeTransactionPageWrapper />}
+              action={() => setTitle("Bike Build Page")}
+            />
+            <Route
+              path="/admin"
+              element={<AdminPage />}
+              action={() => setTitle("Admin Page")}
+            />
+            <Route
+              path="/whiteboard"
+              element={<WhiteboardPage />}
+              action={() => setTitle("Whiteboard")}
+            />
+          </Routes>
+        </Stack>
       </Stack>
-      <AuthPrompt
-        setUser={onUserChange}
-      />
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <TransactionsTable user={user} />
-          }
-        />
-        <Route
-          path="/transaction-details/:transaction_id"
-          element={<TransactionDetail propUser={user} />}
-        />
-        <Route
-          path="/bike-transaction/:transaction_id"
-          element={<BikeTransactionPageWrapper />}
-        />
-        <Route
-          path="/admin"
-          element={<AdminPage user={user} />}
-        />
-        <Route
-          path="/whiteboard"
-          element={<WhiteboardPage user={user} />}
-        />
-      </Routes>
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -89,9 +94,8 @@ function App() {
         pauseOnHover
         theme="light"
       />
-    </>
+    </Grid2>
   );
 }
-
 
 export default App;

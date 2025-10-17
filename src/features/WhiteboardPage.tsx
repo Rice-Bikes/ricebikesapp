@@ -10,14 +10,11 @@ import { useNavigate } from 'react-router-dom';
 import { CheckBox, CheckBoxOutlineBlank } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import OrderModal from '../components/OrderModal';
-import { User } from '../model';
+import { useUser } from '../contexts/UserContext';
 
-interface WhiteboardPageProps {
-    user: User;
-}
-
-const WhiteboardPage: React.FC<WhiteboardPageProps> = ({ user }) => {
+const WhiteboardPage: React.FC = () => {
     const nav = useNavigate();
+    const {data: user} = useUser();
     const { data: orderRequestData, error: orderRequestError, fetchStatus: orderRequestStatus } = useQuery({
         queryKey: ["orderRequest"],
         queryFn: () => {

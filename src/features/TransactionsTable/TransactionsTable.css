@@ -2,7 +2,6 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 0;
 }
 
 .tags {
@@ -21,7 +20,7 @@ header {
   flex-direction: row;
   align-items: center;
   padding: 1%;
-  width: 35vw;
+  /*width: 35vw;*/
 }
 
 #indicators button {
@@ -33,18 +32,16 @@ header {
 }
 
 #nav-buttons {
-  width: 35vw;
+  /*width: 35vw;*/
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 main {
-  padding: 0 10vw;
+  padding: 0 10%;
   max-width: 80vw;
 }
-
-
 
 #transactionsContent {
   width: 100%;

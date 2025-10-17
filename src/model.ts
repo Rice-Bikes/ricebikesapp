@@ -79,8 +79,10 @@ export type CreateWorkflow = FromSchema<typeof CreateWorkflowSchema>;
 export type PartArray = FromSchema<typeof partArraySchema>;
 export type RepairArray = FromSchema<typeof repairArraySchema>;
 export type TransactionArray = FromSchema<typeof TransactionArraySchema>;
-export type TransactionDetailsArray = FromSchema<typeof TransactionDetailsArraySchema>;
-export type TransactionLogArray = FromSchema< typeof TransactionLogArraySchema>;
+export type TransactionDetailsArray = FromSchema<
+  typeof TransactionDetailsArraySchema
+>;
+export type TransactionLogArray = FromSchema<typeof TransactionLogArraySchema>;
 export type TransactionLog = FromSchema<typeof TransactionLogSchema>;
 export type WorkflowStepsArray = FromSchema<typeof WorkflowStepsArraySchema>;
 
@@ -92,15 +94,15 @@ export type ObjectResponse = FromSchema<typeof ObjectResponseSchema>;
 type TransactionDetailType = "item" | "repair";
 
 export interface ExtractedRow {
-    lineNumber: string;
-    quantity: string;
-    ordered: string;
-    partNumber: string;
-    description: string;
-    unit: string;
-    price: string;
-    discount: string;
-    total: string;
+  lineNumber: string;
+  quantity: string;
+  ordered: string;
+  partNumber: string;
+  description: string;
+  unit: string;
+  price: string;
+  discount: string;
+  total: string;
 }
 
 /**
@@ -142,7 +144,6 @@ export interface ExtractedRow {
  * @returns {object} - The query configuration object.
  */
 class DBModel {
-
   // OBJECT VERIFICATION METHODS
   static validateTransaction: (data: unknown) => data is Transaction;
   static validateCustomer: (data: unknown) => data is Customer;
@@ -151,27 +152,37 @@ class DBModel {
   static validatePart: (data: unknown) => data is Part;
   static validateRepair: (data: unknown) => data is Repair;
   static validateOrderRequest: (data: unknown) => data is OrderRequest;
-  static validateTransactionDetails: (data: unknown) => data is TransactionDetails;
+  static validateTransactionDetails: (
+    data: unknown,
+  ) => data is TransactionDetails;
   public static validateRepairDetails: (data: unknown) => data is RepairDetails;
   public static validateItemDetails: (data: unknown) => data is ItemDetails;
   public static validateUser: (data: unknown) => data is User;
-  public static validateTransactionLog: (data: unknown) => data is TransactionLog;
+  public static validateTransactionLog: (
+    data: unknown,
+  ) => data is TransactionLog;
   public static validateRole: (data: unknown) => data is Role;
   public static validatePermissions: (data: unknown) => data is Permission;
   public static validateFeatureFlags: (data: unknown) => data is FeatureFlag[];
   public static validateOrder: (data: unknown) => data is Order;
   public static validateWorkflowStep: (data: unknown) => data is WorkflowStep;
-  public static validateWorkflowProgress: (data: unknown) => data is WorkflowProgress;
-  public static validateWorkflowSteps: (data: unknown) => data is WorkflowStep[];
+  public static validateWorkflowProgress: (
+    data: unknown,
+  ) => data is WorkflowProgress;
+  public static validateWorkflowSteps: (
+    data: unknown,
+  ) => data is WorkflowStep[];
 
   // ARRAY VERIFICATION METHODS
   static validatePartsArray: (data: unknown) => data is Part[];
   static validateTransactionsArray: (data: unknown) => data is Transaction[];
   static validateRepairsArray: (data: unknown) => data is Repair[];
   static validateTransactionDetailsArray: (
-    data: unknown
+    data: unknown,
   ) => data is TransactionDetails[] | RepairDetails[] | ItemDetails[];
-  static validateTransactionLogArray: (data: unknown) => data is TransactionLog[];
+  static validateTransactionLogArray: (
+    data: unknown,
+  ) => data is TransactionLog[];
 
   // RESPONSE VERIFICATION METHODS
   static validateRepairsResponse: (data: unknown) => data is RepairResponse;
@@ -179,7 +190,7 @@ class DBModel {
   static validateObjectResponse: (data: unknown) => data is ObjectResponse;
   static validateArrayResponse: (data: unknown) => data is ArrayResponse;
   static validateTransactionSummary: (
-    data: unknown
+    data: unknown,
   ) => data is TransactionSummary;
 
   static initialize() {
@@ -215,7 +226,7 @@ class DBModel {
     DBModel.validatePartsArray = compile(partArraySchema);
     DBModel.validateRepairsArray = compile(repairArraySchema);
     DBModel.validateTransactionDetailsArray = compile(
-      TransactionDetailsArraySchema
+      TransactionDetailsArraySchema,
     );
 
     // RESPONSE VERIFICATION METHODS
@@ -237,14 +248,14 @@ class DBModel {
    */
   public static fetchTransactions = async (
     page_limit: number,
-    aggregate: boolean
+    aggregate: boolean,
   ) =>
     fetch(
       `${hostname}/transactions?` +
         new URLSearchParams({
           page_limit: page_limit.toString(),
           aggregate: aggregate.toString(),
-        })
+        }),
     )
       .then((response) => response.json())
       .then((transactionData: unknown) => {
@@ -261,11 +272,14 @@ class DBModel {
       .then((transactionsData: unknown[]) => {
         console.log("Mapped Parts Data:", transactionsData);
         transactionsData.forEach((part) => {
-          if (part && typeof part === 'object' && part !== null) {
+          if (part && typeof part === "object" && part !== null) {
             const transaction = part as Record<string, unknown>;
             // Only validate essential transaction fields for backwards compatibility
             if (!transaction.transaction_id || !transaction.transaction_num) {
-              console.warn("Transaction missing essential fields (transaction_id, transaction_num):", part);
+              console.warn(
+                "Transaction missing essential fields (transaction_id, transaction_num):",
+                part,
+              );
               // Don't throw error - just log warning
             }
             // Don't validate the optional fields - they can be null/undefined
@@ -278,16 +292,46 @@ class DBModel {
         if (!Array.isArray(transactionsData)) {
           throw new Error("Parts data must be an array");
         }
-        
+
         // Don't validate each transaction strictly - just ensure it's an array
         console.log(`Processing ${transactionsData.length} transactions`);
 
         const transactionRowsPromises = transactionsData.map((partData) => {
           const part = partData as Record<string, unknown>;
           const bikeField: unknown = part.Bike;
-          if (bikeField !== null && !DBModel.validateBike(bikeField)) {
-            console.warn("Invalid bike:", bikeField);
-            throw new Error("Invalid bike found");
+          if (bikeField !== null) {
+            // Coerce string values to numbers for validation
+            if (typeof bikeField === "object" && bikeField !== null) {
+              // Cast to a more specific type with expected properties
+              const bikeCopy = {
+                ...(bikeField as Record<string, unknown>),
+              } as {
+                size_cm?: string | number;
+                price?: string | number;
+                deposit_amount?: string | number;
+              };
+
+              // Convert size_cm from string to number if it's a string
+              if (typeof bikeCopy.size_cm === "string") {
+                bikeCopy.size_cm = parseFloat(bikeCopy.size_cm);
+              }
+              // Convert price from string to number if it's a string
+              if (typeof bikeCopy.price === "string") {
+                bikeCopy.price = parseFloat(bikeCopy.price);
+              }
+              // Convert deposit_amount from string to number if it's a string
+              if (typeof bikeCopy.deposit_amount === "string") {
+                bikeCopy.deposit_amount = parseFloat(bikeCopy.deposit_amount);
+              }
+
+              if (!DBModel.validateBike(bikeCopy)) {
+                console.warn("Invalid bike:", bikeField);
+                throw new Error("Invalid bike found");
+              }
+            } else if (!DBModel.validateBike(bikeField)) {
+              console.warn("Invalid bike:", bikeField);
+              throw new Error("Invalid bike found");
+            }
           }
 
           if (!DBModel.validateCustomer(part.Customer)) {
@@ -295,8 +339,8 @@ class DBModel {
             throw new Error("Invalid customer found");
           }
 
-          if( part.OrderRequests && (part.OrderRequests instanceof Array )){
-            for(let i = 0; i < part.OrderRequests.length; i++){
+          if (part.OrderRequests && part.OrderRequests instanceof Array) {
+            for (let i = 0; i < part.OrderRequests.length; i++) {
               if (!DBModel.validateOrderRequest(part.OrderRequests[i])) {
                 console.error("Invalid order request:", part.OrderRequests[i]);
                 throw new Error("Invalid order request found");
@@ -459,27 +503,27 @@ class DBModel {
       .catch((error) => {
         throw new Error("Error attaching role data: " + error); // More detailed error logging
       });
-      public static detachRole = async (user_id: string, role_id: string) =>
-        fetch(`${hostname}/users/roles/`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ role_id, user_id }),
-        })
-          .then((response) => response.json())
-          .then((response) => {
-            if (!DBModel.validateObjectResponse(response)) {
-              throw new Error("Invalid response");
-            }
-            if (!response.success) {
-              throw new Error("Failed to attach role");
-            }
-            return response.responseObject;
-          })
-          .catch((error) => {
-            throw new Error("Error attaching role data: " + error); // More detailed error logging
-          });
+  public static detachRole = async (user_id: string, role_id: string) =>
+    fetch(`${hostname}/users/roles/`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ role_id, user_id }),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to attach role");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error attaching role data: " + error); // More detailed error logging
+      });
   public static fetchPermissions = async () =>
     fetch(`${hostname}/permissions`, {
       method: "GET",
@@ -566,7 +610,10 @@ class DBModel {
         throw new Error("Error updating permission data: " + error); // More detailed error logging
       });
 
-  public static attachPermission = async (permission_id: number, role_id: string) =>
+  public static attachPermission = async (
+    permission_id: number,
+    role_id: string,
+  ) =>
     fetch(`${hostname}/roles/permission`, {
       method: "POST",
       headers: {
@@ -588,7 +635,10 @@ class DBModel {
         throw new Error("Error attaching permission data: " + error); // More detailed error logging
       });
 
-    public static detachPermission = async (permission_id: number, role_id: string) =>
+  public static detachPermission = async (
+    permission_id: number,
+    role_id: string,
+  ) =>
     fetch(`${hostname}/roles/permission`, {
       method: "DELETE",
       headers: {
@@ -610,7 +660,7 @@ class DBModel {
         throw new Error("Error detaching permission data: " + error); // More detailed error logging
       });
 
-      public static fetchPermissionsForRole = async (role_id: string) =>
+  public static fetchPermissionsForRole = async (role_id: string) =>
     fetch(`${hostname}/permissions/role/${role_id}`, {
       method: "GET",
       headers: {
@@ -635,32 +685,26 @@ class DBModel {
         throw new Error("Error loading permissions data: " + error); // More detailed error logging
       });
 
-  
-
-  public static fetchCustomers = async () =>  
-    fetch(`${hostname}/customers`, 
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    )
-    .then((response) => response.json())
-    .then((response) => {
-      if (!DBModel.validateArrayResponse(response)) {
-        throw new Error("Invalid response");
-      }
-      if (!response.success) {
-        throw new Error("Failed to load customers");
-      }
-      return response.responseObject;
+  public static fetchCustomers = async () =>
+    fetch(`${hostname}/customers`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
     })
-    .catch((error) => {
-      throw new Error("Error loading customers data: " + error); // More detailed error logging
-    }
-    )
-
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateArrayResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to load customers");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error loading customers data: " + error); // More detailed error logging
+      });
 
   public static fetchTransaction = async (transaction_id: string) =>
     fetch(`${hostname}/transactions/${transaction_id}`, {
@@ -685,12 +729,28 @@ class DBModel {
           console.error("Invalid transaction data:", transactionData);
           throw new Error("Invalid transaction response");
         }
-        if (transactionData?.Bike && !DBModel.validateBike(transactionData.Bike)) {
-          console.error("Invalid bike data:", transactionData.Bike);
-          throw new Error("Invalid bike response");
+        if (transactionData?.Bike) {
+          // Coerce string values to numbers for validation
+          const bikeCopy = { ...transactionData.Bike };
+          // Convert size_cm from string to number if it's a string
+          if (typeof bikeCopy.size_cm === "string") {
+            bikeCopy.size_cm = parseFloat(bikeCopy.size_cm);
+          }
+          // Convert price from string to number if it's a string
+          if (typeof bikeCopy.price === "string") {
+            bikeCopy.price = parseFloat(bikeCopy.price);
+          }
+          // Convert deposit_amount from string to number if it's a string
+          if (typeof bikeCopy.deposit_amount === "string") {
+            bikeCopy.deposit_amount = parseFloat(bikeCopy.deposit_amount);
+          }
+
+          if (!DBModel.validateBike(bikeCopy)) {
+            console.error("Invalid bike data:", transactionData.Bike);
+            throw new Error("Invalid bike response");
+          }
         }
 
-        
         return transactionData;
       });
 
@@ -716,7 +776,7 @@ class DBModel {
 
   public static updateTransaction = async (
     transaction_id: string,
-    Transaction: UpdateTransaction
+    Transaction: UpdateTransaction,
   ) => {
     console.log("updating transaction", Transaction);
     return fetch(`${hostname}/transactions/${transaction_id}`, {
@@ -730,7 +790,7 @@ class DBModel {
       .then((response) => {
         console.log(
           "successfully recieved update transaction response",
-          response
+          response,
         );
         if (!DBModel.validateObjectResponse(response)) {
           throw new Error("Invalid response");
@@ -747,7 +807,6 @@ class DBModel {
         throw new Error("Error posting transaction data: " + error); // More detailed error logging
       });
   };
-
 
   public static postTransaction = async (Transaction: CreateTransaction) =>
     fetch(`${hostname}/transactions`, {
@@ -833,7 +892,7 @@ class DBModel {
         throw Error("Error loading or parsing items data: " + error);
       });
 
-    public static createItem = async (item: CreatePart) =>
+  public static createItem = async (item: CreatePart) =>
     fetch(`${hostname}/items`, {
       method: "POST",
       headers: {
@@ -880,38 +939,36 @@ class DBModel {
         throw new Error("Error posting item data: " + error); // More detailed error logging
       });
 
-      public static deleteItem = async (item_id: string) =>
-        fetch(`${hostname}/items/${item_id}`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        })
-          .then((response) => response.json())
-          .then((response) => {
-            if (!DBModel.validateObjectResponse(response)) {
-              throw new Error("Invalid response");
-            }
-            if (!response.success) {
-              throw new Error("Failed to delete item");
-            }
-            return response.responseObject;
-          })
-          .catch((error) => {
-            throw new Error("Error deleting item data: " + error); // More detailed error logging
-          });
+  public static deleteItem = async (item_id: string) =>
+    fetch(`${hostname}/items/${item_id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to delete item");
+        }
+        return response.responseObject;
+      })
+      .catch((error) => {
+        throw new Error("Error deleting item data: " + error); // More detailed error logging
+      });
 
-  public static refreshItems = async (csv: string) =>{
-
+  public static refreshItems = async (csv: string) => {
     console.log("sending file in dbModel", csv);
     return fetch(`${hostname}/items`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({csv: csv}),
-    }
-    ) 
+      body: JSON.stringify({ csv: csv }),
+    })
       .then((response) => response.json())
       .then((itemsData: unknown) => {
         console.log("Raw Parts Data:", itemsData);
@@ -923,8 +980,8 @@ class DBModel {
         }
         // console.log(" Parts Array Data:", itemsData.responseObject);
         return itemsData.responseObject;
-      })
-    }
+      });
+  };
 
   public static activateItem = async (upc: string) =>
     fetch(`${hostname}/items/update/${upc}`, {
@@ -938,20 +995,20 @@ class DBModel {
         if (!response.success) {
           throw new Error("Failed to activate item");
         }
-      })
+      });
 
   public static fetchItemCategory = async (category: number) =>
     fetch(`${hostname}/items/categories/?category=${category}`)
-  .then((response) => response.json())
-  .then((response) => {
-    if (!DBModel.validateArrayResponse(response)) {
-      throw new Error("Invalid response");
-    }
-    if (!response.success) {
-      throw new Error("Failed to load items");
-    }
-    return response.responseObject;
-  })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!DBModel.validateArrayResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to load items");
+        }
+        return response.responseObject;
+      });
 
   public static fetchRepairs = async () =>
     fetch(`${hostname}/repairs`)
@@ -969,16 +1026,13 @@ class DBModel {
       })
       .then((repairsData: unknown[]) => {
         console.log("Mapped repairs Data:", repairsData);
-        repairsData.forEach((part) => {
-          if (!DBModel.validateRepair(part)) {
-            console.log("Invalid Part:", part);
-            throw new Error("Invalid part found");
-          }
+        const filteredRepairs = repairsData.filter((repair) => {
+          return DBModel.validateRepair(repair);
         });
-        if (!DBModel.validateRepairsArray(repairsData)) {
-          throw new Error("Invalid part array");
+        if (!DBModel.validateRepairsArray(filteredRepairs)) {
+          throw new Error("Invalid repair array");
         }
-        return repairsData;
+        return filteredRepairs;
       })
       .catch((error) => {
         throw new Error("Error loading server data: " + error); // More detailed error logging
@@ -1054,7 +1108,11 @@ class DBModel {
       // This helps trace where requests like `/users/eesanders25` are coming from.
       // The stack trace provides an initiator hint in the browser console.
       // Remove this logging after debugging.
-  console.log('DBModel.fetchUser called', { netid, hostname, stack: new Error().stack });
+      console.log("DBModel.fetchUser called", {
+        netid,
+        hostname,
+        stack: new Error().stack,
+      });
     } catch {
       // ignore logging failures
     }
@@ -1135,7 +1193,11 @@ class DBModel {
     try {
       // Lightweight instrumentation: log which user object is being updated.
       // Useful for tracking down unexpected PATCHes to /users/:id
-  console.log('DBModel.updateUser called', { user_id: user?.user_id, hostname, stack: new Error().stack });
+      console.log("DBModel.updateUser called", {
+        user_id: user?.user_id,
+        hostname,
+        stack: new Error().stack,
+      });
     } catch {
       // ignore logging failures
     }
@@ -1182,50 +1244,70 @@ class DBModel {
 
   public static fetchTransactionDetails = async (
     transaction_id: string,
-    type: TransactionDetailType
+    type: TransactionDetailType,
   ) => {
     console.log("fetching transaction id", transaction_id, "of type", type);
     console.log(
       `${hostname}/transactionDetails/${transaction_id}?` +
-        new URLSearchParams({ detailType: type })
+        new URLSearchParams({ detailType: type }),
     );
     return fetch(
       `${hostname}/transactionDetails/${transaction_id}?` +
-        new URLSearchParams({ detailType: type })
+        new URLSearchParams({ detailType: type }),
     )
       .then((response) => {
         if (!response.ok) {
           throw new Error(
-            "Failed to load Transactions Details -- failed to fetch"
+            "Failed to load Transactions Details -- failed to fetch",
           );
         }
         if (response.status > 299) {
           throw new Error(
             "Failed to load Transactions Details: request unsuccessful" +
-              response
+              response,
           );
         }
         return response;
       })
-      .then((response) => response.json())
+      .then(async (response) => {
+        // Handle 204 No Content or empty response bodies to avoid JSON parse errors
+        if (response.status === 204) {
+          return {
+            success: true,
+            responseObject: [],
+            message: "No content",
+            statusCode: 204,
+          };
+        }
+        const text = await response.text();
+        if (!text) {
+          return {
+            success: true,
+            responseObject: [],
+            message: "Empty response body",
+            statusCode: response.status,
+          };
+        }
+        return JSON.parse(text);
+      })
       .then((transactionDetailsData: unknown) => {
         console.log("Raw Transactions Details Data:", transactionDetailsData);
         if (!DBModel.validateArrayResponse(transactionDetailsData)) {
-          throw new Error("Invalid Transactions Details response");
+          throw new Error("Transaction Detail Response not in an array ");
         }
         if (!transactionDetailsData.success) {
           throw new Error("Failed to load Transactions Details");
         }
         console.log(
           "Transactions Details Array Data:",
-          transactionDetailsData.responseObject
+          transactionDetailsData.responseObject,
         );
         return transactionDetailsData.responseObject;
       })
       .then((transactionDetailsArray: unknown[]) => {
         console.log(
           "Mapped Transactions Details Data:",
-          transactionDetailsArray
+          transactionDetailsArray,
         );
         switch (type) {
           case "item":
@@ -1268,7 +1350,7 @@ class DBModel {
     object_id: string,
     changed_by: string,
     quantity: number,
-    type: TransactionDetailType
+    type: TransactionDetailType,
   ) => {
     const body =
       type == "item"
@@ -1310,7 +1392,7 @@ class DBModel {
 
   public static updateTransactionDetails = async (
     transaction_detail_id: string,
-    completed: boolean 
+    completed: boolean,
   ) => {
     return fetch(`${hostname}/transactionDetails/${transaction_detail_id}`, {
       method: "PATCH",
@@ -1338,7 +1420,29 @@ class DBModel {
 
   public static fetchTransactionLogs = async (transaction_id: number) =>
     fetch(`${hostname}/transactionLogs/${transaction_id}`)
-      .then((response) => response.json())
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Failed to load transaction logs -- failed to fetch");
+        }
+        if (response.status === 204) {
+          return {
+            success: true,
+            responseObject: [],
+            message: "No content",
+            statusCode: 204,
+          };
+        }
+        const text = await response.text();
+        if (!text) {
+          return {
+            success: true,
+            responseObject: [],
+            message: "Empty response body",
+            statusCode: response.status,
+          };
+        }
+        return JSON.parse(text);
+      })
       .then((response) => {
         console.log(response);
         if (!DBModel.validateArrayResponse(response)) {
@@ -1360,42 +1464,45 @@ class DBModel {
         }
         return transactionLogs;
       })
+      .catch((error) => {
+        console.error("Error loading transaction logs data: ", error);
+        throw new Error("Error loading transaction logs data: " + error);
+      });
 
-
-    public static postTransactionLog = async (
-      transaction_id: number,
-      changed_by: string,
-      description: string,
-      change_type: string
-    ) => {
-      const body = {
-        changed_by: changed_by,
-        description: description,
-        change_type: change_type,
-      };
-
-      return fetch(`${hostname}/transactionLogs/${transaction_id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      })
-        .then((response) => response.json())
-        .then((response) => {
-          console.log(response);
-          if (!DBModel.validateObjectResponse(response)) {
-            throw new Error("Invalid response");
-          }
-          if (!response.success) {
-            throw new Error("Failed to post transaction log");
-          }
-        })
-        .catch((error) => {
-          console.error("Error posting transaction log data: ", error);
-          throw new Error("Error posting transaction log data: " + error); // More detailed error logging
-        });
+  public static postTransactionLog = async (
+    transaction_id: number,
+    changed_by: string,
+    description: string,
+    change_type: string,
+  ) => {
+    const body = {
+      changed_by: changed_by,
+      description: description,
+      change_type: change_type,
     };
+
+    return fetch(`${hostname}/transactionLogs/${transaction_id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        console.log(response);
+        if (!DBModel.validateObjectResponse(response)) {
+          throw new Error("Invalid response");
+        }
+        if (!response.success) {
+          throw new Error("Failed to post transaction log");
+        }
+      })
+      .catch((error) => {
+        console.error("Error posting transaction log data: ", error);
+        throw new Error("Error posting transaction log data: " + error); // More detailed error logging
+      });
+  };
 
   public static createCustomer = async (customer: CreateCustomer) => {
     return fetch(`${hostname}/customers`, {
@@ -1423,7 +1530,7 @@ class DBModel {
       });
   };
 
-  public static updateCustomer = async (customer: Customer) => 
+  public static updateCustomer = async (customer: Customer) =>
     fetch(`${hostname}/customers/${customer.customer_id}`, {
       method: "PATCH",
       headers: {
@@ -1443,13 +1550,10 @@ class DBModel {
           throw new Error("Invalid customer response");
         }
         return response.responseObject;
-      }
-      )
+      })
       .catch((error) => {
         throw new Error("Error posting customer data: " + error); // More detailed error logging
       });
-  
-
 
   public static createBike = async (bike: Bike) =>
     fetch(`${hostname}/bikes`, {
@@ -1470,22 +1574,34 @@ class DBModel {
 
         // More lenient validation for bike creation - only validate essential fields
         const bike = response.responseObject;
-        if (!bike || typeof bike !== 'object' || !bike.make || !bike.model || !bike.description) {
-          console.warn("Invalid bike response - missing essential fields:", bike);
+        if (
+          !bike ||
+          typeof bike !== "object" ||
+          !bike.make ||
+          !bike.model ||
+          !bike.description
+        ) {
+          console.warn(
+            "Invalid bike response - missing essential fields:",
+            bike,
+          );
           throw new Error("Invalid bike response");
         }
-        
+
         return response.responseObject;
       })
       .catch((error) => {
         throw new Error("Error posting bike data: " + error); // More detailed error logging
       });
 
-  public static updateBike = async (bike_id: string, bikeData: Partial<UpdateBike>) => {
+  public static updateBike = async (
+    bike_id: string,
+    bikeData: Partial<UpdateBike>,
+  ) => {
     // Make sure we have valid data
     if (!bikeData || Object.keys(bikeData).length === 0) {
-      console.error('Empty bike data provided for update');
-      throw new Error('Cannot update bike with empty data');
+      console.error("Empty bike data provided for update");
+      throw new Error("Cannot update bike with empty data");
     }
 
     // Ensure we don't send undefined values - convert them to null for the API
@@ -1498,7 +1614,7 @@ class DBModel {
 
     // Debug output before sending request
     console.log(`Updating bike ${bike_id} with data:`, cleanedData);
-    
+
     return fetch(`${hostname}/bikes/${bike_id}`, {
       method: "PATCH",
       headers: {
@@ -1509,41 +1625,60 @@ class DBModel {
       .then(async (response) => {
         const responseText = await response.text();
         console.log(`Update bike response (${response.status}):`, responseText);
-        
+
         // Try to parse the response as JSON
         try {
           return JSON.parse(responseText);
         } catch (e) {
-          console.error('Failed to parse response as JSON:', e);
+          console.error("Failed to parse response as JSON:", e);
           throw new Error(`Server response is not valid JSON: ${responseText}`);
         }
       })
       .then((response) => {
         if (!DBModel.validateObjectResponse(response)) {
-          console.error('Invalid response object:', response);
+          console.error("Invalid response object:", response);
           throw new Error("Invalid response structure");
         }
         if (!response.success) {
-          console.error('Update bike failed:', response.message);
-          throw new Error(`Failed to update bike: ${response.message || 'Unknown error'}`);
+          console.error("Update bike failed:", response.message);
+          throw new Error(
+            `Failed to update bike: ${response.message || "Unknown error"}`,
+          );
         }
 
         // Validate the updated bike response
-        if (!DBModel.validateBike(response.responseObject)) {
-          console.warn("Invalid bike response after update:", response.responseObject);
+        const bikeToValidate = { ...response.responseObject };
+        // Convert string values to numbers for validation
+        if (typeof bikeToValidate.size_cm === "string") {
+          bikeToValidate.size_cm = parseFloat(bikeToValidate.size_cm);
+        }
+        if (typeof bikeToValidate.price === "string") {
+          bikeToValidate.price = parseFloat(bikeToValidate.price);
+        }
+        if (typeof bikeToValidate.deposit_amount === "string") {
+          bikeToValidate.deposit_amount = parseFloat(
+            bikeToValidate.deposit_amount,
+          );
+        }
+
+        if (!DBModel.validateBike(bikeToValidate)) {
+          console.warn(
+            "Invalid bike response after update:",
+            response.responseObject,
+          );
           throw new Error("Invalid bike response");
         }
-        
+
         return response.responseObject;
       })
       .catch((error) => {
-        console.error('Error in updateBike:', error);
+        console.error("Error in updateBike:", error);
         throw new Error("Error updating bike data: " + error);
       });
   };
 
   public static deleteTransactionDetails = async (
-    transaction_detail_id: string
+    transaction_detail_id: string,
   ) =>
     fetch(`${hostname}/transactionDetails/${transaction_detail_id}`, {
       method: "DELETE",
@@ -1613,7 +1748,7 @@ class DBModel {
       });
 
   public static getOrderRequests = async (transaction_id?: string) =>
-    fetch(`${hostname}/orderRequests/${transaction_id? transaction_id : ""}`)
+    fetch(`${hostname}/orderRequests/${transaction_id ? transaction_id : ""}`)
       .then((response) => response.json())
       .then((response) => {
         console.log(response);
@@ -1713,7 +1848,9 @@ class DBModel {
         throw new Error("Error loading order data: " + error);
       });
 
-  public static createOrder = async (order: Omit<Order, 'order_id' | 'order_date'>) =>
+  public static createOrder = async (
+    order: Omit<Order, "order_id" | "order_date">,
+  ) =>
     fetch(`${hostname}/orders`, {
       method: "POST",
       headers: {
@@ -1807,14 +1944,17 @@ class DBModel {
         throw new Error("Error getting closest future order: " + error);
       });
 
-    public static sendEmail = async (customer: Customer, transaction_num: number) => 
-      fetch(`${hostname}/customers/${transaction_num}/emails/pickup`, {
+  public static sendEmail = async (
+    customer: Customer,
+    transaction_num: number,
+  ) =>
+    fetch(`${hostname}/customers/${transaction_num}/emails/pickup`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        customer
+        customer,
       }),
     })
       .then((response) => response.json())
@@ -1832,8 +1972,12 @@ class DBModel {
         throw new Error("Error posting order request data: " + error); // More detailed error logging
       });
 
-  public static sendRecieptEmail = async (customer: Customer, transaction_num: number, transaction_id: string) => 
-      fetch(`${hostname}/customers/${transaction_num}/emails/receipt`, {
+  public static sendRecieptEmail = async (
+    customer: Customer,
+    transaction_num: number,
+    transaction_id: string,
+  ) =>
+    fetch(`${hostname}/customers/${transaction_num}/emails/receipt`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1860,7 +2004,7 @@ class DBModel {
       });
   public static getTransactionsQuery = (
     page_limit: number,
-    aggregate: boolean
+    aggregate: boolean,
   ) => {
     return queryOptions({
       queryKey: ["transactions"],
@@ -1872,7 +2016,7 @@ class DBModel {
   };
 
   public static getTransactionQuery = (
-    transaction_id: string
+    transaction_id: string,
     // onTransactionSuccess: (t: Transaction) => void
     // initialData: Transaction
   ) => {
@@ -1892,7 +2036,7 @@ class DBModel {
       queryFn: () => this.fetchItems(),
       refetchOnWindowFocus: false,
       staleTime: 600000, // Cache products for 10 minutes
-      select: (data) =>  data as Part[],
+      select: (data) => data as Part[],
     });
   };
   public static getRepairsQuery = () => {
@@ -1906,7 +2050,7 @@ class DBModel {
 
   public static getTransactionDetailsQuery = (
     transaction_id: string,
-    type: TransactionDetailType
+    type: TransactionDetailType,
   ) => {
     return queryOptions({
       queryKey: ["transactionDetails", transaction_id, type],
@@ -1931,7 +2075,7 @@ class DBModel {
       refetchOnWindowFocus: false,
       staleTime: 600000, // Cache products for 10 minutes
     });
-  }
+  };
   public static getFeatureFlagsQuery = () => {
     return queryOptions({
       queryKey: ["featureFlags"],
@@ -1950,7 +2094,7 @@ class DBModel {
     });
   };
 
-    /**
+  /**
    * Fetch all feature flags from the backend
    */
   public static fetchFeatureFlags = async () =>
@@ -1978,11 +2122,16 @@ class DBModel {
         // Optionally validate response shape here
         return data;
       });
-    public static addFeatureFlag = async (flagName: string, value: boolean, details: string, user: User) => {
-      return fetch(`${hostname}/feature-flags/${flagName}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({  value, details, user }),
+  public static addFeatureFlag = async (
+    flagName: string,
+    value: boolean,
+    details: string,
+    user: User,
+  ) => {
+    return fetch(`${hostname}/feature-flags/${flagName}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value, details, user }),
     })
       .then((response) => response.json())
       .then((data) => {
@@ -2016,22 +2165,25 @@ class DBModel {
         // Optionally validate response shape here
         return data;
       });
-    
+
   static async processPdf(formData: FormData): Promise<ExtractedRow[]> {
     const response = await fetch(`${hostname}/orderRequests/process-pdf`, {
-      method: 'POST',
+      method: "POST",
       body: formData,
     });
-    
+
     if (!response.ok) {
-      throw new Error('Failed to process PDF');
+      throw new Error("Failed to process PDF");
     }
-    
+
     return response.json();
   }
 
   // Special case: Initialize endpoint uses 'bike-sales' (hyphen) and is hardcoded in the API
-  public static initializeWorkflow = async (transactionId: string, createdBy?: string) =>
+  public static initializeWorkflow = async (
+    transactionId: string,
+    createdBy?: string,
+  ) =>
     fetch(`${hostname}/workflow-steps/initialize/bike-sales/${transactionId}`, {
       method: "POST",
       headers: {
@@ -2058,7 +2210,9 @@ class DBModel {
         try {
           return await response.json();
         } catch (error) {
-          throw new Error(`Invalid JSON response from initialize workflow API: ${error}`);
+          throw new Error(
+            `Invalid JSON response from initialize workflow API: ${error}`,
+          );
         }
       })
       .then((response) => {
@@ -2078,21 +2232,31 @@ class DBModel {
         throw error;
       });
 
-  public static fetchWorkflowProgress = async (transactionId: string, workflowType: string = 'bike_sales') =>
-    fetch(`${hostname}/workflow-steps/progress/${transactionId}/${workflowType}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
+  public static fetchWorkflowProgress = async (
+    transactionId: string,
+    workflowType: string = "bike_sales",
+  ) =>
+    fetch(
+      `${hostname}/workflow-steps/progress/${transactionId}/${workflowType}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    })
+    )
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: Workflow progress endpoint not found`);
+          throw new Error(
+            `HTTP ${response.status}: Workflow progress endpoint not found`,
+          );
         }
         try {
           return await response.json();
         } catch (error) {
-          throw new Error(`Invalid JSON response from workflow progress API: ${error}`);
+          throw new Error(
+            `Invalid JSON response from workflow progress API: ${error}`,
+          );
         }
       })
       .then((response) => {
@@ -2100,15 +2264,23 @@ class DBModel {
           throw new Error("Invalid response structure");
         }
         if (!response.success) {
-          throw new Error(response.message || "Failed to fetch workflow progress");
+          throw new Error(
+            response.message || "Failed to fetch workflow progress",
+          );
         }
-        
+
         // Debug: Log the actual response data to see what we're getting
-        console.log('Workflow progress response:', JSON.stringify(response.responseObject, null, 2));
-        
+        console.log(
+          "Workflow progress response:",
+          JSON.stringify(response.responseObject, null, 2),
+        );
+
         if (!DBModel.validateWorkflowProgress(response.responseObject)) {
-          console.error('Workflow progress validation failed. Expected schema:', WorkflowProgressSchema);
-          console.error('Received data:', response.responseObject);
+          console.error(
+            "Workflow progress validation failed. Expected schema:",
+            WorkflowProgressSchema,
+          );
+          console.error("Received data:", response.responseObject);
           throw new Error("Invalid workflow progress data received");
         }
         return response.responseObject as WorkflowProgress;
@@ -2118,21 +2290,31 @@ class DBModel {
         throw error;
       });
 
-  public static fetchWorkflowSteps = async (transactionId: string, workflowType: string = 'bike_sales') =>
-    fetch(`${hostname}/workflow-steps/transaction/${transactionId}/${workflowType}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
+  public static fetchWorkflowSteps = async (
+    transactionId: string,
+    workflowType: string = "bike_sales",
+  ) =>
+    fetch(
+      `${hostname}/workflow-steps/transaction/${transactionId}/${workflowType}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    })
+    )
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: Workflow steps endpoint not found`);
+          throw new Error(
+            `HTTP ${response.status}: Workflow steps endpoint not found`,
+          );
         }
         try {
           return await response.json();
         } catch (error) {
-          throw new Error(`Invalid JSON response from workflow steps API: ${error}`);
+          throw new Error(
+            `Invalid JSON response from workflow steps API: ${error}`,
+          );
         }
       })
       .then((response) => {
@@ -2154,8 +2336,8 @@ class DBModel {
 
   public static completeWorkflowStep = async (stepId: string) => {
     const url = `${hostname}/workflow-steps/complete/${stepId}`;
-    console.log('Attempting to complete workflow step at URL:', url);
-    
+    console.log("Attempting to complete workflow step at URL:", url);
+
     return fetch(url, {
       method: "POST", // Changed from PATCH to POST to match backend
       headers: {
@@ -2167,33 +2349,48 @@ class DBModel {
       }),
     })
       .then(async (response) => {
-        console.log('Complete workflow step response status:', response.status);
-        console.log('Complete workflow step response headers:', Object.fromEntries(response.headers.entries()));
-        
+        console.log("Complete workflow step response status:", response.status);
+        console.log(
+          "Complete workflow step response headers:",
+          Object.fromEntries(response.headers.entries()),
+        );
+
         if (!response.ok) {
           const responseText = await response.text();
-          console.log('Complete workflow step error response body:', responseText.substring(0, 500));
-          throw new Error(`HTTP ${response.status}: Workflow step completion endpoint not implemented yet. Response: ${responseText.substring(0, 100)}...`);
+          console.log(
+            "Complete workflow step error response body:",
+            responseText.substring(0, 500),
+          );
+          throw new Error(
+            `HTTP ${response.status}: Workflow step completion endpoint not implemented yet. Response: ${responseText.substring(0, 100)}...`,
+          );
         }
-        
+
         const responseText = await response.text();
-        console.log('Complete workflow step success response body:', responseText);
-        
+        console.log(
+          "Complete workflow step success response body:",
+          responseText,
+        );
+
         try {
           return JSON.parse(responseText);
         } catch (parseError) {
-          console.error('Failed to parse JSON response:', parseError);
-          throw new Error(`Invalid JSON response from workflow completion endpoint: ${responseText.substring(0, 200)}...`);
+          console.error("Failed to parse JSON response:", parseError);
+          throw new Error(
+            `Invalid JSON response from workflow completion endpoint: ${responseText.substring(0, 200)}...`,
+          );
         }
       })
       .then((response) => {
-        console.log('Parsed workflow step completion response:', response);
-        
+        console.log("Parsed workflow step completion response:", response);
+
         if (!DBModel.validateObjectResponse(response)) {
           throw new Error("Invalid response structure");
         }
         if (!response.success) {
-          throw new Error(response.message || "Failed to complete workflow step");
+          throw new Error(
+            response.message || "Failed to complete workflow step",
+          );
         }
         if (!DBModel.validateWorkflowStep(response.responseObject)) {
           throw new Error("Invalid workflow step data received");
@@ -2220,7 +2417,9 @@ class DBModel {
           throw new Error("Invalid response structure");
         }
         if (!response.success) {
-          throw new Error(response.message || "Failed to uncomplete workflow step");
+          throw new Error(
+            response.message || "Failed to uncomplete workflow step",
+          );
         }
         if (!DBModel.validateWorkflowStep(response.responseObject)) {
           throw new Error("Invalid workflow step data received");
@@ -2240,7 +2439,7 @@ class DBModel {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        workflow_type: "bike_sales" // Required by backend
+        workflow_type: "bike_sales", // Required by backend
       }),
     })
       .then(async (response) => {
@@ -2259,7 +2458,9 @@ class DBModel {
         try {
           return await response.json();
         } catch (error) {
-          throw new Error(`Invalid JSON response from reset workflow API: ${error}`);
+          throw new Error(
+            `Invalid JSON response from reset workflow API: ${error}`,
+          );
         }
       })
       .then((response) => {

@@ -1,7 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ButtonGroup,
   Button,
   Popper,
   Grow,
@@ -12,19 +11,15 @@ import {
   Modal,
   Box,
 } from "@mui/material";
-import DBModel, { Transaction, User, CreateTransaction, Customer } from "../../model";
+import DBModel, { Transaction, CreateTransaction, Customer } from "../../model";
+import { useUser } from "../../contexts/UserContext";
 import NewTransactionForm from "./CustomerForm";
 
-interface TransactionDropdownProps {
-  user: User
-}
-
 const options = ["Inpatient", "Outpatient", "Merch", "Retrospec"]; // list of actions
-export default function CreateTransactionDropdown({
-  user,
-}: TransactionDropdownProps): JSX.Element {
+export default function CreateTransactionDropdown(): JSX.Element {
+  const { data: user } = useUser();
   const [open, setOpen] = useState(false);
-  const anchorRef = useRef<HTMLDivElement>(null);
+  const anchorRef = useRef<HTMLButtonElement>(null);
   const [showForm, setShowForm] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(1);
 
@@ -35,14 +30,12 @@ export default function CreateTransactionDropdown({
     try {
       // Get existing customers and use the first one as placeholder
       console.log("Fetching existing customers...");
-      const customers = await DBModel.createCustomer(
-        {
-          first_name: '',
-          last_name: '',
-          email: 'template@ricebikes.com',
-          phone: '0000000000'
-        }
-      );
+      const customers = await DBModel.createCustomer({
+        first_name: "",
+        last_name: "",
+        email: "template@ricebikes.com",
+        phone: "0000000000",
+      });
 
       if (!customers) {
         console.error("No existing customers found");
@@ -52,14 +45,17 @@ export default function CreateTransactionDropdown({
 
       // Use the first customer as a placeholder
       const placeholderCustomer = customers as Customer;
-      console.log("Using existing customer as placeholder:", placeholderCustomer);
+      console.log(
+        "Using existing customer as placeholder:",
+        placeholderCustomer,
+      );
 
       // Create transaction for bike sales workflow
       console.log("Creating transaction...");
       const newTransaction: CreateTransaction = {
         transaction_type: "Retrospec",
         customer_id: placeholderCustomer.customer_id,
-        is_employee: false
+        is_employee: false,
       };
 
       const createdTransaction = await DBModel.postTransaction(newTransaction);
@@ -68,13 +64,16 @@ export default function CreateTransactionDropdown({
       // Log the transaction creation
       DBModel.postTransactionLog(
         createdTransaction.transaction_num,
-        user.user_id,
+        user?.user_id ?? "",
         "Retrospec",
-        "initiated bike sales workflow"
+        "initiated bike sales workflow",
       );
 
       // Navigate directly to bike workflow
-      console.log("Navigating to bike workflow:", `/bike-transaction/${createdTransaction.transaction_id}`);
+      console.log(
+        "Navigating to bike workflow:",
+        `/bike-transaction/${createdTransaction.transaction_id}`,
+      );
       nav(`/bike-transaction/${createdTransaction.transaction_id}`);
     } catch (error) {
       console.error("Error creating Retrospec transaction:", error);
@@ -89,7 +88,7 @@ export default function CreateTransactionDropdown({
 
   const handleMenuItemClick = (
     event: React.MouseEvent<HTMLLIElement, MouseEvent>,
-    index: number
+    index: number,
   ) => {
     console.info(`You clicked ${options[index]} with ${event}`);
     setSelectedIndex(index);
@@ -119,12 +118,11 @@ export default function CreateTransactionDropdown({
 
     setOpen(false);
   };
-
   const handleTransactionCreated = (newTransaction: Transaction) => {
     // console.log("Transaction created", newTransaction);
     DBModel.postTransactionLog(
       newTransaction.transaction_num,
-      user.user_id,
+      user?.user_id ?? "",
       newTransaction.transaction_type,
       "created transaction",
     );
@@ -136,28 +134,50 @@ export default function CreateTransactionDropdown({
     } else {
       nav(
         `/transaction-details/${newTransaction.transaction_id}?` +
-        new URLSearchParams({ type: options[selectedIndex] })
+          new URLSearchParams({ type: options[selectedIndex] }),
       );
     }
   };
 
   return (
     <>
-      <ButtonGroup
-        variant="contained"
+      <Button
+        variant="outlined"
+        size="small"
+        aria-controls={open ? "split-button-menu" : undefined}
+        aria-expanded={open ? "true" : undefined}
+        aria-label="select merge strategy"
+        aria-haspopup="menu"
         ref={anchorRef}
-        aria-label="Button group with a nested menu"
+        disableRipple
+        onClick={handleToggle}
+        sx={{
+          // size/alignment to mimic Select
+          fontSize: "1rem",
+          minWidth: 220,
+          height: 40, // typical Select height
+          px: 1.5,
+          justifyContent: "space-between",
+          textTransform: "none",
+          fontWeight: 400,
+          color: "text.primary",
+          bgcolor: "background.paper",
+          borderColor: "divider",
+          borderRadius: 1, // uses theme.shape.borderRadius (4px default)
+          boxShadow: "none",
+          "&:hover": {
+            bgcolor: "background.paper",
+            borderColor: "text.primary",
+          },
+          "&:focus-visible": {
+            // subtle focus ring like inputs
+            boxShadow: (t) =>
+              `0 0 0 2px ${t.palette.action.focus}, inset 0 0 0 1px ${t.palette.divider}`,
+          },
+        }}
       >
-        <Button
-          aria-controls={open ? "split-button-menu" : undefined}
-          aria-expanded={open ? "true" : undefined}
-          aria-label="select merge strategy"
-          aria-haspopup="menu"
-          onClick={handleToggle}
-        >
-          New Transaction
-        </Button>
-      </ButtonGroup>
+        + Add new transaction
+      </Button>
       <Popper
         sx={{ zIndex: 100 }}
         open={open}
@@ -199,7 +219,7 @@ export default function CreateTransactionDropdown({
           <NewTransactionForm
             onTransactionCreated={handleTransactionCreated}
             isOpen={showForm}
-            user_id={user.user_id}
+            user_id={user?.user_id ?? ""}
             onClose={() => setShowForm(false)}
             t_type={options[selectedIndex]}
           />

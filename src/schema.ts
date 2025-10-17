@@ -124,6 +124,7 @@ export const repairResponseSchema = {
   },
   required: ["message", "responseObject", "statusCode", "success"],
 } as const satisfies JSONSchema;
+
 export const CustomerSchema = {
   $schema: "http://json-schema.org/draft-07/schema",
   title: "Customer",
@@ -187,30 +188,30 @@ export const UpdateBikeSchema = {
     model: { type: "string", minLength: 1 },
     description: { type: ["string", "null"] },
     bike_type: { type: ["string", "null"], maxLength: 50 },
-    size_cm: { 
-      type: ["number", "null"], 
-      minimum: 30, 
-      maximum: 80 
+    size_cm: {
+      type: ["number", "null"],
+      minimum: 30,
+      maximum: 80,
     },
-    condition: { 
+    condition: {
       type: "string",
-      enum: ["New", "Refurbished", "Used"]
+      enum: ["New", "Refurbished", "Used"],
     },
-    price: { 
-      type: ["number", "null"], 
-      minimum: 0 
+    price: {
+      type: ["number", "null"],
+      minimum: 0,
     },
     is_available: { type: "boolean" },
-    weight_kg: { 
-      type: ["number", "null"], 
-      minimum: 0.1 
+    weight_kg: {
+      type: ["number", "null"],
+      minimum: 0.1,
     },
-    reservation_customer_id: { 
-      type: ["string", "null"] 
+    reservation_customer_id: {
+      type: ["string", "null"],
     },
-    deposit_amount: { 
-      type: ["number", "null"], 
-      minimum: 0 
+    deposit_amount: {
+      type: ["number", "null"],
+      minimum: 0,
     },
   },
   additionalProperties: false,
@@ -226,7 +227,7 @@ export const RoleSchema = {
     disabled: { type: "boolean" },
     description: { type: ["string", "null"] },
     UserRoles: { type: ["array", "null"] },
-    RolePermissions: { type: ["array", "null"] }
+    RolePermissions: { type: ["array", "null"] },
   },
   required: ["role_id", "disabled"],
   additionalProperties: false,
@@ -240,7 +241,7 @@ export const UserRolesSchema = {
     user_id: { type: "string" },
     role_id: { type: "string" },
     User: { type: "object" },
-    Role: RoleSchema
+    Role: RoleSchema,
   },
   required: ["user_id", "role_id"],
   additionalProperties: false,
@@ -254,7 +255,7 @@ export const PermissionsSchema = {
     id: { type: "integer" },
     name: { type: "string" },
     description: { type: ["string"] },
-    RolePermissions: { type: ["array", "null"] }
+    RolePermissions: { type: ["array", "null"] },
   },
   required: ["id", "name"],
   additionalProperties: false,
@@ -268,7 +269,7 @@ export const RolePermissionsSchema = {
     role_id: { type: "string" },
     permission_id: { type: "integer" },
     Role: RoleSchema,
-    Permission: PermissionsSchema
+    Permission: PermissionsSchema,
   },
   required: ["role_id", "permission_id"],
   additionalProperties: false,
@@ -290,19 +291,17 @@ export const UserSchema = {
   additionalProperties: false,
 } as const satisfies JSONSchema;
 
-
-
 // Order Request Schema
 export const OrderRequestSchema = {
   $schema: "http://json-schema.org/draft-07/schema",
   title: "OrderRequest",
   type: "object",
   properties: {
-    order_request_id: { type: "string",  },
-    created_by: { type: "string",  },
-    transaction_id: { type: "string",  },
+    order_request_id: { type: "string" },
+    created_by: { type: "string" },
+    transaction_id: { type: "string" },
     item_id: { type: "string" },
-    date_created: { type: "string"},
+    date_created: { type: "string" },
     quantity: { type: "integer" },
     notes: { type: ["string", "null"] },
     ordered: { type: "boolean" },
@@ -428,8 +427,6 @@ export const ObjectResponseSchema = {
 export const TransactionDetailsSchema = {
   $id: "transactionDetails.json",
   type: "object",
-  //   oneOf: [
-  // {
   properties: {
     transaction_detail_id: { type: "string" },
     transaction_id: { type: "string" },
@@ -448,8 +445,6 @@ export const TransactionDetailsSchema = {
     "quantity",
     "date_modified",
   ],
-
-  additionalProperties: true,
 } as const satisfies JSONSchema;
 
 export const RepairDetailsSchema = {
@@ -532,13 +527,12 @@ export const updateTransactionSchema = {
   additionalProperties: false,
 } as const satisfies JSONSchema;
 
-
 export const TransactionSummarySchema = {
   $id: "transactionSummary.json",
   type: "object",
   properties: {
     quantity_incomplete: { type: "number" },
-    quantity_beer_bike_incomplete : { type: "number" },
+    quantity_beer_bike_incomplete: { type: "number" },
     quantity_waiting_on_pickup: { type: "number" },
     quantity_waiting_on_safety_check: { type: "number" },
     additionalProperties: false,
@@ -574,7 +568,6 @@ export const CreateOrderRequestsSchema = {
   additionalProperties: false,
 } as const satisfies JSONSchema;
 
-
 export const CreateTransactionLogSchema = {
   $id: "CreateTransactionLogSchema.json",
   type: "object",
@@ -606,7 +599,14 @@ export const TransactionLogSchema = {
     description: { type: "string" },
     Users: UserSchema,
   },
-  required: ["log_id", "transaction_num", "changed_by", "date_modified", "change_type", "description"],
+  required: [
+    "log_id",
+    "transaction_num",
+    "changed_by",
+    "date_modified",
+    "change_type",
+    "description",
+  ],
   additionalProperties: false,
 } as const satisfies JSONSchema;
 
@@ -641,7 +641,13 @@ export const OrderSchema = {
     supplier: { type: "string" },
     ordered_by: { type: "string" },
   },
-  required: ["order_id", "order_date", "estimated_delivery", "supplier", "ordered_by"],
+  required: [
+    "order_id",
+    "order_date",
+    "estimated_delivery",
+    "supplier",
+    "ordered_by",
+  ],
   additionalProperties: false,
 } as const satisfies JSONSchema;
 
@@ -703,14 +709,14 @@ export const WorkflowStepSchema = {
   },
   required: [
     "step_id",
-    "transaction_id", 
+    "transaction_id",
     "workflow_type",
     "step_name",
     "step_order",
     "is_completed",
     "created_by",
     "created_at",
-    "updated_at"
+    "updated_at",
   ],
   additionalProperties: false,
 } as const satisfies JSONSchema;
@@ -729,17 +735,17 @@ export const WorkflowProgressSchema = {
     total_steps: { type: "number" },
     completed_steps: { type: "number" },
     progress_percentage: { type: "number" },
-    current_step: { 
+    current_step: {
       type: ["object", "null"],
       properties: {
         step_id: { type: "string" },
         step_name: { type: "string" },
         step_order: { type: "number" },
         is_completed: { type: "boolean" },
-        completed_at: { type: ["string", "null"], format: "date-time" }
+        completed_at: { type: ["string", "null"], format: "date-time" },
       },
       required: ["step_id", "step_name", "step_order", "is_completed"],
-      additionalProperties: false
+      additionalProperties: false,
     },
     is_workflow_complete: { type: "boolean" },
     steps_summary: {
@@ -751,20 +757,20 @@ export const WorkflowProgressSchema = {
           step_name: { type: "string" },
           step_order: { type: "number" },
           is_completed: { type: "boolean" },
-          completed_at: { type: ["string", "null"], format: "date-time" }
+          completed_at: { type: ["string", "null"], format: "date-time" },
         },
         required: ["step_id", "step_name", "step_order", "is_completed"],
-        additionalProperties: false
-      }
-    }
+        additionalProperties: false,
+      },
+    },
   },
   required: [
     "total_steps",
-    "completed_steps", 
+    "completed_steps",
     "progress_percentage",
     "current_step",
     "is_workflow_complete",
-    "steps_summary"
+    "steps_summary",
   ],
   additionalProperties: false,
 } as const satisfies JSONSchema;
@@ -776,7 +782,7 @@ export const CreateWorkflowSchema = {
   properties: {
     transaction_id: { type: "string", format: "uuid" },
     workflow_type: { type: "string" },
-    created_by: { type: "string" }
+    created_by: { type: "string" },
   },
   required: ["transaction_id", "workflow_type"],
   additionalProperties: false,

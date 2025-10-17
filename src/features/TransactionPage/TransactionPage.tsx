@@ -6,11 +6,11 @@ import { useNavigate } from "react-router-dom";
 import Item from "../../components/TransactionPage/HeaderItem";
 import Notes from "../../components/Notes/Notes";
 import { RowClickedEvent } from "ag-grid-community";
-import ModeEditIcon from '@mui/icons-material/ModeEdit';
+import ModeEditIcon from "@mui/icons-material/ModeEdit";
 import {
   SALES_TAX_MULTIPLIER,
-  MECHANIC_PART_MULTIPLIER
-} from "../../constants/transaction"
+  MECHANIC_PART_MULTIPLIER,
+} from "../../constants/transaction";
 import DBModel, {
   ItemDetails,
   Part,
@@ -19,7 +19,7 @@ import DBModel, {
   Transaction,
   UpdateTransaction,
   Bike,
-  Customer
+  Customer,
 } from "../../model";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../app/queryClient";
@@ -35,10 +35,17 @@ import CompleteTransactionDropdown from "./CompleteTransactionDropdown";
 import SetProjectsTypesDropdown from "./SetProjectsTypesDropdown";
 import DeleteTransactionsModal from "./DeleteTransactionsModal";
 import CheckoutModal from "./CheckoutModal";
+import { useUser } from "../../contexts/UserContext";
 
-const debug: boolean = import.meta.env.VITE_DEBUG
+const debug: boolean = import.meta.env.VITE_DEBUG;
 
-const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], orderRequest: Part[], isEmployee: boolean, isBeerBike: boolean) => {
+const calculateTotalCost = (
+  repairs: RepairDetails[],
+  parts: ItemDetails[],
+  orderRequest: Part[],
+  isEmployee: boolean,
+  isBeerBike: boolean,
+) => {
   let total = 0;
   if (repairs)
     repairs.forEach((repair) => {
@@ -46,47 +53,55 @@ const calculateTotalCost = (repairs: RepairDetails[], parts: ItemDetails[], orde
     });
   if (parts)
     parts.forEach((part) => {
-      total += !isEmployee || isBeerBike ? part.Item.standard_price : (part.Item.wholesale_cost * MECHANIC_PART_MULTIPLIER);
+      total +=
+        !isEmployee || isBeerBike
+          ? part.Item.standard_price
+          : part.Item.wholesale_cost * MECHANIC_PART_MULTIPLIER;
     });
   if (orderRequest)
-    if (debug) console.log("calculating order request cost: ", orderRequest, total);
+    if (debug)
+      console.log("calculating order request cost: ", orderRequest, total);
   orderRequest.forEach((part) => {
-    total += !isEmployee || isBeerBike ? part.standard_price : (part.wholesale_cost * MECHANIC_PART_MULTIPLIER);
+    total +=
+      !isEmployee || isBeerBike
+        ? part.standard_price
+        : part.wholesale_cost * MECHANIC_PART_MULTIPLIER;
   });
   if (debug) console.log("total cost: ", total);
   return total;
 };
 
 const checkStatusOfRetrospec = (transaction: Transaction) => {
-
   if (transaction.is_refurb) {
     return "Building";
-  }
-  else if (transaction.is_waiting_on_email) {
+  } else if (transaction.is_waiting_on_email) {
     return "Completed";
-  }
-  else if (transaction.is_completed) {
+  } else if (transaction.is_completed) {
     return "For Sale";
   }
   return "Arrived";
-}
+};
 
-const checkUserPermissions = (user: User, permissionName: string): boolean => {
+const checkUserPermissions = (
+  user: User | null,
+  permissionName: string,
+): boolean => {
+  if (user === null) return false;
   if (debug) console.log("checking permission: ", permissionName);
-  const permissions = user.permissions?.find((perm) => perm.name === permissionName);
+  const permissions = user.permissions?.find(
+    (perm) => perm.name === permissionName,
+  );
   return permissions ? true : false;
-}
+};
 
 //["Arrived", "Building", "Completed", "For Sale"]
 
-interface TransactionDetailProps {
-  propUser: User;
-}
-
-const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
+const TransactionDetail = () => {
   const { transaction_id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const nav = useNavigate();
+
+  const { data: user } = useUser();
 
   if (!transaction_id) {
     throw new Error("Transaction ID not provided");
@@ -147,27 +162,32 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   } = transactionQuery;
   if (transactionError) toast.error("transaction: " + transactionError);
 
-  const { data: orderRequestData, error: orderRequestError, isLoading: orderRequestLoading, isFetching: orderRequestIsFetching } = useQuery({
+  const {
+    data: orderRequestData,
+    error: orderRequestError,
+    isLoading: orderRequestLoading,
+    isFetching: orderRequestIsFetching,
+  } = useQuery({
     queryKey: ["orderRequest", transaction_id],
     queryFn: () => {
       return DBModel.getOrderRequests(transaction_id);
     },
     select: (data: OrderRequest[]) => {
       if (debug) console.log("converting incoming data", data);
-      return data.flatMap((dataItem: OrderRequest) => {
-        // Create an array with the same part repeated based on quantity
-        return Array(dataItem.quantity).fill(dataItem.Item);
-      }) as Part[] ?? Array<Part>();
+      return (
+        (data.flatMap((dataItem: OrderRequest) => {
+          // Create an array with the same part repeated based on quantity
+          return Array(dataItem.quantity).fill(dataItem.Item);
+        }) as Part[]) ?? Array<Part>()
+      );
     },
   });
   if (orderRequestError) toast.error("orderRequest: " + orderRequestError);
 
-
   const [bike, setBike] = useState<Bike>(null);
-  const user: User = propUser; //queriedUser ?? { user_id: "1" };
   // const [customer, setCustomer] = useState(transaction?.Customer);
   const [transactionType, setTransactionType] = useState<string>(
-    searchParams.get("type") ?? ""
+    searchParams.get("type") ?? "",
   );
   // TODO: make a state that checks to see if you're the first person to
   const [totalPrice, setTotalPrice] = useState<number>(0);
@@ -178,13 +198,15 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const [refurb, setIsRefurb] = useState<boolean>(); // TODO: create refurb Button
   const [reserved] = useState<boolean>(transactionData?.is_reserved ?? false); // TODO: create retrospec stuff
   const [waitEmail, setWaitEmail] = useState<boolean>(
-    transactionData?.is_waiting_on_email ?? false
+    transactionData?.is_waiting_on_email ?? false,
   );
   const [waitPart, setWaitPart] = useState<boolean>();
   const [priority, setPriority] = useState<boolean>();
   const [nuclear, setNuclear] = useState<boolean>();
   const [description, setDescription] = useState<string>();
-  const [isPaid, setPaid] = useState<boolean>(transactionData?.is_paid ?? false);
+  const [isPaid, setPaid] = useState<boolean>(
+    transactionData?.is_paid ?? false,
+  );
   const [isCompleted, setIsCompleted] = useState<boolean>();
   const [beerBike, setBeerBike] = useState<boolean>();
   const [isEmployee, setIsEmployee] = useState<boolean>(false);
@@ -215,17 +237,14 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       else
         DBModel.postTransactionLog(
           transactionData.transaction_num,
-          user.user_id,
+          user?.user_id ?? "",
           "sent email",
-          "completed transaction"
+          "completed transaction",
         );
       queryClient.removeQueries({
         queryKey: ["transactionLogs", transactionData.transaction_num],
       });
-      return DBModel.sendEmail(
-        customer,
-        transactionData.transaction_num
-      );
+      return DBModel.sendEmail(customer, transactionData.transaction_num);
     },
     onSuccess: () => {
       toast.success("Email sent");
@@ -233,14 +252,21 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     onError: (error) => {
       toast.error("Error sending email: " + error);
     },
-  })
+  });
 
   const sendRecieptEmail = useMutation({
-    mutationFn: ({ customer, transaction_id }: { customer: Customer, transaction_id: string }) => {
-      if (!transactionData || !transactionData.transaction_num) throw new Error("Transaction data not found");
+    mutationFn: ({
+      customer,
+      transaction_id,
+    }: {
+      customer: Customer;
+      transaction_id: string;
+    }) => {
+      if (!transactionData || !transactionData.transaction_num)
+        throw new Error("Transaction data not found");
       return DBModel.sendRecieptEmail(
         customer,
-        transactionData.transaction_num ?? '',
+        transactionData.transaction_num ?? "",
         transaction_id,
       );
     },
@@ -271,7 +297,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     },
   });
 
-
   const completeRepair = useMutation({
     mutationFn: (input: {
       transaction_detail_id: string;
@@ -280,15 +305,19 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     }) => {
       DBModel.postTransactionLog(
         transactionData?.transaction_num ?? 0,
-        user.user_id,
+        user?.user_id ?? "",
         input.repair_name,
         `${input.status ? "completed" : "reopened"} repair`,
       );
       queryClient.removeQueries({
         queryKey: ["transactionLogs", transactionData?.transaction_num],
       });
-      if (debug) console.log("calling update transaction on dbmodel", input.status);
-      return DBModel.updateTransactionDetails(input.transaction_detail_id, input.status);
+      if (debug)
+        console.log("calling update transaction on dbmodel", input.status);
+      return DBModel.updateTransactionDetails(
+        input.transaction_detail_id,
+        input.status,
+      );
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
@@ -307,30 +336,29 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     },
     onSuccess: (data) => {
       if (debug) console.log("User found", data);
-      setIsEmployee(true)
+      setIsEmployee(true);
     },
     onError: (error) => {
       console.error("Error finding user", error);
-      setIsEmployee(false)
-    }
+      setIsEmployee(false);
+    },
   });
   useEffect(() => {
-    if (debug) console.log(
-      "waiting on data",
-      transactionStatus,
-      description === "",
-      description === null
-    );
+    if (debug)
+      console.log(
+        "waiting on data",
+        transactionStatus,
+        description === "",
+        description === null,
+      );
     if (
       transactionStatus !== "pending" &&
       transactionStatus !== "error" &&
       description !== "" &&
       description !== null &&
       isCompleted !== undefined
-
     ) {
       // if (debug) // console.log("description before update: ", description);
-
 
       const updatedTransaction = {
         description: description ?? "",
@@ -346,9 +374,11 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         is_reserved: reserved,
         is_employee: isEmployee ?? false,
         bike_id: bike?.bike_id,
-        date_completed: !isCompleted ? null : transactionData?.date_completed === null && isCompleted
-          ? new Date().toISOString()
-          : transactionData?.date_completed,
+        date_completed: !isCompleted
+          ? null
+          : transactionData?.date_completed === null && isCompleted
+            ? new Date().toISOString()
+            : transactionData?.date_completed,
       } as UpdateTransaction;
 
       // if (debug) // console.log("description after update", updatedTransaction.description);
@@ -410,7 +440,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     mutationFn: (repair: Repair) => {
       DBModel.postTransactionLog(
         transactionData?.transaction_num ?? 0,
-        user.user_id,
+        user?.user_id ?? "",
         repair.name,
         "added repair",
       );
@@ -420,9 +450,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       return DBModel.postTransactionDetails(
         transaction_id,
         repair.repair_id,
-        user.user_id,
+        user?.user_id ?? "",
         1,
-        "repair"
+        "repair",
       );
     },
     onSuccess: () => {
@@ -437,7 +467,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     mutationFn: (transactionDetail: RepairDetails) => {
       DBModel.postTransactionLog(
         transactionData?.transaction_num ?? 0,
-        user.user_id,
+        user?.user_id ?? "",
         transactionDetail.Repair.name,
         "deleted repair",
       );
@@ -445,7 +475,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         queryKey: ["transactionLogs", transactionData?.transaction_num],
       });
       return DBModel.deleteTransactionDetails(
-        transactionDetail.transaction_detail_id
+        transactionDetail.transaction_detail_id,
       );
     },
     onSuccess: () => {
@@ -460,7 +490,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     mutationFn: (part: Part) => {
       DBModel.postTransactionLog(
         transactionData?.transaction_num ?? 0,
-        user.user_id,
+        user?.user_id ?? "",
         part.name,
         "added part",
       );
@@ -470,9 +500,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       return DBModel.postTransactionDetails(
         transaction_id,
         part.item_id,
-        user.user_id,
+        user?.user_id ?? "",
         1,
-        "item"
+        "item",
       );
     },
 
@@ -491,7 +521,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     mutationFn: (transactionDetail: ItemDetails) => {
       DBModel.postTransactionLog(
         transactionData?.transaction_num ?? 0,
-        user.user_id,
+        user?.user_id ?? "",
         transactionDetail.Item.name,
         "deleted item",
       );
@@ -502,7 +532,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         queryKey: ["items"],
       });
       return DBModel.deleteTransactionDetails(
-        transactionDetail.transaction_detail_id
+        transactionDetail.transaction_detail_id,
       );
     },
     onSuccess: () => {
@@ -517,7 +547,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     mutationFn: (transaction: Transaction) => {
       DBModel.postTransactionLog(
         transaction.transaction_num,
-        user.user_id,
+        user?.user_id ?? "",
         "transaction deleted",
         "transaction",
       );
@@ -552,12 +582,15 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     });
     DBModel.postTransactionLog(
       transactionData!.transaction_num,
-      user.user_id,
+      user?.user_id ?? "",
       `checked out transaction for $${totalPrice}`,
       "transaction",
     );
     const customer: Customer = transactionData?.Customer as Customer;
-    sendRecieptEmail.mutate({ customer, transaction_id: transactionData!.transaction_id });
+    sendRecieptEmail.mutate({
+      customer,
+      transaction_id: transactionData!.transaction_id,
+    });
     nav("/");
   };
 
@@ -572,7 +605,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         setWaitEmail(true);
         break;
       case "For Sale":
-        if (!checkUserPermissions(user, "safetyCheckBikes")) {
+        if (!checkUserPermissions(user ?? null, "safetyCheckBikes")) {
           return;
         }
         setWaitEmail(false);
@@ -590,7 +623,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     queryClient.invalidateQueries({
       queryKey: ["transactions"],
     });
-  }
+  };
 
   const handleTransactionTypeChange = (newTransactionType: string) => {
     setSearchParams((params) => {
@@ -653,7 +686,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
       sendCheckoutEmail.mutate(customer);
       DBModel.postTransactionLog(
         transactionData.transaction_num,
-        user.user_id,
+        user?.user_id ?? "",
         "completed and sent email",
         "transaction",
       );
@@ -664,8 +697,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     queryClient.invalidateQueries({
       queryKey: ["transactions"],
     });
-
-  }
+  };
 
   const handleCheckout = () => {
     setShowCheckout(true);
@@ -686,7 +718,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     const isValidLexical = (s: string) => {
       try {
         const p = JSON.parse(s);
-        return typeof p === 'object' && p !== null;
+        return typeof p === "object" && p !== null;
       } catch {
         return false;
       }
@@ -694,7 +726,11 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
 
     const payload = isValidLexical(newNotes)
       ? newNotes
-      : JSON.stringify({ root: { children: [{ type: 'paragraph', children: [{ text: newNotes }] }] } });
+      : JSON.stringify({
+          root: {
+            children: [{ type: "paragraph", children: [{ text: newNotes }] }],
+          },
+        });
 
     setDescription(payload);
   };
@@ -712,8 +748,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           itemDetails as ItemDetails[],
           orderRequestData as Part[],
           isEmployee,
-          beerBike ?? false
-        )
+          beerBike ?? false,
+        ),
       );
     }
   }, [
@@ -724,7 +760,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     orderRequestData,
     orderRequestIsFetching,
     isEmployee,
-    beerBike
+    beerBike,
   ]);
 
   if (repairsLoading || partsLoading || transactionLoading) {
@@ -760,13 +796,20 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
   const toggleDoneRepair = (repairDetail: RepairDetails) => {
     const newStatus: boolean = !repairDetail.completed;
     const repairId: string = repairDetail.transaction_detail_id;
-    completeRepair.mutate({ repair_name: repairDetail.Repair.name, transaction_detail_id: repairId, status: newStatus });
-
+    completeRepair.mutate({
+      repair_name: repairDetail.Repair.name,
+      transaction_detail_id: repairId,
+      status: newStatus,
+    });
   };
 
   const blockCompletion = () => {
     if (!repairDetails) return false;
-    if (repairDetails.length === 0 && (searchParams.get("type") === "Merch" || refurb)) return false;
+    if (
+      repairDetails.length === 0 &&
+      (searchParams.get("type") === "Merch" || refurb)
+    )
+      return false;
     if (debug) console.log("repair details: ", repairDetails);
     return !repairDetails.every((repair: RepairDetails) => repair.completed);
   };
@@ -779,18 +822,11 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
     return <p>Customer not found</p>;
   }
   return (
-    <div
-      className="transaction-container"
-    >
-      <Stack
-        className="transaction-header"
-      >
+    <div className="transaction-container">
+      <Stack className="transaction-header">
         {/* <h2>Transaction Details</h2> */}
         <Grid2 container>
-          <Grid2
-            size={6}
-            className="transaction-options-container"
-          >
+          <Grid2 size={6} className="transaction-options-container">
             <h2
               style={{
                 marginRight: "10px",
@@ -807,54 +843,69 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               colors={["green", "blue", "gray", "orange"]}
               setTransactionType={handleTransactionTypeChange}
               initialOption={transactionType.toLowerCase()}
-              isAllowed={(index: string) => index === "Retrospec" ? checkUserPermissions(user, "createRetrospecTransaction") : true}
+              isAllowed={(index: string) =>
+                index === "Retrospec"
+                  ? checkUserPermissions(user ?? null, "createRetrospecTransaction")
+                  : true
+              }
             />
-            {transactionType.toLowerCase() === "retrospec" &&
+            {transactionType.toLowerCase() === "retrospec" && (
               <TransactionOptionDropdown
                 options={["Arrived", "Building", "Completed", "For Sale"]}
                 colors={["gray"]}
                 setTransactionType={handleRetrospecStatusChange}
                 initialOption={checkStatusOfRetrospec(transactionData)}
-                isAllowed={(option: string) => ["For Sale", "Arrived"].includes(option) ? checkUserPermissions(user, "safetyCheckBikes") : true}
-              />}
-            {beerBike && <Button
-              style={{
-                backgroundColor: "turquoise",
-                color: "black",
-                pointerEvents: "none",
-                width: "fit-content",
-                // wordWrap: "break-word",
-                whiteSpace: "nowrap",
-              }}
-              variant="contained"
-              size="small"
+                isAllowed={(option: string) =>
+                  ["For Sale", "Arrived"].includes(option)
+                    ? checkUserPermissions(user ?? null, "safetyCheckBikes")
+                    : true
+                }
+              />
+            )}
+            {beerBike && (
+              <Button
+                style={{
+                  backgroundColor: "turquoise",
+                  color: "black",
+                  pointerEvents: "none",
+                  width: "fit-content",
+                  // wordWrap: "break-word",
+                  whiteSpace: "nowrap",
+                }}
+                variant="contained"
+                size="small"
+              >
+                {" "}
+                Beer Bike
+              </Button>
+            )}
 
-            > Beer Bike</Button>
-            }
-
-            {(refurb && transactionType.toLowerCase() !== "retrospec") && <Button
-              style={{
-                backgroundColor: "beige",
-                color: "black",
-                pointerEvents: "none",
-              }}
-              variant="contained"
-              size="small"
-            >
-              Refurb
-            </Button>
-            }
-            {isEmployee && <Button
-              style={{
-                backgroundColor: "green",
-                color: "white",
-                pointerEvents: "none",
-              }}
-              variant="contained"
-              size="small"
-            >
-              Employee
-            </Button>}
+            {refurb && transactionType.toLowerCase() !== "retrospec" && (
+              <Button
+                style={{
+                  backgroundColor: "beige",
+                  color: "black",
+                  pointerEvents: "none",
+                }}
+                variant="contained"
+                size="small"
+              >
+                Refurb
+              </Button>
+            )}
+            {isEmployee && (
+              <Button
+                style={{
+                  backgroundColor: "green",
+                  color: "white",
+                  pointerEvents: "none",
+                }}
+                variant="contained"
+                size="small"
+              >
+                Employee
+              </Button>
+            )}
           </Grid2>
           <Grid2
             size={6}
@@ -862,23 +913,25 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               display: "flex",
               alignItems: "center",
               justifyContent: "flex-end",
-              gap: "5px"
+              gap: "5px",
             }}
           >
             <TransactionsLogModal
               transaction_num={transactionData.transaction_num}
             />
 
-            {
-              (transactionType.toLowerCase() !== "retrospec"
-                ||
-                transactionType.toLowerCase() === "retrospec"
-                && checkUserPermissions(user, "createRetrospecTransaction"))
-              &&
+            {(transactionType.toLowerCase() !== "retrospec" ||
+              (transactionType.toLowerCase() === "retrospec" &&
+                checkUserPermissions(
+                  user ?? null,
+                  "createRetrospecTransaction",
+                ))) && (
               <DeleteTransactionsModal
-                handleConfirm={() => deleteTransaction.mutate(transactionData as Transaction)}
+                handleConfirm={() =>
+                  deleteTransaction.mutate(transactionData as Transaction)
+                }
               />
-            }
+            )}
           </Grid2>
         </Grid2>
         <Item
@@ -891,7 +944,9 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           <h3>
             <strong>📧: </strong>
             <a
-              href={`mailto:${transactionData.Customer.email}?subject=Your bike`} >
+              target="_blank"
+              href={`mailto:${transactionData.Customer.email}?subject=Your bike`}
+            >
               {transactionData.Customer.email}
             </a>
           </h3>
@@ -905,8 +960,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           notes={transactionData.description ?? ""}
           onSave={handleSaveNotes}
           transaction_num={transactionData.transaction_num}
-          // checkUser={alertAuth}
-          user={user}
         />
 
         <h3>Bike Information</h3>
@@ -914,7 +967,14 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           {" "}
           {transactionData.Bike ? (
             <Grid2 container>
-              <Grid2 size={2} sx={{ display: "flex", justifyContent: "flex-start", margin: "30px 0" }}>
+              <Grid2
+                size={2}
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-start",
+                  margin: "30px 0",
+                }}
+              >
                 <Button
                   variant="contained"
                   sx={{
@@ -940,9 +1000,14 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 </h2>
                 <h2>{transactionData.Bike.description}</h2>
               </Grid2>
-              <Grid2 size={2} sx={{ display: "flex", justifyContent: "flex-end", margin: "30px 0" }}>
-              </Grid2>
-
+              <Grid2
+                size={2}
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  margin: "30px 0",
+                }}
+              ></Grid2>
             </Grid2>
           ) : (
             <Button
@@ -965,11 +1030,15 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               queryKey: ["transactions"],
             });
           }}
-          bike={bike === null ? {
-            make: "",
-            model: "",
-            description: "",
-          } : bike}
+          bike={
+            bike === null
+              ? {
+                  make: "",
+                  model: "",
+                  description: "",
+                }
+              : bike
+          }
         />
       </Stack>
       <hr />
@@ -1025,9 +1094,13 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               { field: "description", headerName: "Description" },
               { field: "brand", headerName: "Brand" },
               {
-                field: "standard_price", headerName: "Price", width: 200,
-                valueGetter: (params) => params.data?.standard_price as number > 0 ? params.data?.standard_price : params.data?.wholesale_cost as number * 2,
-
+                field: "standard_price",
+                headerName: "Price",
+                width: 200,
+                valueGetter: (params) =>
+                  (params.data?.standard_price as number) > 0
+                    ? params.data?.standard_price
+                    : (params.data?.wholesale_cost as number) * 2,
               },
               // { field: "stock", headerName: "Stock", width: 200 }, //TODO: Verify that this piece is actually true
               {
@@ -1047,15 +1120,25 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             Add Part
           </SearchModal>
         </Grid2>
-        <Grid2 size={6} sx={{ textAlign: "center", bgcolor: "#FFF3E0", padding: "10px", borderRadius: "10px" }}>
+        <Grid2
+          size={6}
+          sx={{
+            textAlign: "center",
+            bgcolor: "#FFF3E0",
+            padding: "10px",
+            borderRadius: "10px",
+          }}
+        >
           <h3>Repairs</h3>
           {!repairDetailsLoading && repairDetails ? (
-            <List sx={{
-              width: "100%",
-              borderRadius: "7px",
-              bgcolor: "background.paper",
-              opacity: repairDetails.length === 0 ? 0 : 1
-            }}>
+            <List
+              sx={{
+                width: "100%",
+                borderRadius: "7px",
+                bgcolor: "background.paper",
+                opacity: repairDetails.length === 0 ? 0 : 1,
+              }}
+            >
               {repairDetails.map((transactionDetail: RepairDetails) => (
                 <ListItem
                   key={transactionDetail.transaction_detail_id}
@@ -1079,11 +1162,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                       sx={{ padding: " 0 2px" }}
                     >
                       <Button
-                        onClick={() =>
-                          toggleDoneRepair(
-                            transactionDetail
-                          )
-                        }
+                        onClick={() => toggleDoneRepair(transactionDetail)}
                         style={{
                           border: "2px solid black",
                           marginLeft: "10px",
@@ -1095,9 +1174,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                         }}
                         size="medium"
                       >
-                        {transactionDetail.completed
-                          ? "Done"
-                          : "Mark as Done"}
+                        {transactionDetail.completed ? "Done" : "Mark as Done"}
                       </Button>
                       <Button
                         onClick={() => handleRemoveRepair(transactionDetail)}
@@ -1118,24 +1195,36 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 </ListItem>
               ))}
             </List>
-
           ) : (
             <Skeleton
               variant="rectangular"
               animation="wave"
               style={{ marginBottom: "10px", opacity: 0.5 }}
-            />)}
+            />
+          )}
         </Grid2>
 
-        <Grid2 size={6} sx={{ textAlign: "center", bgcolor: "#E3F2FD", padding: "10px", borderRadius: "10px" }}>
+        <Grid2
+          size={6}
+          sx={{
+            textAlign: "center",
+            bgcolor: "#E3F2FD",
+            padding: "10px",
+            borderRadius: "10px",
+          }}
+        >
           <h3>Parts</h3>
 
           {!itemDetailsLoading && itemDetails ? (
-            <List sx={{
-              width: "100%", bgcolor: "background.paper", borderRadius: "7px", opacity: itemDetails.length === 0 ? 0 : 1
-            }}>
+            <List
+              sx={{
+                width: "100%",
+                bgcolor: "background.paper",
+                borderRadius: "7px",
+                opacity: itemDetails.length === 0 ? 0 : 1,
+              }}
+            >
               {(itemDetails as ItemDetails[]).map((part: ItemDetails) => (
-
                 <ListItem
                   key={part.transaction_detail_id}
                   style={{
@@ -1145,7 +1234,12 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                   }}
                 >
                   <span>
-                    {part.Item.name} - ${!isEmployee || beerBike ? part.Item.standard_price.toFixed(2) : (part.Item.wholesale_cost * MECHANIC_PART_MULTIPLIER).toFixed(2)}
+                    {part.Item.name} - $
+                    {!isEmployee || beerBike
+                      ? part.Item.standard_price.toFixed(2)
+                      : (
+                          part.Item.wholesale_cost * MECHANIC_PART_MULTIPLIER
+                        ).toFixed(2)}
                   </span>
                   <Stack direction="row" spacing={2} sx={{ padding: " 0 2px" }}>
                     <Button
@@ -1167,7 +1261,6 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 </ListItem>
               ))}
             </List>
-
           ) : (
             <Skeleton
               variant="rectangular"
@@ -1177,14 +1270,16 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           )}
 
           {!orderRequestLoading && orderRequestData ? (
-            <List sx={{
-              width: "100%",
-              bgcolor: "background.paper",
-              borderRadius: "7px",
-              opacity: orderRequestData.length === 0 ? 0 : 1,
-              marginTop: "10px",
-            }}>
-              {(orderRequestData).map((part: Part) => (
+            <List
+              sx={{
+                width: "100%",
+                bgcolor: "background.paper",
+                borderRadius: "7px",
+                opacity: orderRequestData.length === 0 ? 0 : 1,
+                marginTop: "10px",
+              }}
+            >
+              {orderRequestData.map((part: Part) => (
                 <ListItem
                   key={part.item_id}
                   style={{
@@ -1195,7 +1290,12 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                   }}
                 >
                   <span>
-                    {part.name} - ${!isEmployee || beerBike ? part.standard_price.toFixed(2) : (part.wholesale_cost * MECHANIC_PART_MULTIPLIER).toFixed(2)}
+                    {part.name} - $
+                    {!isEmployee || beerBike
+                      ? part.standard_price.toFixed(2)
+                      : (
+                          part.wholesale_cost * MECHANIC_PART_MULTIPLIER
+                        ).toFixed(2)}
                   </span>
                   <Stack direction="row" spacing={2} sx={{ padding: " 0 2px" }}>
                     <Button
@@ -1213,10 +1313,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                     </Button>
                   </Stack>
                 </ListItem>
-
               ))}
             </List>
-
           ) : (
             <Skeleton
               variant="rectangular"
@@ -1227,7 +1325,15 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
         </Grid2>
       </Grid2>
 
-      <Grid2 container sx={{ marginTop: "5vh", backgroundColor: "white", borderRadius: "10px", padding: "10px" }}>
+      <Grid2
+        container
+        sx={{
+          marginTop: "5vh",
+          backgroundColor: "white",
+          borderRadius: "10px",
+          padding: "10px",
+        }}
+      >
         <Grid2
           size={12}
           style={{
@@ -1247,26 +1353,33 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
             waitingOnParts={waitPart ?? false}
             parts={parts as Part[]}
             transaction_id={transaction_id}
-            user_id={user.user_id}
+            user_id={user?.user_id ?? ""}
             handleAddOrderedPart={handleAddOrderedPart}
           />
         </Grid2>
         <Grid2
           style={{
-            color: "white", gap: "2px", height: "50%", marginBottom: "10px",
+            color: "white",
+            gap: "2px",
+            height: "50%",
+            marginBottom: "10px",
           }}
           size={12}
           gap={2}
-
         >
-          <Grid2 size={6} >
-            <Stack spacing={1} direction="row" alignItems="center" height={"6vh"}>
+          <Grid2 size={6}>
+            <Stack
+              spacing={1}
+              direction="row"
+              alignItems="center"
+              height={"6vh"}
+            >
               <Button
                 onClick={handleWaitPartClick}
                 style={{
                   backgroundColor: waitPart ? "red" : "grey",
                   color: "white",
-                  height: "100%"
+                  height: "100%",
                 }}
                 variant="contained"
               >
@@ -1277,7 +1390,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 style={{
                   backgroundColor: waitEmail ? "red" : "grey",
                   color: "white",
-                  height: "100%"
+                  height: "100%",
                 }}
                 variant="contained"
               >
@@ -1287,8 +1400,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                 onClick={handlePriority}
                 style={{
                   backgroundColor: "black",
-                  height: "100%"
-
+                  height: "100%",
                 }}
                 disableElevation={!priority}
                 variant="contained"
@@ -1307,18 +1419,17 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
                   borderColor: nuclear ? "red" : "black",
                   color: nuclear ? "red" : "black",
                   width: "fit-content",
-                  height: "100%"
-
+                  height: "100%",
                 }}
                 // disabled={checkUserPermissions(user, "setAtomic")}
 
                 variant="outlined"
               >
-                {nuclear ?
-                  <i
-                    className="fas fa-radiation"
-                    style={{ color: "red" }}
-                  /> : "Mark as Nuclear"}
+                {nuclear ? (
+                  <i className="fas fa-radiation" style={{ color: "red" }} />
+                ) : (
+                  "Mark as Nuclear"
+                )}
               </Button>
 
               <SetProjectsTypesDropdown
@@ -1327,9 +1438,8 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               />
             </Stack>
           </Grid2>
-
         </Grid2>
-        <Grid2 size={6} >
+        <Grid2 size={6}>
           <Button
             onClick={handleCheckout}
             disabled={!isCompleted}
@@ -1345,7 +1455,7 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
           >
             Checkout
           </Button>
-          {showCheckout &&
+          {showCheckout && (
             <CheckoutModal
               repairDetails={repairDetails as RepairDetails[]}
               itemDetails={itemDetails as ItemDetails[]}
@@ -1355,38 +1465,37 @@ const TransactionDetail = ({ propUser }: TransactionDetailProps) => {
               handlePaid={handlePaid}
               closeCheckout={closeCheckout}
             />
-          }
+          )}
           {!isCompleted ? (
             <CompleteTransactionDropdown
               sendEmail={() => handleMarkDone(true)}
               disabled={blockCompletion()}
               completeTransaction={() => handleMarkDone(false)}
             />
-          ) : <Button
-            onClick={() => {
-              setIsCompleted(false);
-              setPaid(false);
-              queryClient.invalidateQueries({
-                queryKey: ["transaction", transaction_id],
-              });
-              queryClient.invalidateQueries({
-                queryKey: ["transactions"],
-              });
-            }}
-            style={{
-              marginRight: "10px",
-              color: "white",
-              backgroundColor: "gray",
-            }}
-            variant="outlined"
-          >
-            Reopen Transaction
-          </Button>
-
-          }
+          ) : (
+            <Button
+              onClick={() => {
+                setIsCompleted(false);
+                setPaid(false);
+                queryClient.invalidateQueries({
+                  queryKey: ["transaction", transaction_id],
+                });
+                queryClient.invalidateQueries({
+                  queryKey: ["transactions"],
+                });
+              }}
+              style={{
+                marginRight: "10px",
+                color: "white",
+                backgroundColor: "gray",
+              }}
+              variant="outlined"
+            >
+              Reopen Transaction
+            </Button>
+          )}
         </Grid2>
       </Grid2>
-
     </div>
   );
 };

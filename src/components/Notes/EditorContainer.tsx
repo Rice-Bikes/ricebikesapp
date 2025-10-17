@@ -1,12 +1,3 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
-
-import { $createListItemNode, $createListNode } from "@lexical/list";
 import { $createHeadingNode } from "@lexical/rich-text";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import {
@@ -56,85 +47,6 @@ function $prepopulatedRichText() {
     const heading = $createHeadingNode("h1");
     heading.append($createTextNode("Repair Inspection & Approved Repairs"));
     root.append(heading);
-
-    const intro = $createParagraphNode();
-    intro.append(
-      $createTextNode(
-        "Use this template to record the bike inspection, the repairs approved by the customer, and any notes that the service technician should communicate to the customer.",
-      ),
-    );
-    root.append(intro);
-
-    // Inspection details
-    const inspectionHeading = $createHeadingNode("h2");
-    inspectionHeading.append($createTextNode("Inspection Details"));
-    root.append(inspectionHeading);
-
-    const inspectionPara = $createParagraphNode();
-    inspectionPara.append(
-      $createTextNode(
-        "Please enter a clear, concise summary of the inspection performed. Include observed issues, severity, and any diagnostic steps taken.",
-      ),
-    );
-    root.append(inspectionPara);
-
-    const inspectionList = $createListNode("bullet");
-    inspectionList.append(
-      $createListItemNode().append(
-        $createTextNode("Observed issue (location on bike):"),
-      ),
-      $createListItemNode().append(
-        $createTextNode("Severity (minor/major/safety):"),
-      ),
-      $createListItemNode().append(
-        $createTextNode("Diagnostic steps performed:"),
-      ),
-    );
-    root.append(inspectionList);
-
-    // Approved repairs
-    const approvedHeading = $createHeadingNode("h2");
-    approvedHeading.append($createTextNode("Approved Repairs"));
-    root.append(approvedHeading);
-
-    const approvedPara = $createParagraphNode();
-    approvedPara.append(
-      $createTextNode(
-        "List the repairs approved by the customer, including parts, labor, and estimates.",
-      ),
-    );
-    root.append(approvedPara);
-
-    const approvedList = $createListNode("bullet");
-    approvedList.append(
-      $createListItemNode().append(
-        $createTextNode("Repair 1: (description, parts required, estimate)"),
-      ),
-      $createListItemNode().append(
-        $createTextNode("Repair 2: (description, parts required, estimate)"),
-      ),
-    );
-    root.append(approvedList);
-
-    // Parts and notes
-    const partsHeading = $createHeadingNode("h3");
-    partsHeading.append($createTextNode("Parts & Materials"));
-    root.append(partsHeading);
-
-    // Customer-facing notes
-    const customerHeading = $createHeadingNode("h2");
-    customerHeading.append(
-      $createTextNode("Customer Notes / Potential Issues"),
-    );
-    root.append(customerHeading);
-
-    const customerPara = $createParagraphNode();
-    customerPara.append(
-      $createTextNode(
-        "Summarize anything the customer should be aware of: safety concerns, follow-up maintenance, items that may require future attention, or optional upgrades.",
-      ),
-    );
-    root.append(customerPara);
   }
 }
 

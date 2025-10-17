@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { User } from "../../model";
-import { Button, Box, Typography, Paper } from "@mui/material";
+import { useUser } from "../../contexts/UserContext";
+import { Button, Box, Typography, Paper, Skeleton } from "@mui/material";
 import { EditorApp } from "./EditorContainer";
 import LexicalStaticRenderer from "./LexicalStaticRenderer";
 import { toast } from "react-toastify";
@@ -8,18 +8,13 @@ import { toast } from "react-toastify";
 interface NotesProps {
   notes: string;
   onSave: (newNotes: string) => void;
-  user: User;
   transaction_num: number;
 }
 
-const Notes: React.FC<NotesProps> = ({
-  notes,
-  onSave,
-  user,
-  transaction_num,
-}) => {
+const Notes: React.FC<NotesProps> = ({ notes, onSave, transaction_num }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editorState, setEditorState] = useState<string>(notes || "");
+  const { data: user } = useUser();
 
   // When notes prop changes (e.g. after save), update editorState
   useEffect(() => {
@@ -32,6 +27,7 @@ const Notes: React.FC<NotesProps> = ({
     // mounted editor (if available) so we include attribution meta
     // even if AutoSavePlugin's debounce hasn't fired yet. Fall back
     // to the last onSave-provided editorState.
+    if (!user) return;
     let payload = editorState;
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,31 +49,7 @@ const Notes: React.FC<NotesProps> = ({
           }
           const jsonObj = e.getEditorState().toJSON();
           // Attach attribution meta if helper available
-          try {
-            if (typeof e.__getAttributionMeta === "function") {
-              const meta = e.__getAttributionMeta();
-              jsonObj.__meta = jsonObj.__meta || { attributions: {} };
-              const now = new Date().toISOString();
-              if (meta && Array.isArray(meta.dirtyKeys)) {
-                for (const k of meta.dirtyKeys) {
-                  try {
-                    jsonObj.__meta.attributions[k] = {
-                      lastEditedBy: meta.lastEditedBy || null,
-                      lastEditedAt: now,
-                    };
-                  } catch {
-                    // ignore per-key failures
-                  }
-                }
-              }
-              if (meta && meta.lastEditedBy) {
-                jsonObj.lastEditedBy = meta.lastEditedBy;
-                jsonObj.lastEditedAt = meta.lastEditedAt || now;
-              }
-            }
-          } catch {
-            // ignore attribution helper failures
-          }
+         
           payload = JSON.stringify(jsonObj);
         } catch {
           // if serialization fails, fallback to editorState
@@ -96,6 +68,10 @@ const Notes: React.FC<NotesProps> = ({
   const handleEditorChange = (html: string) => {
     setEditorState(html);
   };
+
+  if (!user) {
+    return <Skeleton variant="rectangular" width="100%" height={200} />;
+  }
 
   return (
     <Box sx={{ width: "100%" }}>

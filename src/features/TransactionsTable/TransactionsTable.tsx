@@ -1,14 +1,8 @@
 import { AgGridReact } from "ag-grid-react"; // React Data Grid Component
+import { themeQuartz } from "ag-grid-community";
 import { useState, useMemo, useRef, useEffect } from "react"; // React State Hook
 import { useQuery } from "@tanstack/react-query";
-import {
-  Button,
-  ButtonGroup,
-  ToggleButtonGroup,
-  ToggleButton,
-  Chip,
-  Stack,
-} from "@mui/material";
+import { Button, Select, MenuItem, Chip, Stack } from "@mui/material";
 import { ErrorSharp } from "@mui/icons-material";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import type {
@@ -20,23 +14,27 @@ import type {
 } from "ag-grid-community";
 import CreateTransactionDropdown from "./TransactionTypeDropdown";
 import "./TransactionsTable.css";
-import { Transaction, Bike, Customer, TransactionSummary, OrderRequest, User } from "../../model";
+import {
+  Transaction,
+  Bike,
+  Customer,
+  TransactionSummary,
+  OrderRequest,
+} from "../../model";
 import { useNavigate } from "react-router-dom";
 import DBModel from "../../model";
 import PriceCheckModal from "../../components/PriceCheckModal";
-import OrderModal from "../../components/OrderModal";
-import { getBikeSalesColumnDefs } from './BikeSalesColumns';
-import ConstructionIcon from '@mui/icons-material/Construction';
-import PanToolIcon from '@mui/icons-material/PanTool';
-import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import { getBikeSalesColumnDefs } from "./BikeSalesColumns";
+import ConstructionIcon from "@mui/icons-material/Construction";
+import PanToolIcon from "@mui/icons-material/PanTool";
+import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 export interface IRow {
   Transaction: Transaction;
   Customer: Customer;
   OrderRequests: Array<OrderRequest>;
   Bike?: Bike;
 }
-
 
 const isDaysLess = (numDays: number, date1: Date, date2: Date): boolean => {
   const twoDaysInMillis = numDays * 24 * 60 * 60 * 1000; // Two days in milliseconds
@@ -66,37 +64,33 @@ function timeAgo(input: Date) {
   }
 }
 
-const checkStatusOfRetrospec = (refurb: boolean, email: boolean, completed: boolean) => {
+const checkStatusOfRetrospec = (
+  refurb: boolean,
+  email: boolean,
+  completed: boolean,
+) => {
   // Different states:
   // 1. Arrived (not building): !refurb && !email && !completed
-  // 2. Building: refurb && !email && !completed  
+  // 2. Building: refurb && !email && !completed
   // 3. Ready for inspection/email: !refurb && email && !completed
   // 4. For sale: completed
 
   if (completed) {
-    return <MonetizationOnIcon style={{ color: "green", marginRight: "5px" }} />;
-  }
-  else if (email && !refurb) {
+    return (
+      <MonetizationOnIcon style={{ color: "green", marginRight: "5px" }} />
+    );
+  } else if (email && !refurb) {
     return <PanToolIcon style={{ color: "red", marginRight: "5px" }} />;
-  }
-  else if (refurb) {
+  } else if (refurb) {
     return <ConstructionIcon style={{ color: "gold", marginRight: "5px" }} />;
   }
   // Default state: arrived but not building yet
   return <LocalShippingIcon style={{ color: "blue", marginRight: "5px" }} />;
-}
+};
 
+const debug: boolean = import.meta.env.VITE_DEBUG;
 
-interface TransactionTableProps {
-  user: User;
-}
-
-const debug: boolean = import.meta.env.VITE_DEBUG
-
-export function TransactionsTable({
-  user,
-}: TransactionTableProps): JSX.Element {
-
+export function TransactionsTable(): JSX.Element {
   const navigate = useNavigate();
   const currDate: Date = new Date();
   const [viewType, setViewType] = useState<string>("main");
@@ -109,18 +103,18 @@ export function TransactionsTable({
     // Route Retrospec transactions to the new bike transaction system
     if (e.data.Transaction.transaction_type?.toLowerCase() === "retrospec") {
       navigate(
-        `/bike-transaction/${e.data.Transaction.transaction_id}?type=${e.data.Transaction.transaction_type}`
+        `/bike-transaction/${e.data.Transaction.transaction_id}?type=${e.data.Transaction.transaction_type}`,
       );
     } else {
       // Route all other transactions to the regular transaction page
       navigate(
-        `/transaction-details/${e.data.Transaction.transaction_id}?type=${e.data.Transaction.transaction_type}`
+        `/transaction-details/${e.data.Transaction.transaction_id}?type=${e.data.Transaction.transaction_type}`,
       );
     }
   };
 
   const { status, data, error } = useQuery(
-    DBModel.getTransactionsQuery(100000000, true)
+    DBModel.getTransactionsQuery(100000000, true),
   );
 
   const {
@@ -149,18 +143,28 @@ export function TransactionsTable({
     if (viewType === "retrospec") {
       try {
         const bikeSalesColumns = getBikeSalesColumnDefs();
-        if (bikeSalesColumns && Array.isArray(bikeSalesColumns) && bikeSalesColumns.length > 0) {
+        if (
+          bikeSalesColumns &&
+          Array.isArray(bikeSalesColumns) &&
+          bikeSalesColumns.length > 0
+        ) {
           // Validate that all columns have required properties
-          const validColumns = bikeSalesColumns.filter(col => col && typeof col === 'object');
+          const validColumns = bikeSalesColumns.filter(
+            (col) => col && typeof col === "object",
+          );
           if (validColumns.length === bikeSalesColumns.length) {
             return validColumns;
           }
-          console.warn('Some bike sales columns are invalid, falling back to default columns');
+          console.warn(
+            "Some bike sales columns are invalid, falling back to default columns",
+          );
         } else {
-          console.warn('getBikeSalesColumnDefs returned empty or null, falling back to default columns');
+          console.warn(
+            "getBikeSalesColumnDefs returned empty or null, falling back to default columns",
+          );
         }
       } catch (error) {
-        console.error('Error loading bike sales columns:', error);
+        console.error("Error loading bike sales columns:", error);
       }
       // Fallback to default columns if bike sales columns fail
     }
@@ -182,7 +186,8 @@ export function TransactionsTable({
           const isNuclear = params.data?.Transaction.is_nuclear;
           const isBeerBike = params.data?.Transaction.is_beer_bike;
           const transaction_type = params.data?.Transaction.transaction_type;
-          const isWaitingOnParts = (params.data?.OrderRequests?.length ?? 0) > 0;
+          const isWaitingOnParts =
+            (params.data?.OrderRequests?.length ?? 0) > 0;
           const is_completed = params.data?.Transaction.is_completed;
           const refurb = params.data?.Transaction.is_refurb;
 
@@ -265,7 +270,6 @@ export function TransactionsTable({
                 )}
                 {isUrgent && !is_completed && (
                   <ErrorSharp style={{ color: "red", marginRight: "5px" }} />
-
                 )}
                 {isWaitingOnParts && !is_completed && (
                   <i
@@ -284,7 +288,6 @@ export function TransactionsTable({
             );
           } else {
             return (
-
               <Stack
                 style={{
                   display: "flex",
@@ -292,7 +295,8 @@ export function TransactionsTable({
                   justifyContent: "flex-start",
                 }}
                 direction={"row"}
-              ><Chip
+              >
+                <Chip
                   label="Build"
                   sx={{
                     backgroundColor: "orange",
@@ -310,9 +314,9 @@ export function TransactionsTable({
                   ></i>
                 )}
               </Stack>
-            )
-          };
-        }
+            );
+          }
+        },
       },
       {
         headerName: "Name",
@@ -344,7 +348,7 @@ export function TransactionsTable({
             return "";
           }
 
-          return (new Date(params.data?.Transaction.date_created));
+          return new Date(params.data?.Transaction.date_created);
         },
         cellRenderer: (params: ICellRendererParams) => {
           if (
@@ -370,7 +374,7 @@ export function TransactionsTable({
             return "";
           }
 
-          return (new Date(params.data?.Transaction.date_completed));
+          return new Date(params.data?.Transaction.date_completed);
         },
         cellRenderer: (params: ICellRendererParams) => {
           if (
@@ -383,7 +387,7 @@ export function TransactionsTable({
 
           return timeAgo(new Date(params.data?.Transaction.date_completed));
         },
-      }
+      },
     ];
   }, [viewType]); // Recalculate columns when view type changes
 
@@ -400,11 +404,7 @@ export function TransactionsTable({
     };
   }, []);
 
-
-  const handleViewType = (
-    _: React.MouseEvent<HTMLElement>,
-    newAlignment: string
-  ) => {
+  const applyViewType = (newAlignment: string) => {
     if (newAlignment !== null) {
       if (debug) console.log("new alignment", newAlignment);
       setViewType(newAlignment);
@@ -413,7 +413,9 @@ export function TransactionsTable({
       setTimeout(() => {
         try {
           if (!gridApiRef.current?.api) {
-            console.warn('Grid API not available, skipping column state updates');
+            console.warn(
+              "Grid API not available, skipping column state updates",
+            );
             return;
           }
 
@@ -421,12 +423,18 @@ export function TransactionsTable({
 
           if (newAlignment === "paid" || newAlignment === "pickup") {
             gridApiRef.current.api.applyColumnState({
-              state: [{ colId: "time_since_completion", hide: false }, { colId: "submitted", hide: true }],
+              state: [
+                { colId: "time_since_completion", hide: false },
+                { colId: "submitted", hide: true },
+              ],
               defaultState: { hide: null },
             });
           } else {
             gridApiRef.current.api.applyColumnState({
-              state: [{ colId: "time_since_completion", hide: true }, { colId: "submitted", hide: false }],
+              state: [
+                { colId: "time_since_completion", hide: true },
+                { colId: "submitted", hide: false },
+              ],
               defaultState: { hide: null },
             });
           }
@@ -434,7 +442,7 @@ export function TransactionsTable({
           sortFunc();
           gridApiRef.current.api.sizeColumnsToFit();
         } catch (error) {
-          console.error('Error updating grid state:', error);
+          console.error("Error updating grid state:", error);
         }
       }, 100);
     }
@@ -446,7 +454,9 @@ export function TransactionsTable({
 
   function doesExternalFilterPass(node: IRowNode) {
     const transaction = node.data.Transaction as Transaction;
-    const isRetrospec = transaction.transaction_type != null && transaction.transaction_type.toLowerCase() === "retrospec";
+    const isRetrospec =
+      transaction.transaction_type != null &&
+      transaction.transaction_type.toLowerCase() === "retrospec";
 
     return (
       (viewType === "retrospec" &&
@@ -454,19 +464,24 @@ export function TransactionsTable({
         transaction?.is_paid === false) ||
       (viewType === "pickup" &&
         transaction?.is_paid === false &&
-        transaction?.is_completed === true
-        && transaction?.is_refurb === false
-        && transaction.transaction_type != null &&
-        !isRetrospec
-        && !isDaysLess(183, new Date(transaction.date_created ?? ""), new Date())
-      ) ||
+        transaction?.is_completed === true &&
+        transaction?.is_refurb === false &&
+        transaction.transaction_type != null &&
+        !isRetrospec &&
+        !isDaysLess(
+          183,
+          new Date(transaction.date_created ?? ""),
+          new Date(),
+        )) ||
       (viewType === "paid" && transaction?.is_paid === true) ||
       (viewType === "main" &&
         // Include regular non-retrospec transactions that are incomplete
         ((transaction?.is_completed === false &&
           transaction.transaction_type != null &&
           !isRetrospec &&
-          (transaction?.is_employee === false || transaction?.is_employee === true && transaction?.is_beer_bike === true) &&
+          (transaction?.is_employee === false ||
+            (transaction?.is_employee === true &&
+              transaction?.is_beer_bike === true)) &&
           transaction?.is_refurb === false) ||
           // Include retrospec transactions that are actively being built (is_refurb = true)
           (isRetrospec &&
@@ -478,14 +493,19 @@ export function TransactionsTable({
         transaction?.is_completed === false &&
         transaction?.is_beer_bike === false &&
         transaction.transaction_type != null &&
-        !isRetrospec
-        && transaction?.is_refurb === false) ||
-      (viewType === "refurb" && transaction?.is_refurb === true && transaction?.is_paid === false && transaction?.is_completed === false && transaction.transaction_type != null &&
+        !isRetrospec &&
+        transaction?.is_refurb === false) ||
+      (viewType === "refurb" &&
+        transaction?.is_refurb === true &&
+        transaction?.is_paid === false &&
+        transaction?.is_completed === false &&
+        transaction.transaction_type != null &&
         !isRetrospec) ||
       (viewType === "beer bike" &&
-        transaction?.is_beer_bike === true && !isDaysLess(364, new Date(transaction?.date_created ?? ""), new Date())));
+        transaction?.is_beer_bike === true &&
+        !isDaysLess(364, new Date(transaction?.date_created ?? ""), new Date()))
+    );
   }
-
 
   function sortByTransactionNumDesc() {
     try {
@@ -496,7 +516,7 @@ export function TransactionsTable({
         });
       }
     } catch (error) {
-      console.error('Error applying transaction number sort:', error);
+      console.error("Error applying transaction number sort:", error);
     }
   }
 
@@ -509,7 +529,7 @@ export function TransactionsTable({
         });
       }
     } catch (error) {
-      console.error('Error applying completion date sort:', error);
+      console.error("Error applying completion date sort:", error);
     }
   }
 
@@ -521,7 +541,7 @@ export function TransactionsTable({
         });
       }
     } catch (error) {
-      console.error('Error clearing sort:', error);
+      console.error("Error clearing sort:", error);
     }
   }
 
@@ -532,65 +552,126 @@ export function TransactionsTable({
     ["employee", sortByTransactionNumDesc],
     ["refurb", sortByTransactionNumDesc],
     ["beer bike", sortByTransactionNumDesc],
-    ["retrospec", sortByTransactionNumDesc]
+    ["retrospec", sortByTransactionNumDesc],
   ]);
 
-
-
   return (
-    <main style={{ width: "100vw" }}>
-      <Stack direction={"row"} mt={2} mb={2} alignContent={"center"} >
-        <ButtonGroup id="nav-buttons" variant="outlined">
-          <CreateTransactionDropdown user={user} />
-          <Button onClick={() => navigate("/whiteboard")} sx={{ height: "100%" }}>Whiteboard</Button>
-          <Button onClick={() => setShowPriceCheckModal(!showPriceCheckModal)} sx={{ height: "100%" }}>Price Check</Button>
-        </ButtonGroup>
-        <article id="indicators">
-          <Button style={{ backgroundColor: "blue" }}>
-            {summaryData?.quantity_incomplete} Incomplete Bikes
-          </Button>
-          {summaryData?.quantity_beer_bike_incomplete !== 0 && <Button style={{ backgroundColor: "turquoise", color: "black" }}>
-            {summaryData?.quantity_beer_bike_incomplete} Incomplete Beer Bikes
-          </Button>}
-          <Button style={{ backgroundColor: "green" }}>
-            {summaryData?.quantity_waiting_on_pickup} Bikes For Pickup
-          </Button>
-          {summaryData?.quantity_waiting_on_safety_check !== 0 && <Button style={{ backgroundColor: "orange" }}>
-            {summaryData?.quantity_waiting_on_safety_check} Bikes to Safety Check
-          </Button>}
+    <main style={{ width: "80%" }}>
+      <PriceCheckModal
+        open={showPriceCheckModal}
+        onClose={() => {
+          setShowPriceCheckModal(false);
+        }}
+      />
 
-        </article>
-        <OrderModal
-          user={user}
-        />
-
-      </Stack>
-      <PriceCheckModal open={showPriceCheckModal} onClose={() => { setShowPriceCheckModal(false) }} />
-
-      <section
-        id="transactions-table"
-      >
+      <section id="transactions-table">
         <>
-          <ToggleButtonGroup
-            value={viewType}
-            exclusive
-            onChange={handleViewType}
-
-            aria-label="text alignment"
+          <Stack
+            direction={"row"}
+            alignItems={"center"}
+            spacing={2}
+            mt={2}
+            mb={2}
           >
-            <ToggleButton value="main">Main Transactions</ToggleButton>
-            <ToggleButton value="pickup">Waiting on Pickup</ToggleButton>
-            <ToggleButton value="retrospec">Retrospec</ToggleButton>
-            <ToggleButton value="paid">Paid</ToggleButton>
-            <ToggleButton value="employee"> Employee </ToggleButton>
-            <ToggleButton value="refurb"> Refurbs </ToggleButton>
-            <ToggleButton value="beer bike"> Beer Bike </ToggleButton>
-          </ToggleButtonGroup>
-
-          {colDefs && Array.isArray(colDefs) && colDefs.length > 0 && colDefs.every(col => col && typeof col === 'object') ? (
+            <Stack direction={"row"}>
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <CreateTransactionDropdown />
+                <Select
+                  variant="outlined"
+                  value={viewType}
+                  onChange={(e) => applyViewType(e.target.value as string)}
+                  displayEmpty
+                  size="small"
+                  sx={{
+                    minWidth: 220,
+                    bgcolor: "background.paper",
+                    "& fieldset": { borderColor: "divider" },
+                  }}
+                >
+                  <MenuItem value="main">Main Transactions</MenuItem>
+                  <MenuItem value="pickup">Waiting on Pickup</MenuItem>
+                  <MenuItem value="retrospec">Retrospec</MenuItem>
+                  <MenuItem value="paid">Paid</MenuItem>
+                  <MenuItem value="employee">Employee</MenuItem>
+                  <MenuItem value="refurb">Refurbs</MenuItem>
+                  <MenuItem value="beer bike">Beer Bike</MenuItem>
+                </Select>
+              </Stack>
+            </Stack>
+            <Stack direction={"row"} spacing={1} justifyItems={"flex-end"} justifyContent={"flex-end"} flexGrow={1}>
+              <Button
+                size="small"
+                sx={{
+                  height: 40,
+                  lineHeight: 1,
+                  px: 1.5,
+                  borderRadius: 1,
+                  whiteSpace: "nowrap",
+                  bgcolor: "blue",
+                  color: "white",
+                }}
+              >
+                {summaryData?.quantity_incomplete} Incomplete Bikes
+              </Button>
+              {summaryData?.quantity_beer_bike_incomplete !== 0 && (
+                <Button
+                  size="small"
+                  sx={{
+                    height: 40,
+                    lineHeight: 1,
+                    px: 1.5,
+                    borderRadius: 1,
+                    whiteSpace: "nowrap",
+                    bgcolor: "turquoise",
+                    color: "black",
+                  }}
+                >
+                  {summaryData?.quantity_beer_bike_incomplete} Incomplete Beer
+                  Bikes
+                </Button>
+              )}
+              <Button
+                size="small"
+                sx={{
+                  height: 40,
+                  lineHeight: 1,
+                  px: 1.5,
+                  borderRadius: 1,
+                  whiteSpace: "nowrap",
+                  bgcolor: "green",
+                  color: "white",
+                }}
+              >
+                {summaryData?.quantity_waiting_on_pickup} Bikes For Pickup
+              </Button>
+              {summaryData?.quantity_waiting_on_safety_check !== 0 && (
+                <Button
+                  size="small"
+                  sx={{
+                    height: 40,
+                    lineHeight: 1,
+                    px: 1.5,
+                    borderRadius: 1,
+                    whiteSpace: "nowrap",
+                    bgcolor: "orange",
+                    color: "white",
+                  }}
+                >
+                  {summaryData?.quantity_waiting_on_safety_check} Bikes to
+                  Safety Check
+                </Button>
+              )}
+            </Stack>
+            {/*<OrderModal />*/}
+          </Stack>
+          {colDefs &&
+          Array.isArray(colDefs) &&
+          colDefs.length > 0 &&
+          colDefs.every((col) => col && typeof col === "object") ? (
             <AgGridReact
               key={`ag-grid-${viewType}`}
               ref={gridApiRef}
+              theme={themeQuartz}
               loading={status !== "success"}
               rowData={data}
               columnDefs={colDefs}
@@ -599,18 +680,44 @@ export function TransactionsTable({
               onRowClicked={onRowClicked}
               getRowStyle={({ data }) => {
                 const transaction = data?.Transaction as Transaction;
-                if (transaction.date_created && transaction.transaction_type != null && (transaction.is_completed === false
-                  && (transaction.transaction_type !== "retrospec" && transaction.transaction_type !== "Retrospec")
-                  && transaction.is_employee === false
-                  && transaction.is_refurb === false ||
-                  transaction.is_beer_bike === true
-                  && transaction.is_completed === false)
+                if (
+                  transaction.date_created &&
+                  transaction.transaction_type != null &&
+                  ((transaction.is_completed === false &&
+                    transaction.transaction_type !== "retrospec" &&
+                    transaction.transaction_type !== "Retrospec" &&
+                    transaction.is_employee === false &&
+                    transaction.is_refurb === false) ||
+                    (transaction.is_beer_bike === true &&
+                      transaction.is_completed === false))
+                ) {
+                  if (
+                    isDaysLess(5, currDate, new Date(transaction.date_created))
+                  ) {
+                    return { backgroundColor: "lightcoral" };
+                  } else if (
+                    isDaysLess(2, currDate, new Date(transaction.date_created))
+                  ) {
+                    return { backgroundColor: "lightyellow" };
+                  } else return { backgroundColor: "white" };
+                } else if (
+                  transaction.date_completed !== null &&
+                  transaction.transaction_type !== null &&
+                  transaction.date_completed !== undefined &&
+                  ((transaction.is_paid === false &&
+                    transaction.is_completed === true &&
+                    transaction.is_refurb === false &&
+                    transaction.transaction_type.toLowerCase() !==
+                      "retrospec") ||
+                    (transaction.is_beer_bike === true &&
+                      transaction.is_completed === true &&
+                      transaction.is_paid === false))
                 ) {
                   if (
                     isDaysLess(
                       5,
                       currDate,
-                      new Date(transaction.date_created)
+                      new Date(transaction.date_completed),
                     )
                   ) {
                     return { backgroundColor: "lightcoral" };
@@ -618,45 +725,13 @@ export function TransactionsTable({
                     isDaysLess(
                       2,
                       currDate,
-                      new Date(transaction.date_created)
+                      new Date(transaction.date_completed),
                     )
                   ) {
                     return { backgroundColor: "lightyellow" };
                   } else return { backgroundColor: "white" };
                 }
-                else if (
-                  transaction.date_completed !== null
-                  && transaction.transaction_type !== null
-                  && transaction.date_completed !== undefined
-                  && (transaction.is_paid === false
-                    && transaction.is_completed === true
-                    && transaction.is_refurb === false
-                    && transaction.transaction_type.toLowerCase() !== "retrospec" ||
-                    transaction.is_beer_bike === true
-                    && transaction.is_completed === true
-                    && transaction.is_paid === false
-                  )) {
-                  if (
-                    isDaysLess(
-                      5,
-                      currDate,
-                      new Date(transaction.date_completed)
-                    )
-                  ) {
-                    return { backgroundColor: "lightcoral" };
-                  } else if (
-                    isDaysLess(
-                      2,
-                      currDate,
-                      new Date(transaction.date_completed)
-                    )
-                  ) {
-                    return { backgroundColor: "lightyellow" };
-                  } else return { backgroundColor: "white" };
-                }
-
-              }
-              }
+              }}
               isExternalFilterPresent={isExternalFilterPresent}
               doesExternalFilterPass={doesExternalFilterPass}
               domLayout="autoHeight"
@@ -665,25 +740,29 @@ export function TransactionsTable({
                 try {
                   if (params.api) {
                     params.api.applyColumnState({
-                      state: [{ colId: "time_since_completion", hide: true }, { colId: "submitted", hide: false }],
+                      state: [
+                        { colId: "time_since_completion", hide: true },
+                        { colId: "submitted", hide: false },
+                      ],
                       defaultState: { sort: null },
                     });
                     params.api.sizeColumnsToFit();
                   }
                 } catch (error) {
-                  console.error('Error during grid ready initialization:', error);
+                  console.error(
+                    "Error during grid ready initialization:",
+                    error,
+                  );
                 }
               }}
             />
           ) : (
-            <div style={{ padding: '20px', textAlign: 'center' }}>
+            <div style={{ padding: "20px", textAlign: "center" }}>
               <p>Error loading table columns. Please refresh the page.</p>
             </div>
           )}
         </>
-
       </section>
-
     </main>
   );
 }

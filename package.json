@@ -41,7 +41,7 @@
     "@mui/icons-material": "^6.4.7",
     "@mui/material": "^6.4.7",
     "@mui/x-date-pickers": "^8.10.2",
-    "@react-email/components": "^0.0.33",
+    "@react-email/components": "^0.5.6",
     "@tanstack/react-query": "^5.63.0",
     "@tanstack/react-query-devtools": "^5.63.0",
     "ag-grid-react": "^33.0.3",
@@ -61,7 +61,8 @@
     "react-router-dom": "^7.1.1",
     "react-toastify": "^11.0.2",
     "uuid": "^11.0.5",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
@@ -73,7 +74,7 @@
     "@types/papaparse": "^5.3.15",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
-    "@types/react-pdf": "^6.2.0",
+    "@types/react-pdf": "^5.0.7",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.17.0",
@@ -82,7 +83,7 @@
     "globals": "^15.14.0",
     "jsdom": "^26.1.0",
     "pdfjs-dist": "^5.0.375",
-    "react-email": "3.0.7",
+    "react-email": "^4.3.0",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.18.2",
     "vite": "^6.0.5"

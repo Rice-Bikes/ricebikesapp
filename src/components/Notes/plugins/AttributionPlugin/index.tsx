@@ -7,6 +7,7 @@ import {
   $createTextNode,
   $createParagraphNode,
 } from "lexical";
+import { $isListItemNode } from "@lexical/list";
 import DBModel, { User } from "../../../../model";
 import { toast } from "react-toastify";
 import { queryClient } from "../../../../app/queryClient";
@@ -39,7 +40,6 @@ export default function AttributionPlugin({
       dirtyKeys: Array.from(dirtyKeys),
     });
 
-
     // For test compatibility - expose method to mark nodes as dirty
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (editor as any).__markAttributionDirty = (key: string) => {
@@ -56,12 +56,21 @@ export default function AttributionPlugin({
             // const now = new Date().toISOString();
             for (const key of Array.from(dirtyKeys)) {
               const node = $getNodeByKey(key as string);
-              if (node && $isParagraphNode(node)) {
+              if (node && $isListItemNode(node)) {
+                // Only append attribution if the paragraph is not empty
+                const textContent = node.getTextContent().trim();
+                if (textContent.length === 0) continue;
+                // const dateObj = new Date(now);
+                // const dateParts = dateObj.toString().split(' ');
+                // const datePart = dateParts.slice(0, 4).join(' ');
+                // const timePart = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+                const attributionLine = ` -- ${name || "unknown"}`;
+                node.append($createTextNode(attributionLine));
+              } else if (node && $isParagraphNode(node)) {
                 try {
                   // Only append attribution if the paragraph is not empty
                   const textContent = node.getTextContent().trim();
                   if (textContent.length === 0) continue;
-
                   // const dateObj = new Date(now);
                   // const dateParts = dateObj.toString().split(' ');
                   // const datePart = dateParts.slice(0, 4).join(' ');
@@ -112,86 +121,91 @@ export default function AttributionPlugin({
       });
     };
 
-    // Register listener to capture dirty paragraph node keys (no AttributionNode logic)
+    // Register listener to capture dirty paragraph/list item keys based on leaf (text) changes
     const remove = editor.registerUpdateListener(
-      ({ dirtyElements, dirtyLeaves, tags }) => {
+      ({ editorState, prevEditorState, dirtyLeaves, tags }) => {
         try {
-          if (tags && tags.has && tags.has(ATTRIBUTION_UPDATE_TAG)) return;
+          // Ignore our own updates
+          if (
+            tags &&
+            (tags as Set<string>).has &&
+            (tags as Set<string>).has(ATTRIBUTION_UPDATE_TAG)
+          ) {
+            return;
+          }
 
-          if (dirtyElements) {
-            for (const n of dirtyElements) {
-              let candidate: unknown,
-                isDirty = true;
+          // Helper: climb up from a node to the nearest Paragraph or ListItem
+          const findAttributableBlockKey = (
+            startKey: string | null,
+          ): string | null => {
+            if (!startKey) return null;
+            let node = $getNodeByKey(startKey);
+            while (node) {
+              if ($isParagraphNode(node) || $isListItemNode(node)) {
+                return node.getKey();
+              }
+              const parent = node.getParent();
+              if (!parent) break;
+              node = parent;
+            }
+            return null;
+          };
+
+          // Only use dirtyLeaves (text nodes) to determine actual content changes
+          const leafKeys = new Set<string>();
+          if (dirtyLeaves) {
+            for (const n of dirtyLeaves as unknown as Iterable<unknown>) {
+              let candidate: unknown;
+              let isDirty = true;
               if (Array.isArray(n) && n.length === 2) {
                 candidate = n[0];
                 isDirty = Boolean(n[1]);
               } else {
                 candidate = n;
-                isDirty = true;
               }
               if (!isDirty) continue;
-              let key: string | null = null;
+
               if (typeof candidate === "string") {
-                key = candidate;
+                leafKeys.add(candidate);
               } else if (
                 candidate &&
                 typeof (candidate as { getKey?: unknown }).getKey === "function"
               ) {
-                key = (candidate as { getKey: () => string }).getKey();
+                leafKeys.add((candidate as { getKey: () => string }).getKey());
               } else if (
                 candidate &&
                 typeof (candidate as { key?: unknown }).key === "string"
               ) {
-                key = (candidate as { key: string }).key;
-              }
-              if (key) {
-                try {
-                  const node = $getNodeByKey(key as string);
-                  if (node && $isParagraphNode(node)) {
-                    dirtyKeys.add(key);
-                  }
-                } catch {
-                  dirtyKeys.add(key);
-                }
+                leafKeys.add((candidate as { key: string }).key);
               }
             }
           }
-          if (dirtyLeaves) {
-            for (const n of dirtyLeaves) {
-              let candidate: unknown,
-                isDirty = true;
-              if (Array.isArray(n) && n.length === 2) {
-                candidate = n[0];
-                isDirty = Boolean(n[1]);
-              } else {
-                candidate = n;
-                isDirty = true;
-              }
-              if (!isDirty) continue;
-              let key: string | null = null;
-              if (typeof candidate === "string") {
-                key = candidate;
-              } else if (
-                candidate &&
-                typeof (candidate as { getKey?: unknown }).getKey === "function"
-              ) {
-                key = (candidate as { getKey: () => string }).getKey();
-              } else if (
-                candidate &&
-                typeof (candidate as { key?: unknown }).key === "string"
-              ) {
-                key = (candidate as { key: string }).key;
-              }
-              if (key) {
-                try {
-                  const node = $getNodeByKey(key as string);
-                  if (node && $isParagraphNode(node)) {
-                    dirtyKeys.add(key);
-                  }
-                } catch {
-                  dirtyKeys.add(key);
-                }
-              }
+
+          // For each changed leaf, find the enclosing Paragraph/ListItem and ensure its text actually changed
+          for (const leafKey of leafKeys) {
+            let blockKey: string | null = null;
+
+            editorState.read(() => {
+              blockKey = findAttributableBlockKey(leafKey);
+            });
+
+            if (!blockKey) continue;
+
+            let prevText = "";
+            let currText = "";
+
+            prevEditorState.read(() => {
+              const prevNode = $getNodeByKey(blockKey as string);
+              prevText = prevNode?.getTextContent() ?? "";
+            });
+
+            editorState.read(() => {
+              const currNode = $getNodeByKey(blockKey as string);
+              currText = currNode?.getTextContent() ?? "";
+            });
+
+            if (currText !== prevText) {
+              dirtyKeys.add(blockKey as string);
             }
           }
         } catch {
@@ -199,8 +213,6 @@ export default function AttributionPlugin({
         }
       },
     );
-
-    // No initial snapshot population needed for append mode.
 
     return () => {
       remove();

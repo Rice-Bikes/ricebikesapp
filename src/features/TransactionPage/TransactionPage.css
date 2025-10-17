@@ -1,4 +1,4 @@
-/* 
+/*
 main#transaction-details section {
   display: flex;
   flex-direction: row;
@@ -6,7 +6,7 @@ main#transaction-details section {
   justify-content: center;
   margin-top: 20px;
   /* border: 10px solid black; */
-/*   
+/*
   gap: 2%;
   height: auto;
   width: 50%;
@@ -172,11 +172,11 @@ button {
 
 .transaction-container {
   padding: 0 10vw;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
   display: flex;
   flex-direction: column;
   height: 100%;
-  width: 80vw;
+  width: 72vw;
 }
 
 .transaction-header {
