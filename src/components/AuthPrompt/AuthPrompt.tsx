@@ -13,7 +13,6 @@ import {
 
 import { useAuth, useUser } from "../../contexts/UserContext";
 
-import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 const TIMER_DURATION = 7 * 60;

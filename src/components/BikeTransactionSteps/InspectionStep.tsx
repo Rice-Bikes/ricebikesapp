@@ -167,7 +167,6 @@ export const InspectionStep: React.FC<InspectionStepProps> = ({
         // If reverting to "Build" step, we need to put bike back in the main queue
         // This does the opposite of what happens when completing the build step
         if (stepName === "Build" && transaction?.transaction_id) {
-          // eslint-disable-line @typescript-eslint/no-unused-vars
           const {
             transaction_num, // eslint-disable-line @typescript-eslint/no-unused-vars
             customer_id, // eslint-disable-line @typescript-eslint/no-unused-vars
