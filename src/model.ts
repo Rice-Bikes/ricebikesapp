@@ -408,7 +408,7 @@ class DBModel {
         throw new Error("Error deleting role data: " + error); // More detailed error logging
       });
 
-  public static createRole = async (role: Role) =>
+  public static createRole = async (role: Role): Promise<Role> =>
     fetch(`${hostname}/roles`, {
       method: "POST",
       headers: {
@@ -424,6 +424,9 @@ class DBModel {
         if (!response.success) {
           throw new Error("Failed to post role");
         }
+        if (!DBModel.validateRole(response.responseObject))
+          throw new Error("Invalid role response");
+        
         return response.responseObject;
       })
       .catch((error) => {

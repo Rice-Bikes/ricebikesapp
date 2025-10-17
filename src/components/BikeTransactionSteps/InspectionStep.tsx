@@ -30,7 +30,7 @@ import DBModel, { UpdateTransaction } from "../../model";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../app/queryClient";
 import { toast } from "react-toastify";
-import Notes from "../Notes/Notes";
+import Notes from "../TransactionPage/Notes";
 
 interface InspectionStepProps {
   onStepComplete: () => void;
@@ -167,14 +167,14 @@ export const InspectionStep: React.FC<InspectionStepProps> = ({
         // If reverting to "Build" step, we need to put bike back in the main queue
         // This does the opposite of what happens when completing the build step
         if (stepName === "Build" && transaction?.transaction_id) {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          // eslint-disable-line @typescript-eslint/no-unused-vars
           const {
-            transaction_num,
-            customer_id,
-            bike_id,
-            Bike,
-            OrderRequests,
-            Customer,
+            transaction_num, // eslint-disable-line @typescript-eslint/no-unused-vars
+            customer_id, // eslint-disable-line @typescript-eslint/no-unused-vars
+            bike_id, // eslint-disable-line @typescript-eslint/no-unused-vars
+            Bike, // eslint-disable-line @typescript-eslint/no-unused-vars
+            OrderRequests, // eslint-disable-line @typescript-eslint/no-unused-vars
+            Customer, // eslint-disable-line @typescript-eslint/no-unused-vars
             ...rest
           } = transaction;
           updateTransactionMutation.mutate({
