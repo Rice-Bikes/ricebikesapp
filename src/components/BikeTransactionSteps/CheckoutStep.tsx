@@ -23,7 +23,7 @@ import { ShoppingCart, Receipt } from "@mui/icons-material";
 import { Customer } from "../../model";
 import DBModel from "../../model";
 import { CustomerReservation } from "../CustomerReservation";
-import Notes from "../Notes/Notes";
+import Notes from "../TransactionPage/Notes";
 import { useCurrentUser } from "../../hooks/useUserQuery";
 import { toast } from "react-toastify";
 import { queryClient } from "../../app/queryClient";

@@ -25,7 +25,7 @@ import {
 } from "@mui/icons-material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import DBModel, { TransactionDetailsArray } from "../../model";
-import Notes from "../Notes/Notes";
+import Notes from "../TransactionPage/Notes";
 import { CustomerReservation } from "../CustomerReservation";
 import { useSlackNotifications } from "../../hooks/useSlackNotifications";
 

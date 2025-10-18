@@ -17,11 +17,15 @@ import { toast } from "react-toastify";
 
 const TIMER_DURATION = 7 * 60;
 
-export default function AuthPrompt() {
+export default function AuthPrompt({
+  timerDurationSeconds = TIMER_DURATION,
+}: {
+  timerDurationSeconds?: number;
+}) {
   const [open, setOpen] = useState(true);
   const [netIdInput, setNetIdInput] = useState("");
 
-  const [timer, setTimer] = useState(TIMER_DURATION);
+  const [timer, setTimer] = useState(timerDurationSeconds);
   const { setUserId, logout } = useAuth();
   const { data: user, error } = useUser();
 
@@ -29,11 +33,11 @@ export default function AuthPrompt() {
   useEffect(() => {
     if (user && user.user_id) {
       setOpen(false);
-      setTimer(TIMER_DURATION);
+      setTimer(timerDurationSeconds);
     } else {
       setOpen(true);
     }
-  }, [user]);
+  }, [user, timerDurationSeconds]);
 
   // Removed cache polling effect in favor of auth context
   useEffect(() => {
@@ -55,14 +59,14 @@ export default function AuthPrompt() {
           logout();
           setOpen(true);
 
-          return TIMER_DURATION;
+          return timerDurationSeconds;
         }
         return prev - 1;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [logout]);
+  }, [logout, timerDurationSeconds]);
 
   const handleSubmit = () => {
     const id = netIdInput.trim();
