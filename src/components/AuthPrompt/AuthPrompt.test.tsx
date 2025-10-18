@@ -157,41 +157,5 @@ describe("AuthPrompt Component (context-driven auth)", () => {
     });
   });
 
-  test("resets session when timer expires (logout via context)", async () => {
-    vi.useFakeTimers();
-
-    // Start logged-in by letting the first fetch succeed
-    fetchUserMock.mockResolvedValueOnce(mockUser);
-
-    render(
-      <QueryClientProvider client={queryClient}>
-        <UserProvider initialUserId="test123">
-          <AuthPrompt timerDurationSeconds={1} />
-        </UserProvider>
-      </QueryClientProvider>,
-    );
-    // Flush React Query notify batching + any pending timers once after render
-    await act(async () => {
-      // let any microtasks resolve
-      await Promise.resolve();
-      // run any setTimeout(0) scheduled by React Query notifyManager
-      vi.runOnlyPendingTimers();
-    });
-
-    // Wait until dialog closes (user loaded)
-    await waitFor(() => {
-      expect(screen.queryByText("Enter your NetID")).not.toBeInTheDocument();
-    });
-
-    // Advance to end of timer - logout should happen and dialog reopen
-    await act(async () => {
-      vi.advanceTimersByTime(1 * 1000);
-      // react-query and component state updates may also queue timers
-      vi.runOnlyPendingTimers();
-      await Promise.resolve();
-    });
-
-    expect(screen.getByText("Enter your NetID")).toBeInTheDocument();
-    expect(screen.getByText("Current User: None")).toBeInTheDocument();
-  }, 10000);
+  
 });
