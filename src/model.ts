@@ -46,6 +46,7 @@ import {
   CreateWorkflowSchema,
 } from "./schema";
 import { IRow } from "./features/TransactionsTable/TransactionsTable";
+import { queryClient } from "./app/queryClient";
 
 export const hostname = import.meta.env.VITE_API_URL;
 
@@ -426,7 +427,7 @@ class DBModel {
         }
         if (!DBModel.validateRole(response.responseObject))
           throw new Error("Invalid role response");
-        
+
         return response.responseObject;
       })
       .catch((error) => {
@@ -804,6 +805,9 @@ class DBModel {
         if (!DBModel.validateTransaction(response.responseObject)) {
           throw new Error("Invalid transaction response");
         }
+        queryClient.invalidateQueries({
+          queryKey: ["transactionLogs", transaction_id],
+        });
         return response.responseObject;
       })
       .catch((error) => {
@@ -1500,6 +1504,9 @@ class DBModel {
         if (!response.success) {
           throw new Error("Failed to post transaction log");
         }
+        queryClient.removeQueries({
+          queryKey: ["transactionLogs", transaction_id],
+        });
       })
       .catch((error) => {
         console.error("Error posting transaction log data: ", error);

@@ -50,6 +50,6 @@ if (typeof window !== "undefined" && !window.ResizeObserver) {
     }
   }
   (
-    window as Window & { ResizeObserver: typeof MockResizeObserver }
+    window as unknown as { ResizeObserver: typeof MockResizeObserver }
   ).ResizeObserver = MockResizeObserver;
 }

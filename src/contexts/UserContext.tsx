@@ -22,7 +22,10 @@ type UserProviderProps = {
   initialUserId?: string | null;
 };
 
-export function UserProvider({ children, initialUserId = null }: UserProviderProps) {
+export function UserProvider({
+  children,
+  initialUserId = null,
+}: UserProviderProps) {
   const [userId, setUserId] = useState<string | null>(initialUserId);
 
   const value = useMemo<AuthContextValue>(

@@ -1,13 +1,7 @@
 import { useState } from "react";
 import DBModel from "../../model";
-import {
-  TextField,
-  Button,
-  Box,
-  Typography,
-  Paper,
-  Skeleton,
-} from "@mui/material";
+import { TextField, Button, Box, Typography, Paper } from "@mui/material";
+import { diffWords } from "diff";
 import { useUser, useAuth } from "../../contexts/UserContext";
 import { toast } from "react-toastify";
 interface NotesProps {
@@ -22,7 +16,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, transaction_num }) => {
   const { logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editedNotes, setEditedNotes] = useState(notes);
-  const [prevLengthOfNotes, setPrevLengthOfNotes] = useState(0);
+  const [originalNotes, setOriginalNotes] = useState(notes);
   // useEffect(() => {
   //   if (currentUser !== user && isWaitingForUser) {
   //     // console.log("setting new user in Notes component", user);
@@ -42,29 +36,27 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, transaction_num }) => {
       toast.error("User not found. Cannot save notes.");
       return;
     }
-    const currentLengthOfNotes = editedNotes.length;
     setEditedNotes(editedNotes + " - " + user.firstname + " " + user.lastname);
     // // console.log("edited notes in Notes component", editedNotes);
     onSave(editedNotes + " - " + user.firstname + " " + user.lastname);
     DBModel.postTransactionLog(
       transaction_num,
       user.user_id,
-      `"${editedNotes.slice(prevLengthOfNotes, currentLengthOfNotes).trim()}"`,
+      `"${diffWords(originalNotes, editedNotes)
+        .filter((changeObj) => changeObj.added)
+        .map((changeObj) => changeObj.value)
+        .join("")}"`,
       "updated",
     );
+    setOriginalNotes(editedNotes);
     setIsEditing(false);
   };
 
   const handleOpenToEdit = () => {
     setEditedNotes(editedNotes === "" ? "" : editedNotes + "\n");
     logout();
-    setPrevLengthOfNotes(editedNotes.length);
     setIsEditing(true);
   };
-
-  if (!user) {
-    return <Skeleton variant="rectangular" width="100%" height={200} />;
-  }
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -130,6 +122,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, transaction_num }) => {
                 wordBreak: "break-word",
                 margin: 0,
                 fontSize: "14px",
+                padding: 2,
                 lineHeight: 1.5,
                 backgroundColor: "grey.50",
                 color: editedNotes ? "text.primary" : "text.secondary",

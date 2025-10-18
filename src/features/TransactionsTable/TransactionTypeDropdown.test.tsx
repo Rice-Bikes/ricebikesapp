@@ -76,20 +76,6 @@ vi.mock("./CustomerForm", () => ({
 
 describe("CreateTransactionDropdown Component", () => {
   const mockNavigate = vi.fn();
-  const mockUser = {
-    user_id: "user123",
-    username: "testuser",
-    firstname: "Test",
-    lastname: "User",
-    active: true,
-    permissions: [
-      {
-        id: 1,
-        name: "admin",
-        description: "Administrator",
-      },
-    ],
-  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -97,7 +83,7 @@ describe("CreateTransactionDropdown Component", () => {
   });
 
   test("renders New Transaction button", () => {
-    render(<CreateTransactionDropdown user={mockUser} />, {
+    render(<CreateTransactionDropdown />, {
       wrapper: AllTheProviders,
     });
 
@@ -105,7 +91,7 @@ describe("CreateTransactionDropdown Component", () => {
   });
 
   test("opens dropdown menu when button is clicked", () => {
-    render(<CreateTransactionDropdown user={mockUser} />, {
+    render(<CreateTransactionDropdown />, {
       wrapper: AllTheProviders,
     });
 
@@ -121,7 +107,7 @@ describe("CreateTransactionDropdown Component", () => {
   });
 
   test("selects transaction type and opens form", async () => {
-    render(<CreateTransactionDropdown user={mockUser} />, {
+    render(<CreateTransactionDropdown />, {
       wrapper: AllTheProviders,
     });
 
@@ -142,7 +128,7 @@ describe("CreateTransactionDropdown Component", () => {
   });
 
   test("creates transaction and navigates when form is submitted", async () => {
-    render(<CreateTransactionDropdown user={mockUser} />, {
+    render(<CreateTransactionDropdown />, {
       wrapper: AllTheProviders,
     });
 
@@ -174,7 +160,7 @@ describe("CreateTransactionDropdown Component", () => {
   });
 
   test("closes form when cancel button is clicked", async () => {
-    render(<CreateTransactionDropdown user={mockUser} />, {
+    render(<CreateTransactionDropdown />, {
       wrapper: AllTheProviders,
     });
 

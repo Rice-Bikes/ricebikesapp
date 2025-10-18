@@ -312,7 +312,7 @@ const BikeTransactionPageContent: React.FC = () => {
                                 try {
                                     await initializeWorkflow(currentUser.user_id);
                                 } catch (error) {
-                                    console.error('Error initializing workflow:', error);
+                                    toast.error('Error initializing workflow:' + JSON.stringify(error));
                                 }
                             }}
                             disabled={isInitializing || !transaction?.transaction_id || !currentUser?.user_id}

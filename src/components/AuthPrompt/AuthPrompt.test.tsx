@@ -156,6 +156,4 @@ describe("AuthPrompt Component (context-driven auth)", () => {
       expect(screen.queryByText("Enter your NetID")).not.toBeInTheDocument();
     });
   });
-
-  
 });

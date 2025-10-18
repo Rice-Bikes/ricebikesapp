@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Typography,
-  TextField,
   Alert,
   Card,
   CardContent,
@@ -16,18 +15,19 @@ import {
   ListItemText,
 } from "@mui/material";
 import { useParams } from "react-router-dom";
-import { useCurrentUser } from "../../hooks/useUserQuery";
 import {
   Build,
   CheckCircle,
   RadioButtonUnchecked,
   Person,
 } from "@mui/icons-material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import DBModel, { TransactionDetailsArray } from "../../model";
+import { queryClient } from "../../app/queryClient";
 import Notes from "../TransactionPage/Notes";
 import { CustomerReservation } from "../CustomerReservation";
 import { useSlackNotifications } from "../../hooks/useSlackNotifications";
+import { useUser } from "../../contexts/UserContext";
 
 // Build task definitions (moved outside component to avoid dependency issues)
 const BUILD_TASKS = [
@@ -148,8 +148,7 @@ interface BuildStepProps {
 
 export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
   const { transaction_id } = useParams<{ transaction_id: string }>();
-  const currentUser = useCurrentUser();
-  const queryClient = useQueryClient();
+  const { data: currentUser } = useUser();
   const { notifyBuildReady, notifyInspectionComplete } =
     useSlackNotifications();
 
@@ -351,16 +350,17 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
     if (transaction && transaction.description) {
       setNotes(transaction.description);
     }
-  }, [
-    transactionDetails,
-    transaction,
-    transaction_id,
-    currentUser?.user_id,
-    queryClient,
-  ]);
+  }, [transactionDetails, transaction, transaction_id, currentUser?.user_id]);
 
   const handleTaskToggle = async (taskId: string) => {
-    if (!transaction_id || !currentUser?.user_id) return;
+    if (!transaction_id || !currentUser?.user_id) {
+      console.error(
+        "Cannot toggle task: missing transaction_id or user_id",
+        transaction_id,
+        currentUser?.user_id,
+      );
+      return;
+    }
 
     const task = buildTasks.find((t) => t.id === taskId);
     if (!task) return;
@@ -498,27 +498,7 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
   };
 
   const handleNotesChange = async (newNotes: string) => {
-    const isValidLexical = (s: string) => {
-      try {
-        const p = JSON.parse(s);
-        return typeof p === "object" && p !== null;
-      } catch {
-        return false;
-      }
-    };
-
-    const payload = isValidLexical(newNotes)
-      ? newNotes
-      : JSON.stringify({
-          root: {
-            children: [
-              {
-                type: "paragraph",
-                children: [{ text: newNotes }],
-              },
-            ],
-          },
-        });
+    const payload = newNotes;
 
     setNotes(payload);
 
@@ -781,22 +761,11 @@ export const BuildStep: React.FC<BuildStepProps> = ({ onStepComplete }) => {
           <Typography variant="h6" sx={{ mb: 2 }}>
             Build & Inspection Notes
           </Typography>
-          {currentUser && transaction ? (
+          {transaction && (
             <Notes
               notes={transaction.description || ""}
               onSave={handleNotesChange}
               transaction_num={transaction.transaction_num}
-            />
-          ) : (
-            <TextField
-              label="Technical Notes"
-              value={notes}
-              onChange={(e) => handleNotesChange(e.target.value)}
-              multiline
-              rows={4}
-              fullWidth
-              placeholder="Document any issues, adjustments, or special notes about the build process..."
-              helperText="These notes will be included with the transaction record"
             />
           )}
         </CardContent>
