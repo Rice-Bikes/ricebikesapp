@@ -52,21 +52,23 @@ export default function AuthPrompt({
     }
   }, [error]);
 
+  // Tick down the timer once per second. Do not trigger other state updates here.
   useEffect(() => {
     const interval = setInterval(() => {
-      setTimer((prev) => {
-        if (prev <= 1) {
-          logout();
-          setOpen(true);
-
-          return timerDurationSeconds;
-        }
-        return prev - 1;
-      });
+      setTimer((prev) => (prev <= 1 ? 0 : prev - 1));
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [logout, timerDurationSeconds]);
+  }, []);
+
+  // When the timer hits 0, log out and reset the timer. Opening/closing the dialog
+  // is driven by the `user` effect above.
+  useEffect(() => {
+    if (timer <= 0) {
+      logout();
+      setTimer(timerDurationSeconds);
+    }
+  }, [timer, logout, timerDurationSeconds]);
 
   const handleSubmit = () => {
     const id = netIdInput.trim();

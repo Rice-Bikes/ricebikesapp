@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { TransactionsTable } from "../features/TransactionsTable/TransactionsTable";
 // import RiceBikesIcon from "../assets/img/rice-bikes_white.png";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation, matchPath } from "react-router-dom";
 import "./App.css";
 import TransactionDetail from "../features/TransactionPage/TransactionPage";
 import { BikeTransactionPageWrapper } from "../features/BuildStepsPage/BikeTransactionPageWrapper";
@@ -28,7 +28,17 @@ function App() {
 }
 
 function AppContent() {
-  const [title, setTitle] = useState<string>("All bikes");
+  const location = useLocation();
+  const title = useMemo(() => {
+    const path = location.pathname;
+    if (matchPath("/transaction-details/:transaction_id", path))
+      return "Your bike";
+    if (matchPath("/bike-transaction/:transaction_id", path))
+      return "Bike Build Page";
+    if (matchPath("/admin", path)) return "Admin Hub";
+    if (matchPath("/whiteboard", path)) return "Whiteboard";
+    return "All bikes";
+  }, [location.pathname]);
   const [open, setOpen] = useState(false);
 
   const toggleDrawer = (newOpen: boolean) => () => {
@@ -52,7 +62,7 @@ function AppContent() {
             alignItems="space-between"
             sx={{ width: "90vw" }}
           >
-            <Typography variant="h2" noWrap width="20vw">
+            <Typography variant="h2" noWrap width="40vw">
               {title}
             </Typography>
             <AuthPrompt />
@@ -62,23 +72,13 @@ function AppContent() {
             <Route
               path="/transaction-details/:transaction_id"
               element={<TransactionDetail />}
-              // action={() => setTitle("Your bike")}
             />
             <Route
               path="/bike-transaction/:transaction_id"
               element={<BikeTransactionPageWrapper />}
-              action={() => setTitle("Bike Build Page")}
             />
-            <Route
-              path="/admin"
-              element={<AdminPage />}
-              action={() => setTitle("Admin Page")}
-            />
-            <Route
-              path="/whiteboard"
-              element={<WhiteboardPage />}
-              action={() => setTitle("Whiteboard")}
-            />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/whiteboard" element={<WhiteboardPage />} />
           </Routes>
         </Stack>
       </Stack>

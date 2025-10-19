@@ -27,18 +27,18 @@ export function CollapsedRail({ open, toggleDrawer }: Props) {
             zIndex: (theme) => theme.zIndex.drawer - 1,
             // subtle right-edge effect like your screenshot
             boxShadow: "4px 0 12px rgba(0,0,0,0.10)",
-            // optional: extra inner fade on the right edge
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              right: 0,
-              height: "100%",
-              width: "10px",
-              pointerEvents: "none",
-              background:
-                "linear-gradient(to right, rgba(0,0,0,0.08), rgba(0,0,0,0))",
-            },
+            // // optional: extra inner fade on the right edge
+            // "&::after": {
+            //   content: '""',
+            //   position: "absolute",
+            //   top: 0,
+            //   right: 0,
+            //   height: "100%",
+            //   width: "10px",
+            //   pointerEvents: "none",
+            //   background:
+            //     "linear-gradient(to right, rgba(0,0,0,0.08), rgba(0,0,0,0))",
+            // },
             borderRight: "1px solid",
             borderColor: "divider",
           }}

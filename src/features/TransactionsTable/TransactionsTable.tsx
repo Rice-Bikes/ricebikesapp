@@ -179,41 +179,21 @@ export function TransactionsTable(): JSX.Element {
       },
       {
         headerName: "Status",
-        flex: 2,
+        flex: 1.35,
         valueGetter: (params) => {
-          const isWaitEmail = params.data?.Transaction.is_waiting_on_email;
-          const isUrgent = params.data?.Transaction.is_urgent;
-          const isNuclear = params.data?.Transaction.is_nuclear;
           const isBeerBike = params.data?.Transaction.is_beer_bike;
           const transaction_type = params.data?.Transaction.transaction_type;
-          const isWaitingOnParts =
-            (params.data?.OrderRequests?.length ?? 0) > 0;
-          const is_completed = params.data?.Transaction.is_completed;
-          const refurb = params.data?.Transaction.is_refurb;
+          // const refurb = params.data?.Transaction.is_refurb;
 
           // Return the data to be rendered by the cellRenderer
           return {
-            isWaitEmail,
-            isUrgent,
-            isNuclear,
             isBeerBike,
             transaction_type,
-            isWaitingOnParts,
-            is_completed,
-            refurb,
+            // refurb,
           };
         },
         cellRenderer: (params: ICellRendererParams) => {
-          const {
-            isWaitEmail,
-            isUrgent,
-            isNuclear,
-            isBeerBike,
-            transaction_type,
-            isWaitingOnParts,
-            is_completed,
-            refurb,
-          } = params.value;
+          const { isBeerBike, transaction_type } = params.value;
 
           if (transaction_type.toLowerCase() !== "retrospec") {
             return (
@@ -268,6 +248,81 @@ export function TransactionsTable(): JSX.Element {
                     }}
                   />
                 )}
+              </Stack>
+            );
+          } else {
+            return (
+              <Stack
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-start",
+                }}
+                direction={"row"}
+              >
+                <Chip
+                  label="Build"
+                  sx={{
+                    backgroundColor: "orange",
+                    color: "white",
+                    marginTop: "4px",
+                    marginLeft: "10px",
+                    marginRight: "5px",
+                  }}
+                />
+              </Stack>
+            );
+          }
+        },
+      },
+      {
+        headerName: "Tags",
+        flex: 0.6,
+        valueGetter: (params) => {
+          const isWaitEmail = params.data?.Transaction.is_waiting_on_email;
+          const isUrgent = params.data?.Transaction.is_urgent;
+          const isNuclear = params.data?.Transaction.is_nuclear;
+          const isBeerBike = params.data?.Transaction.is_beer_bike;
+          const transaction_type = params.data?.Transaction.transaction_type;
+          const isWaitingOnParts =
+            (params.data?.OrderRequests?.length ?? 0) > 0;
+          const is_completed = params.data?.Transaction.is_completed;
+          const refurb = params.data?.Transaction.is_refurb;
+
+          // Return the data to be rendered by the cellRenderer
+          return {
+            isWaitEmail,
+            isUrgent,
+            isNuclear,
+            isBeerBike,
+            transaction_type,
+            isWaitingOnParts,
+            is_completed,
+            refurb,
+          };
+        },
+        cellRenderer: (params: ICellRendererParams) => {
+          const {
+            isWaitEmail,
+            isUrgent,
+            isNuclear,
+            transaction_type,
+            isWaitingOnParts,
+            is_completed,
+            refurb,
+          } = params.value;
+
+          if (transaction_type.toLowerCase() !== "retrospec") {
+            return (
+              <Stack
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-start",
+                  padding: "5px",
+                }}
+                direction={"row"}
+              >
                 {isUrgent && !is_completed && (
                   <ErrorSharp style={{ color: "red", marginRight: "5px" }} />
                 )}
@@ -296,16 +351,6 @@ export function TransactionsTable(): JSX.Element {
                 }}
                 direction={"row"}
               >
-                <Chip
-                  label="Build"
-                  sx={{
-                    backgroundColor: "orange",
-                    color: "white",
-                    marginTop: "4px",
-                    marginLeft: "10px",
-                    marginRight: "5px",
-                  }}
-                />
                 {checkStatusOfRetrospec(refurb, isWaitEmail, is_completed)}
                 {isNuclear && !is_completed && (
                   <i
@@ -598,7 +643,13 @@ export function TransactionsTable(): JSX.Element {
                 </Select>
               </Stack>
             </Stack>
-            <Stack direction={"row"} spacing={1} justifyItems={"flex-end"} justifyContent={"flex-end"} flexGrow={1}>
+            <Stack
+              direction={"row"}
+              spacing={1}
+              justifyItems={"flex-end"}
+              justifyContent={"flex-end"}
+              flexGrow={1}
+            >
               <Button
                 size="small"
                 sx={{

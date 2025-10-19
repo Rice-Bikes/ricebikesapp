@@ -72,13 +72,13 @@ const AdminPage: React.FC = () => {
       <Grid2
         sx={{
           backgroundColor: "white",
-          padding: "2rem",
+          padding: "1",
           borderRadius: "1rem",
-          marginBottom: "2rem",
-          height: "100%",
+          marginBottom: "2",
+          height: "fit-content",
         }}
         container
-        spacing={2}
+        spacing={1}
       >
         <Grid2 size={4}>
           {checkPermission(user, "updateCatalog") && (
