@@ -1762,7 +1762,13 @@ class DBModel {
       .then((response) => response.json())
       .then((response) => {
         console.log(response);
-        if (response.statusCode === 400) {
+        // Treat 400/404 and "not found" responses as empty lists to be tolerant of missing data
+        if (
+          response.statusCode === 400 ||
+          response.statusCode === 404 ||
+          (typeof response.message === "string" &&
+            response.message.toLowerCase().includes("not found"))
+        ) {
           return [];
         }
         if (!DBModel.validateArrayResponse(response)) {

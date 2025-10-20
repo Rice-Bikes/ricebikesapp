@@ -1,4 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  // useCallback,
+  // useMemo
+} from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import {
   Button,
@@ -8,6 +14,17 @@ import {
   Grid2,
   Skeleton,
   Tooltip,
+  Paper,
+  Box,
+  Chip,
+  Divider,
+  Typography,
+  Card,
+  CardHeader,
+  CardContent,
+  // IconButton,
+  // Popover,
+  // Badge,
 } from "@mui/material";
 import { OrderRequest, User } from "../../model";
 import { useNavigate } from "react-router-dom";
@@ -38,6 +55,7 @@ import NewBikeForm from "../../components/TransactionPage/BikeForm";
 import TransactionOptionDropdown from "../../components/TransactionPage/TransactionOptionDropdown";
 import WhiteboardEntryModal from "../../components/WhiteboardEntryModal";
 import ErrorSharp from "@mui/icons-material/ErrorSharp";
+// import InfoOutlined from "@mui/icons-material/InfoOutlined";
 import TransactionsLogModal from "../../components/TransactionsLogModal";
 import CompleteTransactionDropdown from "./CompleteTransactionDropdown";
 import SetProjectsTypesDropdown from "./SetProjectsTypesDropdown";
@@ -69,7 +87,7 @@ const calculateTotalCost = (
   if (orderRequest)
     if (debug)
       console.log("calculating order request cost: ", orderRequest, total);
-  orderRequest.forEach((part) => {
+  (orderRequest ?? []).forEach((part) => {
     total +=
       !isEmployee || isBeerBike
         ? part.standard_price
@@ -136,14 +154,18 @@ const TransactionDetail = () => {
     data: parts,
     error: partsError,
   } = itemsQuery;
-  if (partsError) toast.error("parts: " + partsError);
+  useEffect(() => {
+    if (partsError) toast.error("parts: " + partsError);
+  }, [partsError]);
 
   const {
     isLoading: repairsLoading,
     data: repairs,
     error: repairError,
   } = repairsQuery;
-  if (repairError) toast.error("repairs: " + repairError);
+  useEffect(() => {
+    if (repairError) toast.error("repairs: " + repairError);
+  }, [repairError]);
 
   const {
     isFetching: repairDetailsIsFetching,
@@ -160,15 +182,23 @@ const TransactionDetail = () => {
     data: queriedItemDetails,
     error: itemDetailsError,
   } = itemDetailsQuery;
-  if (itemDetailsError) toast.error("itemDetails: " + itemDetailsError);
+  useEffect(() => {
+    if (itemDetailsError) toast.error("itemDetails: " + itemDetailsError);
+  }, [itemDetailsError]);
   const itemDetails = queriedItemDetails as ItemDetails[];
+  const totalRef = useRef<HTMLDivElement | null>(null);
+  // const scrollToTotal = useCallback(() => {
+  //   totalRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  // }, []);
   const {
     status: transactionStatus,
     isLoading: transactionLoading,
     data: transactionData,
     error: transactionError,
   } = transactionQuery;
-  if (transactionError) toast.error("transaction: " + transactionError);
+  useEffect(() => {
+    if (transactionError) toast.error("transaction: " + transactionError);
+  }, [transactionError]);
 
   const {
     data: orderRequestData,
@@ -190,7 +220,9 @@ const TransactionDetail = () => {
       );
     },
   });
-  if (orderRequestError) toast.error("orderRequest: " + orderRequestError);
+  useEffect(() => {
+    if (orderRequestError) toast.error("orderRequest: " + orderRequestError);
+  }, [orderRequestError]);
 
   const [bike, setBike] = useState<Bike>(null);
   // const [customer, setCustomer] = useState(transaction?.Customer);
@@ -218,6 +250,56 @@ const TransactionDetail = () => {
   const [isCompleted, setIsCompleted] = useState<boolean>();
   const [beerBike, setBeerBike] = useState<boolean>();
   const [isEmployee, setIsEmployee] = useState<boolean>(false);
+  // const [summaryAnchorEl, setSummaryAnchorEl] = useState<HTMLElement | null>(
+  //   null,
+  // );
+  // const openSummary = Boolean(summaryAnchorEl);
+  // const handleOpenSummary = (e: React.MouseEvent<HTMLElement>) =>
+  //   setSummaryAnchorEl(e.currentTarget);
+  // const handleCloseSummary = () => setSummaryAnchorEl(null);
+
+  // // Context-aware totals for floating summary chip
+  // const repairsTotal = useMemo(() => {
+  //   const repairsArr = (repairDetails as RepairDetails[]) || [];
+  //   return repairsArr.reduce((sum, r) => sum + (r?.Repair?.price ?? 0), 0);
+  // }, [repairDetails]);
+
+  // const partsTotal = useMemo(() => {
+  //   let sum = 0;
+  //   const itemsArr = (itemDetails as ItemDetails[]) || [];
+  //   itemsArr.forEach((p) => {
+  //     const price =
+  //       !isEmployee || beerBike
+  //         ? p.Item.standard_price
+  //         : p.Item.wholesale_cost * MECHANIC_PART_MULTIPLIER;
+  //     sum += price || 0;
+  //   });
+  //   const orderedArr = (orderRequestData as Part[]) || [];
+  //   orderedArr.forEach((p) => {
+  //     const price =
+  //       !isEmployee || beerBike
+  //         ? p.standard_price
+  //         : p.wholesale_cost * MECHANIC_PART_MULTIPLIER;
+  //     sum += price || 0;
+  //   });
+  //   return sum;
+  // }, [itemDetails, orderRequestData, isEmployee, beerBike]);
+
+  // const totalChipColor = waitPart || waitEmail ? "warning" : "primary";
+  // const totalTooltip = `Repairs: $${repairsTotal.toFixed(2)} • Parts: $${partsTotal.toFixed(2)} • Subtotal: $${(repairsTotal + partsTotal).toFixed(2)} • Tax est.: $${(totalPrice * SALES_TAX_MULTIPLIER - totalPrice).toFixed(2)} • Total: $${(totalPrice * SALES_TAX_MULTIPLIER).toFixed(2)}`;
+  // const repairsCount = useMemo(
+  //   () => (repairDetails as RepairDetails[])?.length ?? 0,
+  //   [repairDetails],
+  // );
+  // const partsCount = useMemo(
+  //   () => (itemDetails as ItemDetails[])?.length ?? 0,
+  //   [itemDetails],
+  // );
+  // const orderedCount = useMemo(
+  //   () => (orderRequestData as Part[])?.length ?? 0,
+  //   [orderRequestData],
+  // );
+  // const itemsBadge = repairsCount + partsCount + orderedCount;
 
   // const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
   // Remember last checked netid to avoid repeatedly calling fetchUser for
@@ -830,687 +912,828 @@ const TransactionDetail = () => {
     return <p>Customer not found</p>;
   }
   return (
-    <div className="transaction-container">
-      <Stack className="transaction-header">
-        {/* <h2>Transaction Details</h2> */}
-        <Grid2 container>
-          <Grid2 size={6} className="transaction-options-container">
-            <h2
-              style={{
-                marginRight: "10px",
-                paddingTop: "5px",
-              }}
-            >
-              {transactionData.transaction_num + ": "}
-              {/* <strong>Name: </strong> */}
-              {"  " + transactionData.Customer.first_name}{" "}
-              {transactionData.Customer.last_name}
-            </h2>
-            <TransactionOptionDropdown
-              options={["Inpatient", "Outpatient", "Merch", "Retrospec"]}
-              colors={["green", "blue", "gray", "orange"]}
-              setTransactionType={handleTransactionTypeChange}
-              initialOption={transactionType.toLowerCase()}
-              isAllowed={(index: string) =>
-                index === "Retrospec"
-                  ? checkUserPermissions(
-                      user ?? null,
-                      "createRetrospecTransaction",
-                    )
-                  : true
-              }
-            />
-            {transactionType.toLowerCase() === "retrospec" && (
+    <Box sx={{ px: 3, py: 2 }}>
+      <Paper
+        elevation={3}
+        sx={{
+          p: 3,
+          borderRadius: 3,
+          background: "linear-gradient(180deg, #F8FBFF 0%, #FFFFFF 100%)",
+        }}
+      >
+        <Stack className="transaction-header" sx={{ gap: 2 }}>
+          {/* <h2>Transaction Details</h2> */}
+          <Grid2 container>
+            <Grid2 size={6} className="transaction-options-container">
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  {`${transactionData.transaction_num}: ${transactionData.Customer.first_name} ${transactionData.Customer.last_name}`}
+                </Typography>
+                <Chip
+                  label={transactionType.toUpperCase()}
+                  color={
+                    transactionType.toLowerCase() === "inpatient"
+                      ? "success"
+                      : transactionType.toLowerCase() === "outpatient"
+                        ? "info"
+                        : transactionType.toLowerCase() === "merch"
+                          ? "default"
+                          : "warning"
+                  }
+                  sx={{ fontWeight: 700 }}
+                />
+              </Stack>
               <TransactionOptionDropdown
-                options={["Arrived", "Building", "Completed", "For Sale"]}
-                colors={["gray"]}
-                setTransactionType={handleRetrospecStatusChange}
-                initialOption={checkStatusOfRetrospec(transactionData)}
-                isAllowed={(option: string) =>
-                  ["For Sale", "Arrived"].includes(option)
-                    ? checkUserPermissions(user ?? null, "safetyCheckBikes")
+                options={["Inpatient", "Outpatient", "Merch", "Retrospec"]}
+                colors={["green", "blue", "gray", "orange"]}
+                setTransactionType={handleTransactionTypeChange}
+                initialOption={transactionType.toLowerCase()}
+                isAllowed={(index: string) =>
+                  index === "Retrospec"
+                    ? checkUserPermissions(
+                        user ?? null,
+                        "createRetrospecTransaction",
+                      )
                     : true
                 }
               />
-            )}
-            {beerBike && (
-              <Button
-                style={{
-                  backgroundColor: "turquoise",
-                  color: "black",
-                  pointerEvents: "none",
-                  width: "fit-content",
-                  // wordWrap: "break-word",
-                  whiteSpace: "nowrap",
-                }}
-                variant="contained"
-                size="small"
-              >
-                {" "}
-                Beer Bike
-              </Button>
-            )}
-
-            {refurb && transactionType.toLowerCase() !== "retrospec" && (
-              <Button
-                style={{
-                  backgroundColor: "beige",
-                  color: "black",
-                  pointerEvents: "none",
-                }}
-                variant="contained"
-                size="small"
-              >
-                Refurb
-              </Button>
-            )}
-            {isEmployee && (
-              <Button
-                style={{
-                  backgroundColor: "green",
-                  color: "white",
-                  pointerEvents: "none",
-                }}
-                variant="contained"
-                size="small"
-              >
-                Employee
-              </Button>
-            )}
-          </Grid2>
-          <Grid2
-            size={6}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              gap: "5px",
-            }}
-          >
-            <TransactionsLogModal
-              transaction_num={transactionData.transaction_num}
-            />
-
-            {(transactionType.toLowerCase() !== "retrospec" ||
-              (transactionType.toLowerCase() === "retrospec" &&
-                checkUserPermissions(
-                  user ?? null,
-                  "createRetrospecTransaction",
-                ))) && (
-              <DeleteTransactionsModal
-                handleConfirm={() =>
-                  deleteTransaction.mutate(transactionData as Transaction)
-                }
-              />
-            )}
-          </Grid2>
-        </Grid2>
-        <Item
-          style={{
-            display: "flex",
-            gap: "10px",
-            justifyContent: "space-between",
-          }}
-        >
-          <h3>
-            <strong>📧: </strong>
-            <a
-              target="_blank"
-              href={`mailto:${transactionData.Customer.email}?subject=Your bike`}
-            >
-              {transactionData.Customer.email}
-            </a>
-          </h3>
-          <h3>
-            <strong>#: </strong>
-            {transactionData.Customer.phone}
-          </h3>
-        </Item>
-
-        <Notes
-          notes={transactionData.description ?? ""}
-          onSave={handleSaveNotes}
-          transaction_num={transactionData.transaction_num}
-        />
-
-        <h3>Bike Information</h3>
-        <Item style={{ color: "black" }}>
-          {" "}
-          {transactionData.Bike ? (
-            <Grid2 container>
-              <Grid2
-                size={2}
-                sx={{
-                  display: "flex",
-                  justifyContent: "flex-start",
-                  margin: "30px 0",
-                }}
-              >
+              {transactionType.toLowerCase() === "retrospec" && (
+                <TransactionOptionDropdown
+                  options={["Arrived", "Building", "Completed", "For Sale"]}
+                  colors={["gray"]}
+                  setTransactionType={handleRetrospecStatusChange}
+                  initialOption={checkStatusOfRetrospec(transactionData)}
+                  isAllowed={(option: string) =>
+                    ["For Sale", "Arrived"].includes(option)
+                      ? checkUserPermissions(user ?? null, "safetyCheckBikes")
+                      : true
+                  }
+                />
+              )}
+              {beerBike && (
                 <Button
+                  style={{
+                    backgroundColor: "turquoise",
+                    color: "black",
+                    pointerEvents: "none",
+                    width: "fit-content",
+                    // wordWrap: "break-word",
+                    whiteSpace: "nowrap",
+                  }}
                   variant="contained"
-                  sx={{
-                    backgroundColor: "gray",
-                    marginLeft: "10px",
-                  }}
-                  onClick={() => {
-                    setBike({
-                      ...bike,
-                      description: transactionData.Bike?.description ?? "",
-                      make: transactionData.Bike?.make ?? "",
-                      model: transactionData.Bike?.model ?? "",
-                    });
-                    setShowBikeForm(true);
-                  }}
+                  size="small"
                 >
-                  <ModeEditIcon />
+                  {" "}
+                  Beer Bike
                 </Button>
-              </Grid2>
-              <Grid2 size={8}>
-                <h2>
-                  {transactionData.Bike.make + " " + transactionData.Bike.model}
-                </h2>
-                <h2>{transactionData.Bike.description}</h2>
-              </Grid2>
-              <Grid2
-                size={2}
-                sx={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  margin: "30px 0",
-                }}
-              ></Grid2>
-            </Grid2>
-          ) : (
-            <Button
-              color="primary"
-              variant="contained"
-              onClick={() => setShowBikeForm(true)}
-            >
-              Add Bike
-            </Button>
-          )}
-        </Item>
+              )}
 
-        <NewBikeForm
-          isOpen={showBikeForm}
-          onClose={() => setShowBikeForm(false)}
-          onBikeCreated={(bike: Bike) => {
-            setBike(bike);
-            setShowBikeForm(false);
-            queryClient.invalidateQueries({
-              queryKey: ["transactions"],
-            });
-          }}
-          bike={
-            bike === null
-              ? {
-                  make: "",
-                  model: "",
-                  description: "",
-                }
-              : bike
-          }
-        />
-      </Stack>
-      <hr />
-      <Grid2
-        container
-        id="transaction-details"
-        spacing={2}
-        sx={{
-          paddingBottom: "20px",
-          backgroundColor: "whitesmoke",
-          padding: "20px",
-          borderRadius: "10px",
-        }}
-      >
-        {/* <Grid2 id="search" size = {12}> */}
-        <Grid2 size={6}>
-          <SearchModal
-            searchData={repairs == undefined ? [] : repairs}
-            columnData={[
-              {
-                field: "name",
-                headerName: "Name",
-                width: 200,
-                autoHeight: true,
-                wrapText: true,
-                filter: true,
-                tooltipField: "description",
-                headerTooltip: "Name of repairs",
-              },
-              { field: "price", headerName: "Price", width: 200 },
-            ]}
-            colDefaults={{
-              flex: 1,
-            }}
-            onRowClick={(row) => handleAddRepair(row)}
-          >
-            Add Repair
-          </SearchModal>
-        </Grid2>
-        <Grid2 size={6}>
-          <SearchModal
-            searchData={parts == undefined ? [] : parts}
-            columnData={[
-              {
-                field: "name",
-                headerName: "Name",
-                width: 200,
-                autoHeight: true,
-                wrapText: true,
-                flex: 2,
-                filter: true,
-              },
-              { field: "description", headerName: "Description" },
-              { field: "brand", headerName: "Brand" },
-              {
-                field: "standard_price",
-                headerName: "Price",
-                width: 200,
-                valueGetter: (params) => params.data?.wholesale_cost as number,
-                // (params.data?.standard_price as number) > 0
-                //   ? params.data?.standard_price
-                //   : (params.data?.wholesale_cost as number) * 2,
-              },
-              // { field: "stock", headerName: "Stock", width: 200 }, //TODO: Verify that this piece is actually true
-              {
-                field: "upc",
-                headerName: "UPC",
-                width: 200,
-                wrapText: true,
-                autoHeight: true,
-                filter: true,
-              },
-            ]}
-            colDefaults={{
-              flex: 1,
-            }}
-            onRowClick={(row) => handleAddPart(row)}
-          >
-            Add Part
-          </SearchModal>
-        </Grid2>
-        <Grid2
-          size={6}
-          sx={{
-            textAlign: "center",
-            bgcolor: "#FFF3E0",
-            padding: "10px",
-            borderRadius: "10px",
-          }}
-        >
-          <h3>Repairs</h3>
-          {!repairDetailsLoading && repairDetails ? (
-            <List
+              {refurb && transactionType.toLowerCase() !== "retrospec" && (
+                <Button
+                  style={{
+                    backgroundColor: "beige",
+                    color: "black",
+                    pointerEvents: "none",
+                  }}
+                  variant="contained"
+                  size="small"
+                >
+                  Refurb
+                </Button>
+              )}
+              {isEmployee && (
+                <Button
+                  style={{
+                    backgroundColor: "green",
+                    color: "white",
+                    pointerEvents: "none",
+                  }}
+                  variant="contained"
+                  size="small"
+                >
+                  Employee
+                </Button>
+              )}
+            </Grid2>
+            <Grid2
+              size={6}
               sx={{
-                width: "100%",
-                borderRadius: "7px",
-                bgcolor: "background.paper",
-                opacity: repairDetails.length === 0 ? 0 : 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: "5px",
               }}
             >
-              {repairDetails.map((transactionDetail: RepairDetails) => (
-                <Tooltip
-                  title={transactionDetail.Repair.description}
-                  placement="top-start"
+              <TransactionsLogModal
+                transaction_num={transactionData.transaction_num}
+              />
+
+              {(transactionType.toLowerCase() !== "retrospec" ||
+                (transactionType.toLowerCase() === "retrospec" &&
+                  checkUserPermissions(
+                    user ?? null,
+                    "createRetrospecTransaction",
+                  ))) && (
+                <DeleteTransactionsModal
+                  handleConfirm={() =>
+                    deleteTransaction.mutate(transactionData as Transaction)
+                  }
+                />
+              )}
+            </Grid2>
+          </Grid2>
+          <Item
+            style={{
+              display: "flex",
+              gap: "10px",
+              justifyContent: "space-between",
+            }}
+          >
+            <h3>
+              <strong>📧: </strong>
+              <a
+                target="_blank"
+                href={`mailto:${transactionData.Customer.email}?subject=Your bike`}
+              >
+                {transactionData.Customer.email}
+              </a>
+            </h3>
+            <h3>
+              <strong>#: </strong>
+              {transactionData.Customer.phone}
+            </h3>
+          </Item>
+
+          <Notes
+            notes={transactionData.description ?? ""}
+            onSave={handleSaveNotes}
+            transaction_num={transactionData.transaction_num}
+          />
+          <Divider sx={{ my: 2 }} />
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: 700, color: "text.primary" }}
+          >
+            Bike Information
+          </Typography>
+          <Item style={{ color: "black" }}>
+            {" "}
+            {transactionData.Bike ? (
+              <Grid2 container>
+                <Grid2
+                  size={2}
+                  sx={{
+                    display: "flex",
+                    justifyContent: "flex-start",
+                    margin: "30px 0",
+                  }}
                 >
-                  <ListItem
-                    key={transactionDetail.transaction_detail_id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "10px",
-                      padding: "10px",
-                      width: "100%",
+                  <Button
+                    variant="contained"
+                    sx={{
+                      backgroundColor: "gray",
+                      marginLeft: "10px",
+                    }}
+                    onClick={() => {
+                      setBike({
+                        ...bike,
+                        description: transactionData.Bike?.description ?? "",
+                        make: transactionData.Bike?.make ?? "",
+                        model: transactionData.Bike?.model ?? "",
+                      });
+                      setShowBikeForm(true);
                     }}
                   >
-                    <span>
-                      {transactionDetail.Repair.name} - $
-                      {transactionDetail.Repair.price.toFixed(2)}
-                    </span>
-                    <Stack
-                      direction="row"
-                      spacing={2}
-                      sx={{ padding: " 0 2px" }}
-                    >
-                      <Button
-                        onClick={() => toggleDoneRepair(transactionDetail)}
-                        style={{
-                          border: "2px solid black",
-                          marginLeft: "10px",
-                          cursor: "pointer",
-                          backgroundColor: transactionDetail.completed
-                            ? "green"
-                            : "initial",
-                          color: "black",
-                        }}
-                        size="medium"
-                      >
-                        {transactionDetail.completed ? "Done" : "Mark as Done"}
-                      </Button>
-                      <Button
-                        onClick={() => handleRemoveRepair(transactionDetail)}
-                        style={{
-                          marginLeft: "10px",
-                          cursor: "pointer",
-                          border: "white",
-                          backgroundColor: "red",
-                          color: "white",
-                          // margin: "10px",
-                        }}
-                        size="medium"
-                      >
-                        Delete
-                      </Button>
-                    </Stack>
-                  </ListItem>
-                </Tooltip>
-              ))}
-            </List>
-          ) : (
-            <Skeleton
-              variant="rectangular"
-              animation="wave"
-              style={{ marginBottom: "10px", opacity: 0.5 }}
-            />
-          )}
-        </Grid2>
-
-        <Grid2
-          size={6}
-          sx={{
-            textAlign: "center",
-            bgcolor: "#E3F2FD",
-            padding: "10px",
-            borderRadius: "10px",
-          }}
-        >
-          <h3>Parts</h3>
-
-          {!itemDetailsLoading && itemDetails ? (
-            <List
-              sx={{
-                width: "100%",
-                bgcolor: "background.paper",
-                borderRadius: "7px",
-                opacity: itemDetails.length === 0 ? 0 : 1,
-              }}
-            >
-              {(itemDetails as ItemDetails[]).map((part: ItemDetails) => (
-                <ListItem
-                  key={part.transaction_detail_id}
-                  style={{
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "10px",
+                    <ModeEditIcon />
+                  </Button>
+                </Grid2>
+                <Grid2 size={8}>
+                  <h2>
+                    {transactionData.Bike.make +
+                      " " +
+                      transactionData.Bike.model}
+                  </h2>
+                  <h2>{transactionData.Bike.description}</h2>
+                </Grid2>
+                <Grid2
+                  size={2}
+                  sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    margin: "30px 0",
                   }}
-                >
-                  <span>
-                    {part.Item.name} - $
-                    {!isEmployee || beerBike
-                      ? part.Item.standard_price.toFixed(2)
-                      : (
-                          part.Item.wholesale_cost * MECHANIC_PART_MULTIPLIER
-                        ).toFixed(2)}
-                  </span>
-                  <Stack direction="row" spacing={2} sx={{ padding: " 0 2px" }}>
-                    <Button
-                      onClick={() => {
-                        handleRemovePart(part);
-                      }}
-                      style={{
-                        marginLeft: "10px",
-                        cursor: "pointer",
-                        border: "white",
-                        backgroundColor: "red",
-                        color: "white",
-                      }}
-                      size="medium"
-                    >
-                      Delete
-                    </Button>
-                  </Stack>
-                </ListItem>
-              ))}
-            </List>
-          ) : (
-            <Skeleton
-              variant="rectangular"
-              animation="wave"
-              style={{ marginBottom: "10px", opacity: 0.5 }}
-            />
-          )}
+                ></Grid2>
+              </Grid2>
+            ) : (
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={() => setShowBikeForm(true)}
+              >
+                Add Bike
+              </Button>
+            )}
+          </Item>
 
-          {!orderRequestLoading && orderRequestData ? (
-            <List
-              sx={{
-                width: "100%",
-                bgcolor: "background.paper",
-                borderRadius: "7px",
-                opacity: orderRequestData.length === 0 ? 0 : 1,
-                marginTop: "10px",
-              }}
-            >
-              {orderRequestData.map((part: Part) => (
-                <ListItem
-                  key={part.item_id}
-                  style={{
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "10px",
-                    opacity: 0.5,
-                  }}
-                >
-                  <span>
-                    {part.name} - $
-                    {!isEmployee || beerBike
-                      ? part.standard_price.toFixed(2)
-                      : (
-                          part.wholesale_cost * MECHANIC_PART_MULTIPLIER
-                        ).toFixed(2)}
-                  </span>
-                  <Stack direction="row" spacing={2} sx={{ padding: " 0 2px" }}>
-                    <Button
-                      style={{
-                        marginLeft: "10px",
-                        cursor: "pointer",
-                        border: "white",
-                        backgroundColor: "red",
-                        color: "white",
-                      }}
-                      disabled
-                      size="medium"
-                    >
-                      Delete
-                    </Button>
-                  </Stack>
-                </ListItem>
-              ))}
-            </List>
-          ) : (
-            <Skeleton
-              variant="rectangular"
-              animation="wave"
-              style={{ marginBottom: "10px", opacity: 0.5 }}
-            />
-          )}
-        </Grid2>
-      </Grid2>
-
-      <Grid2
-        container
-        sx={{
-          marginTop: "5vh",
-          backgroundColor: "whitesmoke",
-          borderRadius: "10px",
-          padding: "10px",
-        }}
-      >
-        <Grid2
-          size={12}
-          style={{
-            borderRadius: "10px",
-            height: "50%",
-            marginBottom: "5px",
-          }}
-        >
-          <h3>Total</h3>
-          <p>
-            <strong>${(totalPrice * SALES_TAX_MULTIPLIER).toFixed(2)}</strong>
-          </p>
-          <WhiteboardEntryModal
-            open={showWaitingParts}
-            onClose={() => setShowWaitingParts(false)}
-            setWaitingOnParts={(waiting: boolean) => setWaitPart(waiting)}
-            waitingOnParts={waitPart ?? false}
-            parts={parts as Part[]}
-            transaction_id={transaction_id}
-            user_id={user?.user_id ?? ""}
-            handleAddOrderedPart={handleAddOrderedPart}
+          <NewBikeForm
+            isOpen={showBikeForm}
+            onClose={() => setShowBikeForm(false)}
+            onBikeCreated={(bike: Bike) => {
+              setBike(bike);
+              setShowBikeForm(false);
+              queryClient.invalidateQueries({
+                queryKey: ["transactions"],
+              });
+            }}
+            bike={
+              bike === null
+                ? {
+                    make: "",
+                    model: "",
+                    description: "",
+                  }
+                : bike
+            }
           />
-        </Grid2>
+        </Stack>
+        <hr />
         <Grid2
-          style={{
-            color: "whitesmoke",
-            gap: "2px",
-            height: "50%",
-            marginBottom: "10px",
+          container
+          id="transaction-details"
+          spacing={2}
+          sx={{
+            paddingBottom: "20px",
+            backgroundColor: "whitesmoke",
+            padding: "20px",
+            borderRadius: "16px",
+            boxShadow: 2,
+            border: "1px solid rgba(0,0,0,0.05)",
           }}
-          size={12}
-          gap={2}
         >
+          {/* <Grid2 id="search" size = {12}> */}
           <Grid2 size={6}>
-            <Stack
-              spacing={1}
-              direction="row"
-              alignItems="center"
-              height={"6vh"}
+            <SearchModal
+              searchData={repairs == undefined ? [] : repairs}
+              columnData={[
+                {
+                  field: "name",
+                  headerName: "Name",
+                  width: 200,
+                  autoHeight: true,
+                  wrapText: true,
+                  filter: true,
+                  tooltipField: "description",
+                  headerTooltip: "Name of repairs",
+                },
+                { field: "price", headerName: "Price", width: 200 },
+              ]}
+              colDefaults={{
+                flex: 1,
+              }}
+              onRowClick={(row) => handleAddRepair(row)}
             >
-              <Button
-                onClick={handleWaitPartClick}
-                style={{
-                  backgroundColor: waitPart ? "red" : "grey",
-                  color: "white",
-                  height: "100%",
-                }}
-                variant="contained"
-              >
-                Wait on Part
-              </Button>
-              <Button
-                onClick={handleWaitEmail}
-                style={{
-                  backgroundColor: waitEmail ? "red" : "grey",
-                  color: "white",
-                  height: "100%",
-                }}
-                variant="contained"
-              >
-                Wait on Email
-              </Button>
-              <Button
-                onClick={handlePriority}
-                style={{
-                  backgroundColor: "black",
-                  height: "100%",
-                }}
-                disableElevation={!priority}
-                variant="contained"
-              >
-                <ErrorSharp
-                  style={{
-                    color: priority ? "red" : "white",
-                    marginRight: "5px",
-                  }}
-                />
-              </Button>
-              <Button
-                onClick={handleNuclear}
-                style={{
-                  // backgroundColor: nuclear ? "white" : "grey",
-                  borderColor: nuclear ? "red" : "black",
-                  color: nuclear ? "red" : "black",
-                  width: "fit-content",
-                  height: "100%",
-                }}
-                // disabled={checkUserPermissions(user, "setAtomic")}
-
-                variant="outlined"
-              >
-                {nuclear ? (
-                  <i className="fas fa-radiation" style={{ color: "red" }} />
+              Add Repair
+            </SearchModal>
+          </Grid2>
+          <Grid2 size={6}>
+            <SearchModal
+              searchData={parts == undefined ? [] : parts}
+              columnData={[
+                {
+                  field: "name",
+                  headerName: "Name",
+                  width: 200,
+                  autoHeight: true,
+                  wrapText: true,
+                  flex: 2,
+                  filter: true,
+                },
+                { field: "description", headerName: "Description" },
+                { field: "brand", headerName: "Brand" },
+                {
+                  field: "standard_price",
+                  headerName: "Price",
+                  width: 200,
+                  valueGetter: (params) =>
+                    params.data?.wholesale_cost as number,
+                  // (params.data?.standard_price as number) > 0
+                  //   ? params.data?.standard_price
+                  //   : (params.data?.wholesale_cost as number) * 2,
+                },
+                // { field: "stock", headerName: "Stock", width: 200 }, //TODO: Verify that this piece is actually true
+                {
+                  field: "upc",
+                  headerName: "UPC",
+                  width: 200,
+                  wrapText: true,
+                  autoHeight: true,
+                  filter: true,
+                },
+              ]}
+              colDefaults={{
+                flex: 1,
+              }}
+              onRowClick={(row) => handleAddPart(row)}
+            >
+              Add Part
+            </SearchModal>
+          </Grid2>
+          <Grid2 size={6}>
+            <Card elevation={2} sx={{ bgcolor: "#FFF8E1", borderRadius: 2 }}>
+              <CardHeader title="Repairs" />
+              <CardContent>
+                {!repairDetailsLoading && repairDetails ? (
+                  <List
+                    sx={{
+                      width: "100%",
+                      borderRadius: "7px",
+                      bgcolor: "background.paper",
+                      opacity: repairDetails.length === 0 ? 0 : 1,
+                    }}
+                  >
+                    {repairDetails.map((transactionDetail: RepairDetails) => (
+                      <Tooltip
+                        title={transactionDetail.Repair.description}
+                        placement="top-start"
+                      >
+                        <ListItem
+                          key={transactionDetail.transaction_detail_id}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: "10px",
+                            padding: "10px",
+                            width: "100%",
+                          }}
+                        >
+                          <span>
+                            {transactionDetail.Repair.name} - $
+                            {transactionDetail.Repair.price.toFixed(2)}
+                          </span>
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            sx={{ padding: " 0 2px" }}
+                          >
+                            <Button
+                              onClick={() =>
+                                toggleDoneRepair(transactionDetail)
+                              }
+                              style={{
+                                border: "2px solid black",
+                                marginLeft: "10px",
+                                cursor: "pointer",
+                                backgroundColor: transactionDetail.completed
+                                  ? "green"
+                                  : "initial",
+                                color: "black",
+                              }}
+                              size="medium"
+                            >
+                              {transactionDetail.completed
+                                ? "Done"
+                                : "Mark as Done"}
+                            </Button>
+                            <Button
+                              onClick={() =>
+                                handleRemoveRepair(transactionDetail)
+                              }
+                              style={{
+                                marginLeft: "10px",
+                                cursor: "pointer",
+                                border: "white",
+                                backgroundColor: "red",
+                                color: "white",
+                                // margin: "10px",
+                              }}
+                              size="medium"
+                            >
+                              Delete
+                            </Button>
+                          </Stack>
+                        </ListItem>
+                      </Tooltip>
+                    ))}
+                  </List>
                 ) : (
-                  "Mark as Nuclear"
+                  <Skeleton
+                    variant="rectangular"
+                    animation="wave"
+                    style={{ marginBottom: "10px", opacity: 0.5 }}
+                  />
                 )}
-              </Button>
+              </CardContent>
+            </Card>
+          </Grid2>
 
-              <SetProjectsTypesDropdown
-                setRefurb={() => setIsRefurb(!refurb)}
-                setBeerBike={() => setBeerBike(!beerBike)}
-              />
-            </Stack>
+          <Grid2 size={6}>
+            <Card elevation={2} sx={{ bgcolor: "#E8F3FF", borderRadius: 2 }}>
+              <CardHeader title="Parts" />
+              <CardContent>
+                {!itemDetailsLoading && itemDetails ? (
+                  <List
+                    sx={{
+                      width: "100%",
+                      bgcolor: "background.paper",
+                      borderRadius: "7px",
+                      opacity: itemDetails.length === 0 ? 0 : 1,
+                    }}
+                  >
+                    {(itemDetails as ItemDetails[]).map((part: ItemDetails) => (
+                      <ListItem
+                        key={part.transaction_detail_id}
+                        style={{
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        <span>
+                          {part.Item.name} - $
+                          {!isEmployee || beerBike
+                            ? part.Item.standard_price.toFixed(2)
+                            : (
+                                part.Item.wholesale_cost *
+                                MECHANIC_PART_MULTIPLIER
+                              ).toFixed(2)}
+                        </span>
+                        <Stack
+                          direction="row"
+                          spacing={2}
+                          sx={{ padding: " 0 2px" }}
+                        >
+                          <Button
+                            onClick={() => {
+                              handleRemovePart(part);
+                            }}
+                            style={{
+                              marginLeft: "10px",
+                              cursor: "pointer",
+                              border: "white",
+                              backgroundColor: "red",
+                              color: "white",
+                            }}
+                            size="medium"
+                          >
+                            Delete
+                          </Button>
+                        </Stack>
+                      </ListItem>
+                    ))}
+                  </List>
+                ) : (
+                  <Skeleton
+                    variant="rectangular"
+                    animation="wave"
+                    style={{ marginBottom: "10px", opacity: 0.5 }}
+                  />
+                )}
+
+                {!orderRequestLoading && orderRequestData ? (
+                  <List
+                    sx={{
+                      width: "100%",
+                      bgcolor: "background.paper",
+                      borderRadius: "7px",
+                      opacity: orderRequestData.length === 0 ? 0 : 1,
+                      marginTop: "10px",
+                    }}
+                  >
+                    {orderRequestData.map((part: Part) => (
+                      <ListItem
+                        key={part.item_id}
+                        style={{
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: "10px",
+                          opacity: 0.5,
+                        }}
+                      >
+                        <span>
+                          {part.name} - $
+                          {!isEmployee || beerBike
+                            ? part.standard_price.toFixed(2)
+                            : (
+                                part.wholesale_cost * MECHANIC_PART_MULTIPLIER
+                              ).toFixed(2)}
+                        </span>
+                        <Stack
+                          direction="row"
+                          spacing={2}
+                          sx={{ padding: " 0 2px" }}
+                        >
+                          <Button
+                            style={{
+                              marginLeft: "10px",
+                              cursor: "pointer",
+                              border: "white",
+                              backgroundColor: "red",
+                              color: "white",
+                            }}
+                            disabled
+                            size="medium"
+                          >
+                            Delete
+                          </Button>
+                        </Stack>
+                      </ListItem>
+                    ))}
+                  </List>
+                ) : (
+                  <Skeleton
+                    variant="rectangular"
+                    animation="wave"
+                    style={{ marginBottom: "10px", opacity: 0.5 }}
+                  />
+                )}
+              </CardContent>
+            </Card>
           </Grid2>
         </Grid2>
-        <Grid2 size={6}>
-          <Button
-            onClick={handleCheckout}
-            disabled={!isCompleted}
+
+        <Grid2
+          container
+          sx={{
+            mt: "5vh",
+            backgroundColor: "whitesmoke",
+            borderRadius: "10px",
+            padding: "10px",
+          }}
+        >
+          <Grid2
+            size={12}
             style={{
-              backgroundColor: isCompleted ? "green" : "grey",
-              border: "white",
-              marginRight: "10px",
-              color: "white",
-              // cursor: allRepairsDone() ? "pointer" : "not-allowed",
-              opacity: isCompleted ? 1 : 0.5,
+              borderRadius: "10px",
+              height: "50%",
+              marginBottom: "5px",
             }}
-            variant="outlined"
+            ref={totalRef}
           >
-            Checkout
-          </Button>
-          {showCheckout && (
-            <CheckoutModal
-              repairDetails={repairDetails as RepairDetails[]}
-              itemDetails={itemDetails as ItemDetails[]}
-              totalPrice={totalPrice}
-              isEmployee={isEmployee}
-              beerBike={beerBike ?? false}
-              handlePaid={handlePaid}
-              closeCheckout={closeCheckout}
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              Total
+            </Typography>
+            <Typography variant="h4" color="primary" sx={{ fontWeight: 800 }}>
+              {(totalPrice * SALES_TAX_MULTIPLIER).toFixed(2)}
+            </Typography>
+            <WhiteboardEntryModal
+              open={showWaitingParts}
+              onClose={() => setShowWaitingParts(false)}
+              setWaitingOnParts={(waiting: boolean) => setWaitPart(waiting)}
+              waitingOnParts={waitPart ?? false}
+              parts={parts as Part[]}
+              transaction_id={transaction_id}
+              user_id={user?.user_id ?? ""}
+              handleAddOrderedPart={handleAddOrderedPart}
             />
-          )}
-          {!isCompleted ? (
-            <CompleteTransactionDropdown
-              sendEmail={() => handleMarkDone(true)}
-              disabled={blockCompletion()}
-              completeTransaction={() => handleMarkDone(false)}
-            />
-          ) : (
+          </Grid2>
+          <Grid2
+            style={{
+              color: "whitesmoke",
+              gap: "2px",
+              height: "50%",
+              marginBottom: "10px",
+            }}
+            size={12}
+            gap={2}
+          >
+            <Grid2 size={6}>
+              <Stack
+                spacing={1}
+                direction="row"
+                alignItems="center"
+                height={"6vh"}
+              >
+                <Button
+                  onClick={handleWaitPartClick}
+                  style={{
+                    backgroundColor: waitPart ? "red" : "grey",
+                    color: "white",
+                    height: "100%",
+                  }}
+                  variant="contained"
+                >
+                  Wait on Part
+                </Button>
+                <Button
+                  onClick={handleWaitEmail}
+                  style={{
+                    backgroundColor: waitEmail ? "red" : "grey",
+                    color: "white",
+                    height: "100%",
+                  }}
+                  variant="contained"
+                >
+                  Wait on Email
+                </Button>
+                <Button
+                  onClick={handlePriority}
+                  style={{
+                    backgroundColor: "black",
+                    height: "100%",
+                  }}
+                  disableElevation={!priority}
+                  variant="contained"
+                >
+                  <ErrorSharp
+                    style={{
+                      color: priority ? "red" : "white",
+                      marginRight: "5px",
+                    }}
+                  />
+                </Button>
+                <Button
+                  onClick={handleNuclear}
+                  style={{
+                    // backgroundColor: nuclear ? "white" : "grey",
+                    borderColor: nuclear ? "red" : "black",
+                    color: nuclear ? "red" : "black",
+                    width: "fit-content",
+                    height: "100%",
+                  }}
+                  // disabled={checkUserPermissions(user, "setAtomic")}
+
+                  variant="outlined"
+                >
+                  {nuclear ? (
+                    <i className="fas fa-radiation" style={{ color: "red" }} />
+                  ) : (
+                    "Mark as Nuclear"
+                  )}
+                </Button>
+
+                <SetProjectsTypesDropdown
+                  setRefurb={() => setIsRefurb(!refurb)}
+                  setBeerBike={() => setBeerBike(!beerBike)}
+                />
+              </Stack>
+            </Grid2>
+          </Grid2>
+          <Grid2 size={6}>
             <Button
-              onClick={() => {
-                setIsCompleted(false);
-                setPaid(false);
-                queryClient.invalidateQueries({
-                  queryKey: ["transaction", transaction_id],
-                });
-                queryClient.invalidateQueries({
-                  queryKey: ["transactions"],
-                });
-              }}
+              onClick={handleCheckout}
+              disabled={!isCompleted}
               style={{
+                backgroundColor: isCompleted ? "green" : "grey",
+                border: "white",
                 marginRight: "10px",
                 color: "white",
-                backgroundColor: "gray",
+                // cursor: allRepairsDone() ? "pointer" : "not-allowed",
+                opacity: isCompleted ? 1 : 0.5,
               }}
               variant="outlined"
             >
-              Reopen Transaction
+              Checkout
             </Button>
-          )}
+            {showCheckout && (
+              <CheckoutModal
+                repairDetails={repairDetails as RepairDetails[]}
+                itemDetails={itemDetails as ItemDetails[]}
+                totalPrice={totalPrice}
+                isEmployee={isEmployee}
+                beerBike={beerBike ?? false}
+                handlePaid={handlePaid}
+                closeCheckout={closeCheckout}
+              />
+            )}
+            {!isCompleted ? (
+              <CompleteTransactionDropdown
+                sendEmail={() => handleMarkDone(true)}
+                disabled={blockCompletion()}
+                completeTransaction={() => handleMarkDone(false)}
+              />
+            ) : (
+              <Button
+                onClick={() => {
+                  setIsCompleted(false);
+                  setPaid(false);
+                  queryClient.invalidateQueries({
+                    queryKey: ["transaction", transaction_id],
+                  });
+                  queryClient.invalidateQueries({
+                    queryKey: ["transactions"],
+                  });
+                }}
+                style={{
+                  marginRight: "10px",
+                  color: "white",
+                  backgroundColor: "gray",
+                }}
+                variant="outlined"
+              >
+                Reopen Transaction
+              </Button>
+            )}
+          </Grid2>
         </Grid2>
-      </Grid2>
-    </div>
+      </Paper>
+      {/*<Box
+        sx={{
+          position: "fixed",
+          right: 8,
+          top: "50%",
+          transform: "translateY(-50%)",
+          zIndex: 1200,
+        }}
+      >
+        <Tooltip placement="left" arrow title="View transaction summary">
+          <Button
+            color={totalChipColor}
+            variant="contained"
+            onClick={handleOpenSummary}
+            size="large"
+          >
+            <Badge
+              color={totalChipColor}
+              badgeContent={itemsBadge}
+              overlap="rectangular"
+            >
+              <InfoOutlined />
+            </Badge>
+          </Button>
+        </Tooltip>
+        <Popover
+          open={openSummary}
+          anchorEl={summaryAnchorEl}
+          onClose={handleCloseSummary}
+          anchorOrigin={{ vertical: "center", horizontal: "left" }}
+          transformOrigin={{ vertical: "center", horizontal: "right" }}
+          PaperProps={{
+            sx: {
+              p: 2,
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor:
+                totalChipColor === "warning"
+                  ? "warning.light"
+                  : "primary.light",
+              boxShadow: 6,
+              minWidth: 280,
+            },
+          }}
+        >
+          <Typography
+            variant="subtitle2"
+            sx={{
+              fontWeight: 700,
+              color:
+                totalChipColor === "warning" ? "warning.main" : "primary.main",
+              mb: 1,
+            }}
+          >
+            Transaction Summary
+          </Typography>
+          <Divider sx={{ mb: 1 }} />
+          <Stack spacing={0.75}>
+            <Typography variant="body2">
+              Repairs: {repairsCount} • ${repairsTotal.toFixed(2)}
+            </Typography>
+            <Typography variant="body2">
+              Parts: {partsCount} • ${partsTotal.toFixed(2)}
+            </Typography>
+            <Typography variant="body2">Ordered: {orderedCount}</Typography>
+            <Divider />
+            <Typography variant="body2">
+              Subtotal: ${(repairsTotal + partsTotal).toFixed(2)}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Tax est.: $
+              {(totalPrice * SALES_TAX_MULTIPLIER - totalPrice).toFixed(2)}
+            </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 800,
+                color:
+                  totalChipColor === "warning"
+                    ? "warning.main"
+                    : "primary.main",
+              }}
+            >
+              Total: ${(totalPrice * SALES_TAX_MULTIPLIER).toFixed(2)}
+            </Typography>
+            {(waitPart || waitEmail) && (
+              <Chip
+                size="small"
+                color="warning"
+                variant="filled"
+                label={`${waitPart ? "Waiting on Part" : ""}${waitPart && waitEmail ? " • " : ""}${waitEmail ? "Waiting on Email" : ""}`}
+              />
+            )}
+            <Button
+              onClick={() => {
+                handleCloseSummary();
+                scrollToTotal();
+              }}
+              variant="text"
+              size="small"
+            >
+              Go to totals
+            </Button>
+          </Stack>
+        </Popover>
+      </Box>*/}
+    </Box>
   );
 };
 
