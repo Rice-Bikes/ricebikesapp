@@ -16,7 +16,7 @@ import {
   Tooltip,
   Paper,
   Box,
-  Chip,
+  // Chip,
   Divider,
   Typography,
   Card,
@@ -918,7 +918,6 @@ const TransactionDetail = () => {
         sx={{
           p: 3,
           borderRadius: 3,
-          background: "linear-gradient(180deg, #F8FBFF 0%, #FFFFFF 100%)",
         }}
       >
         <Stack className="transaction-header" sx={{ gap: 2 }}>
@@ -929,7 +928,7 @@ const TransactionDetail = () => {
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
                   {`${transactionData.transaction_num}: ${transactionData.Customer.first_name} ${transactionData.Customer.last_name}`}
                 </Typography>
-                <Chip
+                {/*<Chip
                   label={transactionType.toUpperCase()}
                   color={
                     transactionType.toLowerCase() === "inpatient"
@@ -941,7 +940,7 @@ const TransactionDetail = () => {
                           : "warning"
                   }
                   sx={{ fontWeight: 700 }}
-                />
+                />*/}
               </Stack>
               <TransactionOptionDropdown
                 options={["Inpatient", "Outpatient", "Merch", "Retrospec"]}
@@ -1163,7 +1162,7 @@ const TransactionDetail = () => {
           spacing={2}
           sx={{
             paddingBottom: "20px",
-            backgroundColor: "whitesmoke",
+            backgroundColor: "white",
             padding: "20px",
             borderRadius: "16px",
             boxShadow: 2,
@@ -1456,7 +1455,7 @@ const TransactionDetail = () => {
           container
           sx={{
             mt: "5vh",
-            backgroundColor: "whitesmoke",
+            backgroundColor: "white",
             borderRadius: "10px",
             padding: "10px",
           }}
@@ -1473,7 +1472,7 @@ const TransactionDetail = () => {
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
               Total
             </Typography>
-            <Typography variant="h4" color="primary" sx={{ fontWeight: 800 }}>
+            <Typography variant="h4" sx={{ fontWeight: 800 }}>
               {(totalPrice * SALES_TAX_MULTIPLIER).toFixed(2)}
             </Typography>
             <WhiteboardEntryModal
@@ -1489,7 +1488,7 @@ const TransactionDetail = () => {
           </Grid2>
           <Grid2
             style={{
-              color: "whitesmoke",
+              color: "white",
               gap: "2px",
               height: "50%",
               marginBottom: "10px",
