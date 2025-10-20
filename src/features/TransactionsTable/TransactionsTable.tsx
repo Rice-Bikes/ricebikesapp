@@ -20,6 +20,7 @@ import {
   Customer,
   TransactionSummary,
   OrderRequest,
+  TransactionDetails,
 } from "../../model";
 import { useNavigate } from "react-router-dom";
 import DBModel from "../../model";
@@ -29,6 +30,8 @@ import ConstructionIcon from "@mui/icons-material/Construction";
 import PanToolIcon from "@mui/icons-material/PanTool";
 import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+
 export interface IRow {
   Transaction: Transaction;
   Customer: Customer;
@@ -89,6 +92,108 @@ const checkStatusOfRetrospec = (
 };
 
 const debug: boolean = import.meta.env.VITE_DEBUG;
+
+// Renders a progress bar based on repair-type TransactionDetails for the row
+const ProgressCellRenderer = ({ data }: ICellRendererParams) => {
+  const transactionId: string | undefined = data?.Transaction?.transaction_id;
+
+  const { data: details, isLoading } = useQuery({
+    queryKey: ["transactionDetails", transactionId, "repair"],
+    queryFn: () =>
+      transactionId
+        ? DBModel.fetchTransactionDetails(transactionId, "repair")
+        : Promise.resolve([]),
+    enabled: !!transactionId,
+    select: (data) => data as TransactionDetails[],
+  });
+
+  // If loading, keep row height consistent. If details are empty/null, show a completed checkmark.
+  if (!transactionId || isLoading) {
+    return <div style={{ height: 10 }} />;
+  }
+  if (
+    !details ||
+    details.length === 0
+  ) {
+    return (
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1}
+        style={{ width: "100%", height: "100%" }}
+        justifyContent="center"
+      >
+        <div
+          style={{
+            flexGrow: 1,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              height: 10,
+              borderRadius: 5,
+              background: "#e0e0e0",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                background: "#2e7d32",
+              }}
+            />
+          </div>
+        </div>
+        <CheckCircleIcon style={{ color: "#2e7d32" }} fontSize="medium" />
+      </Stack>
+    );
+  }
+
+  const total = details.length;
+  const completed = details.filter(
+    (d: TransactionDetails) => d.completed === true,
+  ).length;
+  const percent = Math.round((completed / total) * 100);
+
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={1}
+      style={{ width: "100%", height: "100%" }}
+      justifyContent="center"
+    >
+      <div style={{ flexGrow: 1 }}>
+        <div
+          style={{
+            width: "100%",
+            height: 10,
+            borderRadius: 5,
+            background: "#e0e0e0",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: `${percent}%`,
+              height: "100%",
+              background: percent === 100 ? "#2e7d32" : "#fb8c00",
+            }}
+          />
+        </div>
+      </div>
+      {percent === 100 ? (
+        <CheckCircleIcon style={{ color: "#2e7d32" }} fontSize="medium" />
+      ) : (
+        <span style={{ minWidth: 32 }}>{percent}%</span>
+      )}
+    </Stack>
+  );
+};
 
 export function TransactionsTable(): JSX.Element {
   const navigate = useNavigate();
@@ -362,6 +467,16 @@ export function TransactionsTable(): JSX.Element {
             );
           }
         },
+      },
+      {
+        headerName: "Progress",
+        colId: "progress",
+        flex: 1.1,
+        filter: false,
+        sortable: false,
+        suppressMenu: true,
+        valueGetter: (params) => params.data?.Transaction?.transaction_id,
+        cellRenderer: ProgressCellRenderer,
       },
       {
         headerName: "Name",

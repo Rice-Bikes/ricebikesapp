@@ -912,7 +912,7 @@ const TransactionDetail = () => {
     return <p>Customer not found</p>;
   }
   return (
-    <Box sx={{ px: 3, py: 2 }}>
+    <Box sx={{ px: "10vw", py: 2, }}>
       <Paper
         elevation={3}
         sx={{
@@ -1196,7 +1196,7 @@ const TransactionDetail = () => {
           </Grid2>
           <Grid2 size={6}>
             <SearchModal
-              searchData={parts == undefined ? [] : parts}
+              searchData={parts == undefined ? [] : parts as Part[]}
               columnData={[
                 {
                   field: "name",
