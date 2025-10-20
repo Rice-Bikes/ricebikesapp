@@ -1,6 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { Button, Stack, List, ListItem, Grid2, Skeleton } from "@mui/material";
+import {
+  Button,
+  Stack,
+  List,
+  ListItem,
+  Grid2,
+  Skeleton,
+  Tooltip,
+} from "@mui/material";
 import { OrderRequest, User } from "../../model";
 import { useNavigate } from "react-router-dom";
 import Item from "../../components/TransactionPage/HeaderItem";
@@ -845,7 +853,10 @@ const TransactionDetail = () => {
               initialOption={transactionType.toLowerCase()}
               isAllowed={(index: string) =>
                 index === "Retrospec"
-                  ? checkUserPermissions(user ?? null, "createRetrospecTransaction")
+                  ? checkUserPermissions(
+                      user ?? null,
+                      "createRetrospecTransaction",
+                    )
                   : true
               }
             />
@@ -1048,7 +1059,7 @@ const TransactionDetail = () => {
         spacing={2}
         sx={{
           paddingBottom: "20px",
-          backgroundColor: "white",
+          backgroundColor: "whitesmoke",
           padding: "20px",
           borderRadius: "10px",
         }}
@@ -1097,10 +1108,10 @@ const TransactionDetail = () => {
                 field: "standard_price",
                 headerName: "Price",
                 width: 200,
-                valueGetter: (params) =>
-                  (params.data?.standard_price as number) > 0
-                    ? params.data?.standard_price
-                    : (params.data?.wholesale_cost as number) * 2,
+                valueGetter: (params) => params.data?.wholesale_cost as number,
+                // (params.data?.standard_price as number) > 0
+                //   ? params.data?.standard_price
+                //   : (params.data?.wholesale_cost as number) * 2,
               },
               // { field: "stock", headerName: "Stock", width: 200 }, //TODO: Verify that this piece is actually true
               {
@@ -1140,18 +1151,21 @@ const TransactionDetail = () => {
               }}
             >
               {repairDetails.map((transactionDetail: RepairDetails) => (
-                <ListItem
-                  key={transactionDetail.transaction_detail_id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "10px",
-                    padding: "10px",
-                    width: "100%",
-                  }}
+                <Tooltip
+                  title={transactionDetail.Repair.description}
+                  placement="top-start"
                 >
-                  <>
+                  <ListItem
+                    key={transactionDetail.transaction_detail_id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "10px",
+                      padding: "10px",
+                      width: "100%",
+                    }}
+                  >
                     <span>
                       {transactionDetail.Repair.name} - $
                       {transactionDetail.Repair.price.toFixed(2)}
@@ -1191,8 +1205,8 @@ const TransactionDetail = () => {
                         Delete
                       </Button>
                     </Stack>
-                  </>
-                </ListItem>
+                  </ListItem>
+                </Tooltip>
               ))}
             </List>
           ) : (
@@ -1329,7 +1343,7 @@ const TransactionDetail = () => {
         container
         sx={{
           marginTop: "5vh",
-          backgroundColor: "white",
+          backgroundColor: "whitesmoke",
           borderRadius: "10px",
           padding: "10px",
         }}
@@ -1359,7 +1373,7 @@ const TransactionDetail = () => {
         </Grid2>
         <Grid2
           style={{
-            color: "white",
+            color: "whitesmoke",
             gap: "2px",
             height: "50%",
             marginBottom: "10px",

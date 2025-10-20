@@ -106,7 +106,7 @@ main#transaction-details {
 
 .transaction-page header,
 .transaction-page footer {
-  background-color: #f8f9fa;
+  background-color: mintcream;
   padding: 20px;
 }
 
@@ -114,6 +114,7 @@ main#transaction-details {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+  background-color: mintcream;
 }
 
 .transaction-page footer {
@@ -185,7 +186,7 @@ button {
   flex-direction: column;
   justify-content: flex-start;
   padding-bottom: 20px;
-  background-color: white;
+  background-color: mintcream;
   padding: 20px;
   border-radius: 10px;
   margin-top: 20px;
@@ -217,7 +218,7 @@ button {
 
 .transaction-details-container {
   padding-bottom: 20px;
-  background-color: white;
+  background-color: mintcream;
   padding: 20px;
   border-radius: 10px;
 }

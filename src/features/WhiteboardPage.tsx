@@ -56,10 +56,9 @@ const WhiteboardPage: React.FC = () => {
       return DBModel.putOrderRequest(reqWithoutAgg);
     },
     onSuccess: (orderReq: OrderRequest) => {
-      queryClient.removeQueries({
+      queryClient.invalidateQueries({
         queryKey: ["orderRequest"],
       });
-      toast.info("orderReq" + JSON.stringify(orderReq));
       if (orderReq === undefined || orderReq.Item === undefined) return;
       if (orderReq.ordered) {
         toast.success(
@@ -149,20 +148,6 @@ const WhiteboardPage: React.FC = () => {
           return params.data?.Item?.standard_price ?? "";
         } catch (error) {
           console.error("Error in valueGetter for Price:", error);
-          throw error; // Re-throw to be caught by error boundary
-        }
-      },
-    },
-    {
-      headerName: "Quantity",
-      colId: "quantity",
-      valueGetter: (params) => {
-        // console.log("showing quantity", params);
-        if (!params.data) return "";
-        try {
-          return params.data?.quantity ?? 0;
-        } catch (error) {
-          console.error("Error in valueGetter for Quantity:", error);
           throw error; // Re-throw to be caught by error boundary
         }
       },
@@ -385,7 +370,9 @@ const WhiteboardPage: React.FC = () => {
                 columnDefs={columnDefs.filter((col) => col.colId !== "link")}
                 defaultColDef={defaultColDef}
                 columnTypes={columnTypes}
-                loading={orderRequestStatus === "fetching"}
+                loading={
+                  orderRequestData === undefined || orderRequestError !== null
+                }
                 overlayNoRowsTemplate="Add a part to the whiteboard!"
                 suppressMenuHide={true} // Disable menu completely
                 enableCellTextSelection={true}

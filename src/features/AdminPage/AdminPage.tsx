@@ -116,13 +116,22 @@ const AdminPage: React.FC = () => {
           </>
         )}
       </Grid2>
-      <Grid2 container sx={{ height: "fit-content" }}>
-        <Grid2 size={5}>
-          {checkPermission(user, "mutateRepairs") && <RepairsPage />}
-        </Grid2>
-        <Grid2 size={7}>
-          {checkPermission(user, "mutateItems") && <ItemsTable />}
-        </Grid2>
+      <Grid2
+        container
+        direction="column"
+        spacing={2}
+        sx={{ height: "fit-content", marginBottom: "2rem" }}
+      >
+        {checkPermission(user, "mutateItems") && (
+          <Grid2 size={12}>
+            <ItemsTable />
+          </Grid2>
+        )}
+        {checkPermission(user, "mutateRepairs") && (
+          <Grid2 size={12}>
+            <RepairsPage />
+          </Grid2>
+        )}
       </Grid2>
     </div>
   );

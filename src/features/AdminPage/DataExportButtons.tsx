@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Box,
   Button,
-  TextField,
   Select,
   Stack,
   MenuItem,
@@ -121,12 +120,6 @@ export default function DataExportButtons() {
     includeEmployee: "true",
   });
 
-  function handleTextChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) {
-    const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
-  }
   function handleSelectChange(e: SelectChangeEvent) {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name!]: value }));
@@ -258,23 +251,15 @@ export default function DataExportButtons() {
                 />
               </Grid2>
               <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
-                <TextField
-                  name="transactionType"
-                  label="Transaction Type"
-                  value={filters.transactionType}
-                  onChange={handleTextChange}
-                  fullWidth
-                  size="small"
-                />
-              </Grid2>
-              <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
                 <FormControl fullWidth size="small">
-                  <InputLabel id="isCompleted-label">Completed?</InputLabel>
+                  <InputLabel id="isCompleted-label">
+                    Completed Transaction?
+                  </InputLabel>
                   <Select
                     labelId="isCompleted-label"
                     name="isCompleted"
                     value={filters.isCompleted}
-                    label="Completed?"
+                    label="Completed Transaction?"
                     onChange={handleSelectChange}
                   >
                     <MenuItem value="">Any</MenuItem>
