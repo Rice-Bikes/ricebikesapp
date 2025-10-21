@@ -47,7 +47,6 @@ import {
 } from "./schema";
 import { IRow } from "./features/TransactionsTable/TransactionsTable";
 import { queryClient } from "./app/queryClient";
-import {toast} from "react-toastify";
 
 export const hostname = import.meta.env.VITE_API_URL;
 
@@ -1110,6 +1109,7 @@ class DBModel {
       .catch((error) => {
         throw new Error("Error deleting repair data: " + error); // More detailed error logging
       });
+    
   public static fetchUser = async (netid: string) => {
     try {
       // Lightweight instrumentation: log who is being fetched and the API host.
@@ -1124,6 +1124,8 @@ class DBModel {
     } catch {
       // ignore logging failures
     }
+    
+    
     return fetch(`${hostname}/users/${netid}`)
       .then((response) => response.json())
       .then((itemsData: unknown) => {
@@ -1766,7 +1768,6 @@ class DBModel {
         if (response.statusCode === 400) {
           return [];
         }
-        toast.info("Fetched order requests: " + JSON.stringify(response));
         if (!DBModel.validateArrayResponse(response)) {
           throw new Error("Invalid response -- " + response.message);
         }
@@ -1788,7 +1789,6 @@ class DBModel {
         return orderRequests as OrderRequest[];
       })
       .catch((error) => {
-        toast.error("Error fetching order requests: " + error);
         throw new Error("Error loading order requests data: " + error); // More detailed error logging
       });
 

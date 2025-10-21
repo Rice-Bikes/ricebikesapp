@@ -33,7 +33,6 @@ export function AdminFeatureFlags() {
             <Dialog open={open} onClose={() => setOpen(false)}>
                 <DialogTitle>Feature Flags</DialogTitle>
                 <DialogContent>
-                    {/* Flag toggles */}
                     {featureFlags && Object.entries(featureFlags).map(([name]) => (
                         <Stack key={name} direction="row" alignItems="center" spacing={1} sx={{ justifyContent: "space-between" }}>
                             <Typography>{name}</Typography>
