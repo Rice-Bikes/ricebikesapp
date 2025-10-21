@@ -40,7 +40,7 @@ import { InspectionStep } from "../../components/BikeTransactionSteps/Inspection
 import { BuildStep } from "../../components/BikeTransactionSteps/BuildStep";
 import { CheckoutStep } from "../../components/BikeTransactionSteps/CheckoutStep";
 import { BikeSelectionStep } from "../../components/BikeTransactionSteps/BikeSelectionStep";
-import DBModel, { Bike, UpdateTransaction } from "../../model";
+import DBModel, { Bike, UpdateTransaction, Customer } from "../../model";
 import { toast } from "react-toastify";
 import TransactionsLogModal from "../../components/TransactionsLogModal";
 
@@ -139,6 +139,29 @@ const BikeTransactionPageContent: React.FC = () => {
     },
     onError: (error) => {
       toast.error(`Error occurred during deletion: ${error}`);
+    },
+  });
+  const sendRecieptEmail = useMutation({
+    mutationFn: ({
+      customer,
+      transaction_id,
+    }: {
+      customer: Customer;
+      transaction_id: string;
+    }) => {
+      if (!transaction || !transaction.transaction_num)
+        throw new Error("Transaction data not found");
+      return DBModel.sendRecieptEmail(
+        customer,
+        transaction.transaction_num ?? "",
+        transaction_id,
+      );
+    },
+    onSuccess: () => {
+      toast.success("Receipt email sent");
+    },
+    onError: (error) => {
+      toast.error("Error sending receipt email: " + error);
     },
   });
   const handleAdminMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -460,6 +483,7 @@ const BikeTransactionPageContent: React.FC = () => {
             onStepComplete={() => {
               handleNext();
               if (!currentUser || !transaction) return;
+
               DBModel.postTransactionLog(
                 transaction.transaction_num,
                 "safety check completed, moved to checkout",
@@ -497,9 +521,30 @@ const BikeTransactionPageContent: React.FC = () => {
                   is_completed: true,
                   is_paid: true,
                   is_refurb: false,
+                  date_completed: new Date().toISOString(),
                 },
               });
-
+              if (
+                transaction.Customer &&
+                transaction.Customer !== null &&
+                transaction.Customer.customer_id !== undefined
+              ) {
+                const customer: Customer = transaction?.Customer as Customer;
+                sendRecieptEmail.mutate({
+                  customer: customer,
+                  transaction_id: transaction.transaction_id,
+                });
+              }
+              if (!currentUser || !transaction) return;
+              DBModel.postTransactionLog(
+                transaction.transaction_num,
+                "completed checkout",
+                currentUser?.user_id,
+                "completed checkout step",
+              );
+              toast.success(
+                "Transaction completed successfully and email sent",
+              );
               navigate("/");
             }}
           />

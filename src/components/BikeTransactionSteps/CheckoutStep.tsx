@@ -90,12 +90,12 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({
     }
   };
 
-  const handleTransactionComplete = async (completed: boolean) => {
-    if (completed) {
-      // In production, this would update the main transaction
-      onStepComplete();
-    }
-  };
+  // const handleTransactionComplete = async (completed: boolean) => {
+  //   if (completed) {
+  //     // In production, this would update the main transaction
+  //     onStepComplete();
+  //   }
+  // };
 
   const handleReservationComplete = async (
     customer: Customer,
@@ -165,7 +165,7 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({
 
   const handleAdvanceStep = async () => {
     if (canAdvance) {
-      await handleTransactionComplete(true);
+      // await handleTransactionComplete(true);
       onStepComplete();
     }
   };

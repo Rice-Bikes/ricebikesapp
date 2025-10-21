@@ -442,13 +442,11 @@ export function TransactionsTable(): JSX.Element {
           if (transaction_type.toLowerCase() !== "retrospec") {
             return (
               <Stack
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "flex-start",
-                  padding: "5px",
-                }}
-                direction={"row"}
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                style={{ width: "100%", minHeight: "100%" }}
+                justifyContent="flex-start"
               >
                 {isUrgent && !is_completed && (
                   <ErrorSharp style={{ color: "red", marginRight: "5px" }} />
@@ -471,12 +469,11 @@ export function TransactionsTable(): JSX.Element {
           } else {
             return (
               <Stack
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "flex-start",
-                }}
-                direction={"row"}
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                style={{ width: "100%", minHeight: "100%" }}
+                justifyContent="flex-start"
               >
                 {checkStatusOfRetrospec(refurb, isWaitEmail, is_completed)}
                 {isNuclear && !is_completed && (
