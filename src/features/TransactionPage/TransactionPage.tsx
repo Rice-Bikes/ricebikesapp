@@ -1412,18 +1412,26 @@ const TransactionDetail = () => {
                           >
                             {part.Item.name?.[0]?.toUpperCase()}
                           </Avatar>
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Box sx={{ flex: 1, minWidth: 0, flexShrink: 1 }}>
                             <Typography
                               variant="subtitle1"
                               fontWeight={600}
-                              noWrap
+                              sx={{
+                                whiteSpace: "normal",
+                                overflowWrap: "anywhere",
+                                wordBreak: "break-word",
+                              }}
                             >
                               {part.Item.name}
                             </Typography>
                             <Typography
                               variant="body2"
                               color="text.secondary"
-                              noWrap
+                              sx={{
+                                whiteSpace: "normal",
+                                overflowWrap: "anywhere",
+                                wordBreak: "break-word",
+                              }}
                             >
                               $
                               {!isEmployee || beerBike
@@ -1504,18 +1512,26 @@ const TransactionDetail = () => {
                             {part.name?.[0]?.toUpperCase()}
                           </Avatar>
 
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Box sx={{ flex: 1, minWidth: 0, flexShrink: 1 }}>
                             <Typography
                               variant="subtitle1"
                               fontWeight={600}
-                              noWrap
+                              sx={{
+                                whiteSpace: "normal",
+                                overflowWrap: "anywhere",
+                                wordBreak: "break-word",
+                              }}
                             >
                               {part.name}
                             </Typography>
                             <Typography
                               variant="body2"
                               color="text.secondary"
-                              noWrap
+                              sx={{
+                                whiteSpace: "normal",
+                                overflowWrap: "anywhere",
+                                wordBreak: "break-word",
+                              }}
                             >
                               $
                               {!isEmployee || beerBike
