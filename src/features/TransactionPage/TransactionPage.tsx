@@ -1290,11 +1290,15 @@ const TransactionDetail = () => {
                             >
                               {transactionDetail.Repair.name?.[0]?.toUpperCase()}
                             </Avatar>
-                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Box sx={{ flex: 1, minWidth: 0, flexShrink: 1 }}>
                               <Typography
                                 variant="subtitle1"
                                 fontWeight={600}
-                                noWrap
+                                sx={{
+                                  whiteSpace: "normal",
+                                  overflowWrap: "anywhere",
+                                  wordBreak: "break-word",
+                                }}
                               >
                                 {transactionDetail.Repair.name}
                               </Typography>
