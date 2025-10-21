@@ -53,7 +53,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, transaction_num }) => {
   };
 
   const handleOpenToEdit = () => {
-    setEditedNotes(editedNotes === "" ? "" : editedNotes + "\n");
+    setEditedNotes(editedNotes === "" ? "" : editedNotes);
     logout();
     setIsEditing(true);
   };
