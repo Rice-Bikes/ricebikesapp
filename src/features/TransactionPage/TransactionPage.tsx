@@ -16,15 +16,14 @@ import {
   Tooltip,
   Paper,
   Box,
-  // Chip,
+  Chip,
+  Avatar,
   Divider,
   Typography,
   Card,
   CardHeader,
   CardContent,
-  // IconButton,
-  // Popover,
-  // Badge,
+  IconButton,
 } from "@mui/material";
 import { OrderRequest, User } from "../../model";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +31,8 @@ import Item from "../../components/TransactionPage/HeaderItem";
 import Notes from "../../components/TransactionPage/Notes";
 import { RowClickedEvent } from "ag-grid-community";
 import ModeEditIcon from "@mui/icons-material/ModeEdit";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import {
   SALES_TAX_MULTIPLIER,
   MECHANIC_PART_MULTIPLIER,
@@ -912,7 +913,7 @@ const TransactionDetail = () => {
     return <p>Customer not found</p>;
   }
   return (
-    <Box sx={{ px: "10vw", py: 2, }}>
+    <Box sx={{ px: "10vw", py: 2 }}>
       <Paper
         elevation={3}
         sx={{
@@ -1196,7 +1197,7 @@ const TransactionDetail = () => {
           </Grid2>
           <Grid2 size={6}>
             <SearchModal
-              searchData={parts == undefined ? [] : parts as Part[]}
+              searchData={parts == undefined ? [] : (parts as Part[])}
               columnData={[
                 {
                   field: "name",
@@ -1245,8 +1246,7 @@ const TransactionDetail = () => {
                   <List
                     sx={{
                       width: "100%",
-                      borderRadius: "7px",
-                      bgcolor: "background.paper",
+                      // bgcolor: "background.paper",
                       opacity: repairDetails.length === 0 ? 0 : 1,
                     }}
                   >
@@ -1257,59 +1257,101 @@ const TransactionDetail = () => {
                       >
                         <ListItem
                           key={transactionDetail.transaction_detail_id}
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: "10px",
-                            padding: "10px",
-                            width: "100%",
+                          sx={{
+                            p: 1.5,
+                            mb: 1,
+                            borderRadius: 2,
+                            bgcolor: "background.paper",
+                            transition: "all .15s ease-in-out",
+                            "&:hover": {
+                              boxShadow: 3,
+                              transform: "translateY(-1px)",
+                            },
                           }}
                         >
-                          <span>
-                            {transactionDetail.Repair.name} - $
-                            {transactionDetail.Repair.price.toFixed(2)}
-                          </span>
                           <Stack
                             direction="row"
+                            alignItems="center"
                             spacing={2}
-                            sx={{ padding: " 0 2px" }}
+                            sx={{ width: "100%" }}
                           >
-                            <Button
+                            <Avatar
+                              sx={{
+                                bgcolor: transactionDetail.completed
+                                  ? "success.light"
+                                  : "warning.light",
+                                color: transactionDetail.completed
+                                  ? "success.dark"
+                                  : "warning.dark",
+                                width: 32,
+                                height: 32,
+                                fontSize: 14,
+                              }}
+                            >
+                              {transactionDetail.Repair.name?.[0]?.toUpperCase()}
+                            </Avatar>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography
+                                variant="subtitle1"
+                                fontWeight={600}
+                                noWrap
+                              >
+                                {transactionDetail.Repair.name}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                ${transactionDetail.Repair.price.toFixed(2)}
+                              </Typography>
+                            </Box>
+                            <Chip
+                              size="small"
+                              color={
+                                transactionDetail.completed
+                                  ? "success"
+                                  : "warning"
+                              }
+                              variant={
+                                transactionDetail.completed
+                                  ? "filled"
+                                  : "outlined"
+                              }
+                              label={
+                                transactionDetail.completed
+                                  ? "Done"
+                                  : "In Progress"
+                              }
+                              sx={{
+                                mr: 0.5,
+                                minWidth: 96,
+                                display: "flex",
+                                justifyContent: "center",
+                                px: 1,
+                              }}
+                            />
+                            <IconButton
                               onClick={() =>
                                 toggleDoneRepair(transactionDetail)
                               }
-                              style={{
-                                border: "2px solid black",
-                                marginLeft: "10px",
-                                cursor: "pointer",
-                                backgroundColor: transactionDetail.completed
-                                  ? "green"
-                                  : "initial",
-                                color: "black",
-                              }}
-                              size="medium"
+                              color={
+                                transactionDetail.completed
+                                  ? "success"
+                                  : "default"
+                              }
+                              size="small"
                             >
-                              {transactionDetail.completed
-                                ? "Done"
-                                : "Mark as Done"}
-                            </Button>
-                            <Button
+                              <CheckCircleOutlineIcon />
+                            </IconButton>
+                            <IconButton
                               onClick={() =>
                                 handleRemoveRepair(transactionDetail)
                               }
-                              style={{
-                                marginLeft: "10px",
-                                cursor: "pointer",
-                                border: "white",
-                                backgroundColor: "red",
-                                color: "white",
-                                // margin: "10px",
-                              }}
-                              size="medium"
+                              color="error"
+                              size="small"
                             >
-                              Delete
-                            </Button>
+                              <DeleteOutlineIcon />
+                            </IconButton>
                           </Stack>
                         </ListItem>
                       </Tooltip>
@@ -1334,49 +1376,81 @@ const TransactionDetail = () => {
                   <List
                     sx={{
                       width: "100%",
-                      bgcolor: "background.paper",
-                      borderRadius: "7px",
+                      // borderRadius: "7px",
                       opacity: itemDetails.length === 0 ? 0 : 1,
                     }}
                   >
                     {(itemDetails as ItemDetails[]).map((part: ItemDetails) => (
                       <ListItem
                         key={part.transaction_detail_id}
-                        style={{
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginBottom: "10px",
+                        sx={{
+                          p: 1.5,
+                          mb: 1,
+                          borderRadius: "7px",
+                          bgcolor: "background.paper",
+                          transition: "all .15s ease-in-out",
+                          "&:hover": {
+                            boxShadow: 3,
+                            transform: "translateY(-1px)",
+                          },
                         }}
                       >
-                        <span>
-                          {part.Item.name} - $
-                          {!isEmployee || beerBike
-                            ? part.Item.standard_price.toFixed(2)
-                            : (
-                                part.Item.wholesale_cost *
-                                MECHANIC_PART_MULTIPLIER
-                              ).toFixed(2)}
-                        </span>
                         <Stack
                           direction="row"
+                          alignItems="center"
                           spacing={2}
-                          sx={{ padding: " 0 2px" }}
+                          sx={{ width: "100%" }}
                         >
-                          <Button
+                          <Avatar
+                            sx={{
+                              bgcolor: "primary.light",
+                              color: "primary.dark",
+                              width: 32,
+                              height: 32,
+                              fontSize: 14,
+                            }}
+                          >
+                            {part.Item.name?.[0]?.toUpperCase()}
+                          </Avatar>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography
+                              variant="subtitle1"
+                              fontWeight={600}
+                              noWrap
+                            >
+                              {part.Item.name}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              noWrap
+                            >
+                              $
+                              {!isEmployee || beerBike
+                                ? part.Item.standard_price.toFixed(2)
+                                : (
+                                    part.Item.wholesale_cost *
+                                    MECHANIC_PART_MULTIPLIER
+                                  ).toFixed(2)}
+                            </Typography>
+                          </Box>
+                          {part.Item.brand && (
+                            <Chip
+                              size="small"
+                              variant="outlined"
+                              label={part.Item.brand}
+                              sx={{ mr: 0.5 }}
+                            />
+                          )}
+                          <IconButton
                             onClick={() => {
                               handleRemovePart(part);
                             }}
-                            style={{
-                              marginLeft: "10px",
-                              cursor: "pointer",
-                              border: "white",
-                              backgroundColor: "red",
-                              color: "white",
-                            }}
-                            size="medium"
+                            color="error"
+                            size="small"
                           >
-                            Delete
-                          </Button>
+                            <DeleteOutlineIcon />
+                          </IconButton>
                         </Stack>
                       </ListItem>
                     ))}
@@ -1389,62 +1463,89 @@ const TransactionDetail = () => {
                   />
                 )}
 
-                {!orderRequestLoading && orderRequestData ? (
+                {!orderRequestLoading && orderRequestData && (
                   <List
                     sx={{
                       width: "100%",
-                      bgcolor: "background.paper",
-                      borderRadius: "7px",
                       opacity: orderRequestData.length === 0 ? 0 : 1,
-                      marginTop: "10px",
                     }}
                   >
                     {orderRequestData.map((part: Part) => (
                       <ListItem
                         key={part.item_id}
-                        style={{
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          marginBottom: "10px",
-                          opacity: 0.5,
+                        sx={{
+                          p: 1.5,
+                          mb: 1,
+                          borderRadius: 2,
+                          bgcolor: "background.paper",
+                          transition: "all .15s ease-in-out",
+                          "&:hover": {
+                            boxShadow: 3,
+                            transform: "translateY(-1px)",
+                          },
+                          opacity: 0.9,
                         }}
                       >
-                        <span>
-                          {part.name} - $
-                          {!isEmployee || beerBike
-                            ? part.standard_price.toFixed(2)
-                            : (
-                                part.wholesale_cost * MECHANIC_PART_MULTIPLIER
-                              ).toFixed(2)}
-                        </span>
                         <Stack
                           direction="row"
                           spacing={2}
-                          sx={{ padding: " 0 2px" }}
+                          alignItems="center"
+                          sx={{ width: "100%" }}
                         >
-                          <Button
-                            style={{
-                              marginLeft: "10px",
-                              cursor: "pointer",
-                              border: "white",
-                              backgroundColor: "red",
-                              color: "white",
+                          <Avatar
+                            sx={{
+                              bgcolor: "primary.light",
+                              color: "primary.dark",
+                              width: 32,
+                              height: 32,
+                              fontSize: 14,
                             }}
-                            disabled
-                            size="medium"
                           >
-                            Delete
-                          </Button>
+                            {part.name?.[0]?.toUpperCase()}
+                          </Avatar>
+
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography
+                              variant="subtitle1"
+                              fontWeight={600}
+                              noWrap
+                            >
+                              {part.name}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              noWrap
+                            >
+                              $
+                              {!isEmployee || beerBike
+                                ? part.standard_price.toFixed(2)
+                                : (
+                                    part.wholesale_cost *
+                                    MECHANIC_PART_MULTIPLIER
+                                  ).toFixed(2)}
+                            </Typography>
+                          </Box>
+
+                          <Chip
+                            size="small"
+                            variant="outlined"
+                            label="Ordered"
+                            sx={{ mr: 0.5 }}
+                          />
+
+                          <IconButton
+                            disabled
+                            size="small"
+                            color="error"
+                            aria-label="delete-ordered-part"
+                          >
+                            <DeleteOutlineIcon />
+                          </IconButton>
                         </Stack>
                       </ListItem>
                     ))}
                   </List>
-                ) : (
-                  <Skeleton
-                    variant="rectangular"
-                    animation="wave"
-                    style={{ marginBottom: "10px", opacity: 0.5 }}
-                  />
                 )}
               </CardContent>
             </Card>
@@ -1469,10 +1570,10 @@ const TransactionDetail = () => {
             }}
             ref={totalRef}
           >
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
               Total
             </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 800 }}>
+            <Typography variant="h5" sx={{ fontWeight: 800 }}>
               {(totalPrice * SALES_TAX_MULTIPLIER).toFixed(2)}
             </Typography>
             <WhiteboardEntryModal
@@ -1626,112 +1727,6 @@ const TransactionDetail = () => {
           </Grid2>
         </Grid2>
       </Paper>
-      {/*<Box
-        sx={{
-          position: "fixed",
-          right: 8,
-          top: "50%",
-          transform: "translateY(-50%)",
-          zIndex: 1200,
-        }}
-      >
-        <Tooltip placement="left" arrow title="View transaction summary">
-          <Button
-            color={totalChipColor}
-            variant="contained"
-            onClick={handleOpenSummary}
-            size="large"
-          >
-            <Badge
-              color={totalChipColor}
-              badgeContent={itemsBadge}
-              overlap="rectangular"
-            >
-              <InfoOutlined />
-            </Badge>
-          </Button>
-        </Tooltip>
-        <Popover
-          open={openSummary}
-          anchorEl={summaryAnchorEl}
-          onClose={handleCloseSummary}
-          anchorOrigin={{ vertical: "center", horizontal: "left" }}
-          transformOrigin={{ vertical: "center", horizontal: "right" }}
-          PaperProps={{
-            sx: {
-              p: 2,
-              borderRadius: 2,
-              border: "1px solid",
-              borderColor:
-                totalChipColor === "warning"
-                  ? "warning.light"
-                  : "primary.light",
-              boxShadow: 6,
-              minWidth: 280,
-            },
-          }}
-        >
-          <Typography
-            variant="subtitle2"
-            sx={{
-              fontWeight: 700,
-              color:
-                totalChipColor === "warning" ? "warning.main" : "primary.main",
-              mb: 1,
-            }}
-          >
-            Transaction Summary
-          </Typography>
-          <Divider sx={{ mb: 1 }} />
-          <Stack spacing={0.75}>
-            <Typography variant="body2">
-              Repairs: {repairsCount} • ${repairsTotal.toFixed(2)}
-            </Typography>
-            <Typography variant="body2">
-              Parts: {partsCount} • ${partsTotal.toFixed(2)}
-            </Typography>
-            <Typography variant="body2">Ordered: {orderedCount}</Typography>
-            <Divider />
-            <Typography variant="body2">
-              Subtotal: ${(repairsTotal + partsTotal).toFixed(2)}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Tax est.: $
-              {(totalPrice * SALES_TAX_MULTIPLIER - totalPrice).toFixed(2)}
-            </Typography>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 800,
-                color:
-                  totalChipColor === "warning"
-                    ? "warning.main"
-                    : "primary.main",
-              }}
-            >
-              Total: ${(totalPrice * SALES_TAX_MULTIPLIER).toFixed(2)}
-            </Typography>
-            {(waitPart || waitEmail) && (
-              <Chip
-                size="small"
-                color="warning"
-                variant="filled"
-                label={`${waitPart ? "Waiting on Part" : ""}${waitPart && waitEmail ? " • " : ""}${waitEmail ? "Waiting on Email" : ""}`}
-              />
-            )}
-            <Button
-              onClick={() => {
-                handleCloseSummary();
-                scrollToTotal();
-              }}
-              variant="text"
-              size="small"
-            >
-              Go to totals
-            </Button>
-          </Stack>
-        </Popover>
-      </Box>*/}
     </Box>
   );
 };

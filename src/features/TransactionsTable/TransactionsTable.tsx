@@ -111,10 +111,7 @@ const ProgressCellRenderer = ({ data }: ICellRendererParams) => {
   if (!transactionId || isLoading) {
     return <div style={{ height: 10 }} />;
   }
-  if (
-    !details ||
-    details.length === 0
-  ) {
+  if (!details || details.length === 0) {
     return (
       <Stack
         direction="row"
@@ -198,11 +195,36 @@ const ProgressCellRenderer = ({ data }: ICellRendererParams) => {
 export function TransactionsTable(): JSX.Element {
   const navigate = useNavigate();
   const currDate: Date = new Date();
-  const [viewType, setViewType] = useState<string>("main");
+  const [viewType, setViewType] = useState<string>(() => {
+    try {
+      return localStorage.getItem("transactionsTable:viewType") || "main";
+    } catch {
+      return "main";
+    }
+  });
   const gridApiRef = useRef<AgGridReact>(null);
   const [, setRowData] = useState<IRow[]>([]);
   const [summaryData, setSummaryData] = useState<TransactionSummary>();
   const [showPriceCheckModal, setShowPriceCheckModal] = useState(false);
+
+  // Persist selected view type across navigations
+  useEffect(() => {
+    localStorage.setItem("transactionsTable:viewType", viewType);
+  }, [viewType]);
+
+  // Apply stored view type after mount when the grid API is available
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        if (gridApiRef.current?.api) {
+          applyViewType(viewType);
+        }
+      } catch (e) {
+        console.error("Error applying initial view type:", e);
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  });
 
   const onRowClicked = (e: RowClickedEvent) => {
     // Route Retrospec transactions to the new bike transaction system
