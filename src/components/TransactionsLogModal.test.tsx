@@ -36,7 +36,12 @@ const createMockUseQueryResult = (overrides = {}) => ({
     errorUpdatedAt: 0,
     errorUpdateCount: 0,
     failureCount: 0,
-
+    failureReason: null,
+    fetchStatus: "idle" as const,
+    isFetched: true,
+    isFetchedAfterMount: true,
+    isFetching: false,
+    isInitialLoading: false,
     isPlaceholderData: false,
     isPaused: false,
     isRefetching: false,

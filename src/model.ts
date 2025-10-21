@@ -375,6 +375,7 @@ class DBModel {
         if (!DBModel.validateArrayResponse(response)) {
           throw new Error("Invalid response");
         }
+        console.warn(response.responseObject);
         for (const role of response.responseObject) {
           if (!DBModel.validateRole(role)) {
             console.error("Invalid role:", role);
@@ -1109,7 +1110,7 @@ class DBModel {
       .catch((error) => {
         throw new Error("Error deleting repair data: " + error); // More detailed error logging
       });
-    
+
   public static fetchUser = async (netid: string) => {
     try {
       // Lightweight instrumentation: log who is being fetched and the API host.
@@ -1124,8 +1125,7 @@ class DBModel {
     } catch {
       // ignore logging failures
     }
-    
-    
+
     return fetch(`${hostname}/users/${netid}`)
       .then((response) => response.json())
       .then((itemsData: unknown) => {
