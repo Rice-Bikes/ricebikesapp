@@ -17,7 +17,6 @@ import {
 } from "@mui/material";
 import { useParams } from "react-router-dom";
 import { useWorkflowSteps } from "../../hooks/useWorkflowSteps";
-import { useCurrentUser } from "../../hooks/useUserQuery";
 import { CustomerReservation } from "../CustomerReservation";
 import {
   VerifiedUser,
@@ -31,6 +30,7 @@ import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../app/queryClient";
 import { toast } from "react-toastify";
 import Notes from "../TransactionPage/Notes";
+import { useUser } from "../../contexts/UserContext";
 
 interface InspectionStepProps {
   onStepComplete: () => void;
@@ -50,7 +50,7 @@ export const InspectionStep: React.FC<InspectionStepProps> = ({
   const { transaction_id } = useParams<{ transaction_id: string }>();
   const { transaction, getStepByName, markStepIncomplete, steps } =
     useWorkflowSteps(transaction_id || "");
-  const currentUser = useCurrentUser();
+  const { data: currentUser } = useUser();
 
   const [safetyCheckPassed, setSafetyCheckPassed] = useState(false);
   const [qualityApproved, setQualityApproved] = useState(false);

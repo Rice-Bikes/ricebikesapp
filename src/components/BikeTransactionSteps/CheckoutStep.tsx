@@ -24,9 +24,9 @@ import { Customer } from "../../model";
 import DBModel from "../../model";
 import { CustomerReservation } from "../CustomerReservation";
 import Notes from "../TransactionPage/Notes";
-import { useCurrentUser } from "../../hooks/useUserQuery";
 import { toast } from "react-toastify";
 import { queryClient } from "../../app/queryClient";
+import { useUser } from "../../contexts/UserContext";
 
 interface CheckoutStepProps {
   onStepComplete: () => void;
@@ -37,7 +37,7 @@ export const CheckoutStep: React.FC<CheckoutStepProps> = ({
 }) => {
   const { transaction_id } = useParams<{ transaction_id: string }>();
   const { transaction } = useWorkflowSteps(transaction_id || "");
-  const currentUser = useCurrentUser();
+  const { data: currentUser } = useUser();
 
   const [bikePrice, setBikePrice] = useState(0);
   const [tax, setTax] = useState(0);

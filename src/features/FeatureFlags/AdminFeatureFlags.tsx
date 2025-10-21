@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useFeatureFlags } from "../../hooks/FeatureFlagProvider";
 import { Switch, Dialog, DialogTitle, DialogContent, Stack, Typography, Button } from "@mui/material";
-import { useCurrentUser } from "../../hooks/useUserQuery";
+import { useUser } from "../../contexts/UserContext";
 
 
 export function AdminFeatureFlags() {
-    const user = useCurrentUser();
+    const {data: user} = useUser();
     const { featureFlags, switchFlag, createFlag } = useFeatureFlags();
     const [open, setOpen] = useState(false);
     const [newFlagName, setNewFlagName] = useState("");
@@ -14,7 +14,7 @@ export function AdminFeatureFlags() {
 
     const handleCreateFlag = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newFlagName.trim()) return;
+        if (!newFlagName.trim() || !user) return;
         setCreating(true);
         try {
             await createFlag(newFlagName.trim(), newFlagDefault, user);
