@@ -803,25 +803,9 @@ const TransactionDetail = () => {
     queryClient.resetQueries({
       queryKey: ["transactionLogs", transaction_id],
     });
-    // Ensure we store valid Lexical JSON. If the incoming notes are plain
-    // text, wrap them in a minimal Lexical paragraph node to avoid
-    // overwriting canonical editor JSON (which may contain decorator nodes).
-    const isValidLexical = (s: string) => {
-      try {
-        const p = JSON.parse(s);
-        return typeof p === "object" && p !== null;
-      } catch {
-        return false;
-      }
-    };
+  
 
-    const payload = isValidLexical(newNotes)
-      ? newNotes
-      : JSON.stringify({
-          root: {
-            children: [{ type: "paragraph", children: [{ text: newNotes }] }],
-          },
-        });
+    const payload = newNotes
 
     setDescription(payload);
   };
