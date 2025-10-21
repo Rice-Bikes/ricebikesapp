@@ -57,8 +57,8 @@ const WhiteboardEntryModal = ({
       return DBModel.getOrderRequests(transaction_id);
     },
     select: (data) => {
-      // console.log("converting incoming data", data);
-      // if (data === undefined) return [];
+      console.log("converting incoming data", data);
+      if (data === undefined) return [];
       return data as OrderRequest[] ?? Array<OrderRequest>()
 
     },
