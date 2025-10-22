@@ -1,7 +1,13 @@
 import { useMemo, useState } from "react";
 import { TransactionsTable } from "../features/TransactionsTable/TransactionsTable";
 // import RiceBikesIcon from "../assets/img/rice-bikes_white.png";
-import { Routes, Route, useLocation, matchPath } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  useLocation,
+  matchPath,
+  useNavigate,
+} from "react-router-dom";
 import "./App.css";
 import TransactionDetail from "../features/TransactionPage/TransactionPage";
 import { BikeTransactionPageWrapper } from "../features/BuildStepsPage/BikeTransactionPageWrapper";
@@ -29,6 +35,7 @@ function App() {
 
 function AppContent() {
   const location = useLocation();
+  const nav = useNavigate();
   const title = useMemo(() => {
     const path = location.pathname;
     if (matchPath("/transaction-details/:transaction_id", path))
@@ -62,7 +69,15 @@ function AppContent() {
             alignItems="space-between"
             sx={{ width: "90vw" }}
           >
-            <Typography variant="h2" noWrap width="40vw">
+            <Typography
+              variant="h2"
+              noWrap
+              width="55vw"
+              onClick={() => {
+                nav("/");
+              }}
+              sx={{ cursor: "pointer" }}
+            >
               {title}
             </Typography>
             <AuthPrompt />

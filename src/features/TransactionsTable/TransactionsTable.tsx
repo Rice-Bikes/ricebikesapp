@@ -783,6 +783,7 @@ export function TransactionsTable(): JSX.Element {
               justifyItems={"flex-end"}
               justifyContent={"flex-end"}
               flexGrow={1}
+              sx={{ pointerEvents: "none" }}
             >
               <Button
                 size="small"
