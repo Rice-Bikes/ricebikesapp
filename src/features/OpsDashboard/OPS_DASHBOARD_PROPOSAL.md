@@ -1,5 +1,166 @@
 # Ops Dashboard — Proposal
 
+---
+
+## Order & Inventory Tracking Extension
+
+---
+
+### Tracking Inventory Turnover & Age at Sale
+
+To accurately track inventory turnover and the age of items at the time of sale, you can leverage your existing `TransactionDetails` model, which records sales/usage events for items.
+
+#### Using TransactionDetails for Turnover Tracking
+
+- **Key Fields:**
+  - `item_id`: Identifies the item being sold/used.
+  - `quantity`: Number of units sold/used.
+  - `date_modified`: Date the transaction was completed (can be treated as the "sold date").
+  - `transaction_id`: Links to the parent transaction (sale, repair, etc.).
+  - `completed`: Indicates if the transaction is finalized.
+
+- **Batch-Level Tracking Recommendation:**
+  - To calculate age at sale (how long each unit spent in inventory), add a `batch_id` field to `TransactionDetails`:
+    - `batch_id`: References the inventory batch or order line from which the item was drawn (using FIFO or another method).
+    - This allows you to calculate:  
+      **Age at sale = date_modified (sold date) - received_date (from batch/order line)**
+
+- **If Schema Changes Aren't Possible:**
+  - You can infer batch assignment in your application logic when reducing stock, tracking which batch/order line is being depleted.
+
+#### Example Code: Batch Assignment and Turnover Calculation
+
+Here is a simplified example in TypeScript-like pseudocode for batch assignment and turnover calculation using FIFO:
+
+```typescript
+type InventoryBatch = {
+  batch_id: string,
+  item_id: string,
+  quantity_received: number,
+  quantity_remaining: number,
+  received_date: Date,
+  order_id: string
+};
+
+type TransactionDetails = {
+  transaction_detail_id: string,
+  item_id: string,
+  quantity: number,
+  date_modified: Date,
+  completed: boolean,
+  batch_id?: string // Add this field for robust tracking
+};
+
+// Assign batches to a sale (FIFO)
+function assignBatchesToSale(batches: InventoryBatch[], sale: TransactionDetails): TransactionDetails[] {
+  let qtyNeeded = sale.quantity;
+  let assigned: TransactionDetails[] = [];
+  for (const batch of batches.filter(b => b.item_id === sale.item_id && b.quantity_remaining > 0).sort((a, b) => a.received_date.getTime() - b.received_date.getTime())) {
+    if (qtyNeeded <= 0) break;
+    const takeQty = Math.min(batch.quantity_remaining, qtyNeeded);
+    batch.quantity_remaining -= takeQty;
+    qtyNeeded -= takeQty;
+    assigned.push({
+      ...sale,
+      quantity: takeQty,
+      batch_id: batch.batch_id
+    });
+  }
+  return assigned;
+}
+
+// Calculate age at sale for each assigned transaction
+function calculateAgeAtSale(assignedSales: TransactionDetails[], batches: InventoryBatch[]): number[] {
+  return assignedSales.map(sale => {
+    const batch = batches.find(b => b.batch_id === sale.batch_id);
+    return batch ? (sale.date_modified.getTime() - batch.received_date.getTime()) / (1000 * 60 * 60 * 24) : null; // age in days
+  });
+}
+```
+
+#### Analytics
+
+- Use the above logic to compute average age at sale for each item.
+- Highlight items with high average age (slow turnover).
+- Visualize inventory batches and their ages.
+
+---
+
+### New Data Type: Order
+
+- **Order**
+  - `order_id`: string/number (unique)
+  - `supplier`: string
+  - `ordered_by`: string
+  - `order_date`: date
+  - `received_date`: date (nullable; set when inventory arrives)
+  - `status`: enum ("Planned", "Ordered", "Shipped", "Received")
+  - `lines`: array of **OrderLine**
+
+- **OrderLine**
+  - `item_id`: string/number
+  - `item_name`: string
+  - `quantity`: number
+  - `unit`: string (optional)
+  - `notes`: string (optional)
+
+#### Purpose
+
+- Track each order's items and quantities, plus when inventory is received.
+- Track inventory at the batch level, recording when each batch is received and when items from each batch are sold or used.
+- Calculate "inventory age" by comparing `received_date` to `sold_date` for each transaction, enabling accurate turnover analytics.
+- Enable graphs of turnover/staleness (e.g., average days in stock, oldest items, average age at sale).
+- Support basic accounting: see what was ordered, when, how much, and how quickly it moves through inventory.
+
+#### API/DBModel Extensions
+
+- Add `received_date` to orders.
+- Add endpoints/queries:
+  - GET `/orders?from=&to=&supplier=&status=`
+  - GET `/orders/:order_id` (includes lines and received_date)
+  - PATCH `/orders/:order_id/received_date` (set when inventory arrives)
+  - POST `/inventory-batches` — create batch records when receiving inventory
+  - POST `/inventory-transactions` — record sales/usage against batches
+  - GET `/inventory/age` — returns items/batches with age since received and age at sale
+  - GET `/inventory/turnover` — returns average age at sale, turnover rates, and stale inventory
+
+#### Dashboard UI Additions
+
+- Show "Date Received" in order cards and detail pane.
+- Add "Mark as Received" action (sets `received_date`).
+- Graphs/tables:
+  - "Inventory Age" chart: items grouped by age since received.
+  - "Turnover Rate": average days from received to depletion.
+  - "Stale Inventory": highlight items not moved in X days.
+
+#### Example Order Object
+
+```json
+{
+  "order_id": "12345",
+  "supplier": "Acme Parts",
+  "ordered_by": "Jane Doe",
+  "order_date": "2024-06-01",
+  "received_date": "2024-06-05",
+  "status": "Received",
+  "lines": [
+    {
+      "item_id": "A100",
+      "item_name": "Bike Tire",
+      "quantity": 10,
+      "unit": "pcs"
+    },
+    {
+      "item_id": "B200",
+      "item_name": "Brake Cable",
+      "quantity": 5,
+      "unit": "pcs"
+    }
+  ]
+}
+```
+---
+
 Location
 - Proposed feature directory: `ricebikesapp/src/features/OpsDashboard/`
 - Key existing components to integrate:
@@ -10,9 +171,10 @@ Location
 Goal
 - Provide an operations dashboard for the ordering manager to plan, batch, submit, and track orders.
 - Surface order requests ("whiteboard" entries), low-stock items, upcoming/previous orders, and per-supplier batching suggestions.
-- Let managers view and edit order meta (order date, supplier, ordered_by, ETA) via `OrderModal`.
+- Let managers view and edit order meta (order date, supplier, ordered_by, ETA, received_date) via `OrderModal`.
 - Let managers see item details and reorder suggestions leveraging logic from `ItemPage`.
 - Allow toggling of "waiting on parts" and quick conversion of order-requests into orders / order lines.
+- Track inventory turnover and staleness by recording `received_date` and item quantities per order.
 
 High-level UX / Layout (desktop-first)
 - Top bar / Controls
@@ -25,8 +187,8 @@ High-level UX / Layout (desktop-first)
     - Sync/Refresh
 - Left column (width 30–35%)
   - Upcoming Orders list (cards)
-    - Each card shows: supplier, order_date, estimated_delivery, ordered_by, status badge
-    - Actions: Edit (open `OrderModal`), Mark as Ordered, Mark Received
+    - Each card shows: supplier, order_date, estimated_delivery, ordered_by, status badge, **received_date**
+    - Actions: Edit (open `OrderModal`), Mark as Ordered, **Mark as Received (sets received_date)**
   - "Next Order" quick button (wired to `getClosestFutureOrderQuery`) — reuse `OrderModal` call pattern
 - Main column (width 65–70%)
   - Whiteboard / Order Requests panel (ag-grid)
@@ -39,9 +201,10 @@ High-level UX / Layout (desktop-first)
     - Shows recommended qty to order, supplier, price estimates, last order date
     - Bulk-add items to a target order (creates order lines in the backend)
 - Right column (optional details pane / narrow)
-  - Selected order detail (lines, status)
+  - Selected order detail (lines, status, **received_date**)
   - Item quick view (reuses `ItemPage` inline view / link)
   - Audit timeline / logs for selected order
+  - **Inventory age and turnover analytics (e.g., chart of item staleness)**
 
 Data & API expectations
 - Use the existing DBModel methods where possible:
@@ -51,10 +214,13 @@ Data & API expectations
   - `DBModel.getItems` / item details (used in `ItemPage.tsx`)
 - Recommended new/extended API endpoints (server side):
   - GET `/orders?from=&to=&supplier=&status=` — list orders in range
+  - GET `/orders/:order_id` — get order with lines and received_date
   - POST `/orders/:order_id/lines` — add item lines to an order (bulk)
   - PATCH `/orders/:order_id/status` — update order lifecycle (ordered/shipped/received)
+  - PATCH `/orders/:order_id/received_date` — set when inventory arrives
   - GET `/orderRequests?status=&supplier=` — filterable whiteboard queries
   - GET `/items/reorder-suggestions` or calculate client-side from `/items`
+  - GET `/inventory/age` — (optional) returns items with age since received for staleness analytics
 - Response shape expectations:
   - Successful responses should use the current envelope: `{ success: boolean, message: string | null, responseObject: any, statusCode?: number }`
   - For error handling, ensure 4xx/5xx return consistent JSON so client can parse and show readable errors (see recommendations below)
@@ -125,7 +291,8 @@ Wireframes (textual)
     - Each row: checkbox | item name (click to open `ItemPage`) | qty | requester | notes | actions
   - Tab 2: Reorder suggestions (list)
     - For each item: name | stock | min | suggested qty | last ordered | add-to-order button
-- Right: Selected order detail (order lines, status, actions)
+- Right: Selected order detail (order lines, status, actions, **received_date**)
+- **Analytics: Inventory Age/Turnover chart**
 
 Testing
 - Unit tests:
@@ -202,3 +369,4 @@ Next steps (immediate)
 If you'd like, I can:
 - Generate starter component files for the skeleton dashboard (`index.tsx`, `WhiteboardPanel.tsx`, `ReorderSuggestions.tsx`) using the project's existing patterns (React + MUI + react-query).
 - Draft the API contract for the backend endpoints proposed above (request/response schemas).
+- Provide example queries for inventory age and staleness analytics.
