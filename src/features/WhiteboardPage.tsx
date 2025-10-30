@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
 import {
   CellClassParams,
@@ -7,19 +7,25 @@ import {
   EditableCallbackParams,
   ICellRendererParams,
   NewValueParams,
+  ITooltipParams,
+  RowClickedEvent,
 } from "ag-grid-community";
 import { Container, Typography, Button, Grid2 } from "@mui/material";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import DBModel from "../model";
+import { useQuery, useMutation, useQueries } from "@tanstack/react-query";
+import DBModel, { type Part } from "../model";
 import { OrderRequest } from "../model";
 import { queryClient } from "../app/queryClient";
 import { useNavigate } from "react-router-dom";
 import { CheckBox, CheckBoxOutlineBlank } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import OrderModal from "../components/OrderModal";
+import { useUser } from "../contexts/UserContext";
+import SearchModal from "../components/ItemSearch/SearchModal";
 
 const WhiteboardPage: React.FC = () => {
   const nav = useNavigate();
+  const { data: user } = useUser();
+  const [quantity, setQuantity] = useState<number>(1);
 
   const {
     data: orderRequestData,
@@ -37,17 +43,40 @@ const WhiteboardPage: React.FC = () => {
     },
   });
 
-  // const createOrderRequest = useMutation({
-  //     mutationFn: (req: OrderRequest) => DBModel.postOrderRequest(req),
-  //     onSuccess: () => {
-  //         queryClient.invalidateQueries({
-  //             queryKey: ["orderRequest"],
-  //         });
-  //     },
-  //     onError: (error) => {
-  //         console.error("Error creating order request", error);
-  //     }
-  // });
+  const [partsQuery] = useQueries({
+    queries: [DBModel.getItemsQuery()],
+  });
+
+  const {
+    isLoading: partsLoading,
+    data: parts,
+    error: partsError,
+  } = partsQuery;
+  const createStockOrderRequest = useMutation({
+    mutationFn: (payload: {
+      item_id: string;
+      quantity?: number;
+      notes?: string;
+    }) => {
+      const orderReq = {
+        created_by: user?.user_id ?? "", // or set to SYSTEM user id if desired
+        transaction_id: "828ea912-8a3a-4521-b5ea-a00e7a786708",
+        item_id: payload.item_id,
+        quantity: payload.quantity ?? 1,
+        notes: payload.notes ?? "",
+      } as OrderRequest;
+      return DBModel.postOrderRequest(orderReq);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orderRequest"] });
+      toast.success("Stock order created");
+    },
+    onError: (err) => {
+      toast.error(
+        "Failed to create stock order: " + ((err as Error)?.message ?? ""),
+      );
+    },
+  });
 
   const updateOrderRequest = useMutation({
     mutationFn: (req: OrderRequest) => {
@@ -187,9 +216,7 @@ const WhiteboardPage: React.FC = () => {
       headerName: "Transaction Link",
       colId: "link",
       onCellClicked: (event: CellClickedEvent<OrderRequest>) => {
-        // console.log("showing add btn", event);
         try {
-          //TODO: MAKE SURE THIS URL PARAMS ASSUMPTION IS CORRECT
           return event.data
             ? nav(
                 `/transaction-details/${event.data.transaction_id}?type=Inpatient`,
@@ -249,18 +276,13 @@ const WhiteboardPage: React.FC = () => {
     flex: 1,
   };
 
-  // Add grid ready handler
-  // const onGridReady = (params: GridReadyEvent) => {
-  //   params.api.sizeColumnsToFit();
-  // };
   function isCellEditable(params: EditableCallbackParams | CellClassParams) {
-    // console.log("params", params);
     try {
       if (!params.colDef) return false;
       return params.colDef.field === "notes";
     } catch (error) {
       console.error("Error in isCellEditable:", error);
-      throw error; // Re-throw to be caught by error boundary
+      throw error;
     }
   }
   const columnTypes = {
@@ -304,37 +326,94 @@ const WhiteboardPage: React.FC = () => {
     },
   };
 
-  // const handleAddPart = (event: RowClickedEvent) => {
-  //     try {
-  //         // console.log('Event received:', event);
-  //         const part = event.data as Part;
-  //         // console.log('Part data:', part);
+  const handleAddPart = (event: RowClickedEvent) => {
+    try {
+      // console.log('Event received:', event);
+      const part = event.data as Part;
+      // console.log('Part data:', part);
 
-  //         if (!part.item_id) {
-  //             console.error('No item_id found in part data');
-  //         }
+      if (!part.item_id) {
+        console.error("No item_id found in part data");
+      }
 
-  //         const newOrderRequest = {
-  //             item_id: part.item_id,
-  //             quantity: quantity,
-  //             notes: "",
-  //             created_by: user_id,
-  //         } as OrderRequest;
-
-  //         // console.log('Creating order request:', newOrderRequest);
-  //         createOrderRequest.mutate(newOrderRequest);
-  //     } catch (error) {
-  //         console.error('Error in handleAddPart:', error);
-  //         throw error; // Re-throw to be caught by error boundary
-  //     }
-  // };
+      // console.log('Creating order request:', newOrderRequest);
+      createStockOrderRequest.mutate({
+        item_id: part.item_id,
+        quantity,
+        notes: "Restock Request",
+      });
+    } catch (error) {
+      console.error("Error in handleAddPart:", error);
+      throw error;
+    }
+  };
 
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
         Order Requests
       </Typography>
-      <OrderModal />
+      <Grid2 container alignItems="center">
+        <Grid2 size={4}>
+          <OrderModal />
+        </Grid2>
+        <Grid2 sx={{ textAlign: "right" }} size={8}>
+          {!partsLoading && !partsError && parts && (
+            <SearchModal
+              variant="contained"
+              searchData={parts}
+              columnData={[
+                {
+                  field: "name",
+                  headerName: "Name",
+                  width: 200,
+                  autoHeight: true,
+                  wrapText: true,
+                  flex: 2,
+                  filter: true,
+                  tooltipField: "description",
+                  headerTooltip: "Name of items",
+                  cellRenderer: (params: ITooltipParams) => {
+                    return (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <p>
+                          <b>{params.value}</b>
+                        </p>
+                        <i className="fa-solid fa-circle-info"></i>
+                      </div>
+                    );
+                  },
+                },
+                { field: "brand", headerName: "Brand" },
+                { field: "standard_price", headerName: "Price", width: 200 },
+                // { field: "stock", headerName: "Stock", width: 200 }, //TODO: Verify that this piece is actually true
+                {
+                  field: "upc",
+                  headerName: "UPC",
+                  width: 200,
+                  wrapText: true,
+                  autoHeight: true,
+                  filter: true,
+                },
+              ]}
+              colDefaults={{
+                flex: 1,
+              }}
+              onRowClick={handleAddPart}
+              onQuantityChange={(quantity) => setQuantity(quantity)}
+            >
+              Request restock part
+            </SearchModal>
+          )}
+        </Grid2>
+      </Grid2>
       {
         <Grid2 container spacing={4}>
           <Grid2 size={12}>

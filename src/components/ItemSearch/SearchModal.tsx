@@ -19,6 +19,7 @@ interface SearchModalProps {
   colDefaults: ColDef;
   onRowClick: (e: RowClickedEvent) => void;
   onQuantityChange?: (quantity: number) => void;
+  variant?: "contained" | "outlined" | "text";
   children?: React.ReactNode;
 }
 
@@ -28,6 +29,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
   colDefaults,
   onRowClick,
   onQuantityChange,
+  variant = "outlined",
   children,
 }) => {
   const [visible, setVisible] = useState(false);
@@ -71,7 +73,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
   return (
     <>
       <Button
-        variant="outlined"
+        variant={variant}
         onClick={showModal}
         style={{ margin: "1%", width: "100%" }}
       >

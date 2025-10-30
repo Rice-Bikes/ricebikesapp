@@ -1479,7 +1479,7 @@ const TransactionDetail = () => {
                             boxShadow: 3,
                             transform: "translateY(-1px)",
                           },
-                          opacity: 0.9,
+                          opacity: 0.5,
                         }}
                       >
                         <Stack

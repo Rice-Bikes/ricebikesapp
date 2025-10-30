@@ -6,14 +6,12 @@ import {
   DialogTitle,
   Button,
   Grid2,
-  //   CircularProgress,
 } from "@mui/material";
 import {
   CellClassParams,
   CellClickedEvent,
   ColDef,
   EditableCallbackParams,
-  // GridReadyEvent,
   ITooltipParams,
   NewValueParams,
   RowClickedEvent,
@@ -96,13 +94,6 @@ const WhiteboardEntryModal = ({
     }
   });
 
-  // useEffect(() => {
-  //   if (gridApi && orderRequestData) {
-  //     gridApi.setRowData(orderRequestData);
-  //     gridApi.sizeColumnsToFit();
-  //   }
-  // }, [gridApi, orderRequestData]);
-
   const deleteOrderRequest = useMutation({
     mutationFn: (req: OrderRequest) => DBModel.deleteOrderRequest(req),
     onSuccess: () => {
@@ -116,13 +107,6 @@ const WhiteboardEntryModal = ({
       toast.error("Error deleting order request");
     }
   });
-
-  // useEffect(() => {
-  //   if (orderRequestData) {
-  //     // console.log("order data changed:", orderRequestData);
-  //     // setLoading(false);
-  //   }
-  // }, []);
 
   useEffect(() => {
     if (orderRequestError) {
