@@ -79,7 +79,7 @@ export const CreatePartSchema = {
     category_2: { type: ["string", "null"] },
     category_3: { type: ["string", "null"] },
     specifications: { type: ["object", "null"] }, // Assuming JSON can be any valid JSON
-    features: { type: ["array", "null"] }, // Assuming JSON can be any valid JSON
+    features: { type: ["object","array", "null"] }, // Assuming JSON can be any valid JSON
   },
 
   required: [
