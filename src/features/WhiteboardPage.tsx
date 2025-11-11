@@ -354,10 +354,10 @@ const WhiteboardPage: React.FC = () => {
         Order Requests
       </Typography>
       <Grid2 container alignItems="center">
-        <Grid2 size={4}>
+        <Grid2 size={5}>
           <OrderModal />
         </Grid2>
-        <Grid2 sx={{ textAlign: "right" }} size={8}>
+        <Grid2 sx={{ textAlign: "right" }} size={7}>
           {!partsLoading && !partsError && parts && (
             <SearchModal
               variant="contained"

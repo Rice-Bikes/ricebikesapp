@@ -157,6 +157,7 @@ const OrderModal: React.FC<OrderModalProps> = ({ order }) => {
             px: 1.5,
             borderRadius: 1,
             whiteSpace: "nowrap",
+            ml: 1,
           }}
         >
           Next Delivery:{" "}

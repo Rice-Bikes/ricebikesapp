@@ -70,13 +70,13 @@ function AppContent() {
             sx={{ width: "90vw" }}
           >
             <Typography
-              variant="h2"
+              variant="h3"
               noWrap
               width="55vw"
               onClick={() => {
                 nav("/");
               }}
-              sx={{ cursor: "pointer" }}
+              sx={{ cursor: "pointer", fontWeight: "bold", ml: "7.5vw" }}
             >
               {title}
             </Typography>

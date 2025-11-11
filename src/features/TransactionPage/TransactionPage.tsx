@@ -803,9 +803,8 @@ const TransactionDetail = () => {
     queryClient.resetQueries({
       queryKey: ["transactionLogs", transaction_id],
     });
-  
 
-    const payload = newNotes
+    const payload = newNotes;
 
     setDescription(payload);
   };
@@ -1199,7 +1198,7 @@ const TransactionDetail = () => {
                   headerName: "Price",
                   width: 200,
                   valueGetter: (params) =>
-                    params.data?.wholesale_cost as number,
+                    params.data?.standard_price as number,
                   // (params.data?.standard_price as number) > 0
                   //   ? params.data?.standard_price
                   //   : (params.data?.wholesale_cost as number) * 2,
