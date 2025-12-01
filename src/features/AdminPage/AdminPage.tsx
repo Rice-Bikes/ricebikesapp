@@ -65,8 +65,9 @@ const AdminPage: React.FC = () => {
     return <Skeleton variant="rectangular" width="100%" height={400} />;
   }
   return (
-    <div style={{ padding: "0 5vw", paddingBottom: "100px" }}>
-      <h1>Admin Page</h1>
+    <div
+      style={{ padding: "0 5vw", paddingBottom: "100px", paddingTop: "30px" }}
+    >
       <AdminFeatureFlags />
       <DataExportButtons />
       <Grid2

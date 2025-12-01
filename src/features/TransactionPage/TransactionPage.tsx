@@ -2,8 +2,6 @@ import {
   useState,
   useEffect,
   useRef,
-  // useCallback,
-  // useMemo
 } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import {
@@ -63,6 +61,7 @@ import SetProjectsTypesDropdown from "./SetProjectsTypesDropdown";
 import DeleteTransactionsModal from "./DeleteTransactionsModal";
 import CheckoutModal from "./CheckoutModal";
 import { useUser } from "../../contexts/UserContext";
+import CopyReceiptButton from "../RecieptButton";
 
 const debug: boolean = import.meta.env.VITE_DEBUG;
 
@@ -251,61 +250,6 @@ const TransactionDetail = () => {
   const [isCompleted, setIsCompleted] = useState<boolean>();
   const [beerBike, setBeerBike] = useState<boolean>();
   const [isEmployee, setIsEmployee] = useState<boolean>(false);
-  // const [summaryAnchorEl, setSummaryAnchorEl] = useState<HTMLElement | null>(
-  //   null,
-  // );
-  // const openSummary = Boolean(summaryAnchorEl);
-  // const handleOpenSummary = (e: React.MouseEvent<HTMLElement>) =>
-  //   setSummaryAnchorEl(e.currentTarget);
-  // const handleCloseSummary = () => setSummaryAnchorEl(null);
-
-  // // Context-aware totals for floating summary chip
-  // const repairsTotal = useMemo(() => {
-  //   const repairsArr = (repairDetails as RepairDetails[]) || [];
-  //   return repairsArr.reduce((sum, r) => sum + (r?.Repair?.price ?? 0), 0);
-  // }, [repairDetails]);
-
-  // const partsTotal = useMemo(() => {
-  //   let sum = 0;
-  //   const itemsArr = (itemDetails as ItemDetails[]) || [];
-  //   itemsArr.forEach((p) => {
-  //     const price =
-  //       !isEmployee || beerBike
-  //         ? p.Item.standard_price
-  //         : p.Item.wholesale_cost * MECHANIC_PART_MULTIPLIER;
-  //     sum += price || 0;
-  //   });
-  //   const orderedArr = (orderRequestData as Part[]) || [];
-  //   orderedArr.forEach((p) => {
-  //     const price =
-  //       !isEmployee || beerBike
-  //         ? p.standard_price
-  //         : p.wholesale_cost * MECHANIC_PART_MULTIPLIER;
-  //     sum += price || 0;
-  //   });
-  //   return sum;
-  // }, [itemDetails, orderRequestData, isEmployee, beerBike]);
-
-  // const totalChipColor = waitPart || waitEmail ? "warning" : "primary";
-  // const totalTooltip = `Repairs: $${repairsTotal.toFixed(2)} • Parts: $${partsTotal.toFixed(2)} • Subtotal: $${(repairsTotal + partsTotal).toFixed(2)} • Tax est.: $${(totalPrice * SALES_TAX_MULTIPLIER - totalPrice).toFixed(2)} • Total: $${(totalPrice * SALES_TAX_MULTIPLIER).toFixed(2)}`;
-  // const repairsCount = useMemo(
-  //   () => (repairDetails as RepairDetails[])?.length ?? 0,
-  //   [repairDetails],
-  // );
-  // const partsCount = useMemo(
-  //   () => (itemDetails as ItemDetails[])?.length ?? 0,
-  //   [itemDetails],
-  // );
-  // const orderedCount = useMemo(
-  //   () => (orderRequestData as Part[])?.length ?? 0,
-  //   [orderRequestData],
-  // );
-  // const itemsBadge = repairsCount + partsCount + orderedCount;
-
-  // const [doneRepairs, setDoneRepairs] = useState<Record<string, boolean>>({});
-  // Remember last checked netid to avoid repeatedly calling fetchUser for
-  // the same customer when transactionData updates (prevents noisy requests
-  // like `/users/eesanders25` on every transaction refetch).
   const lastCheckedNetIdRef = useRef<string | null>(null);
   useEffect(() => {
     try {
@@ -1030,21 +974,23 @@ const TransactionDetail = () => {
               display: "flex",
               gap: "10px",
               justifyContent: "space-between",
+              alignItems: "center",
             }}
           >
-            <h3>
-              <strong>📧: </strong>
-              <a
-                target="_blank"
-                href={`mailto:${transactionData.Customer.email}?subject=Your bike`}
-              >
-                {transactionData.Customer.email}
-              </a>
-            </h3>
-            <h3>
-              <strong>#: </strong>
-              {transactionData.Customer.phone}
-            </h3>
+              <h3>
+                <strong>📧: </strong>
+                <a
+                  target="_blank"
+                  href={`mailto:${transactionData.Customer.email}?subject=Your bike`}
+                >
+                  {transactionData.Customer.email}
+                </a>
+              </h3>
+              <h3>
+                <strong>#: </strong>
+                {transactionData.Customer.phone}
+              </h3>
+            
           </Item>
 
           <Notes
@@ -1669,10 +1615,11 @@ const TransactionDetail = () => {
                   setRefurb={() => setIsRefurb(!refurb)}
                   setBeerBike={() => setBeerBike(!beerBike)}
                 />
+                
               </Stack>
             </Grid2>
           </Grid2>
-          <Grid2 size={6}>
+          <Grid2 size={10}>
             <Button
               onClick={handleCheckout}
               disabled={!isCompleted}
@@ -1727,6 +1674,19 @@ const TransactionDetail = () => {
                 Reopen Transaction
               </Button>
             )}
+            <CopyReceiptButton
+              transactionData={transactionData}
+              items={
+                itemDetails?.map((item) => ({
+                  ...item.Item,
+                  standard_price:
+                    !isEmployee || beerBike
+                      ? item.Item.standard_price
+                      : item.Item.wholesale_cost * MECHANIC_PART_MULTIPLIER,
+                })) ?? []
+              }
+              repairs={repairDetails?.map((repair) => repair.Repair) ?? []}
+            />
           </Grid2>
         </Grid2>
       </Paper>
