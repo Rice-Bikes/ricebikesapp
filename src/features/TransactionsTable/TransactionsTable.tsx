@@ -355,7 +355,8 @@ export function TransactionsTable(): JSX.Element {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "flex-start",
-                  padding: "5px",
+                  height: "100%",
+                  minHeight: "100%",
                 }}
                 direction={"row"}
               >
@@ -410,6 +411,8 @@ export function TransactionsTable(): JSX.Element {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "flex-start",
+                  height: "100%",
+                  minHeight: "100%",
                 }}
                 direction={"row"}
               >
@@ -959,7 +962,6 @@ export function TransactionsTable(): JSX.Element {
                 </Button>
               )}
             </Stack>
-            {/*<OrderModal />*/}
           </Stack>
           <Box
             sx={{
@@ -974,6 +976,7 @@ export function TransactionsTable(): JSX.Element {
               },
               "& .ag-cell": {
                 padding: { xs: "4px", md: "8px" },
+                justifyContent: "center",
               },
             }}
           >
