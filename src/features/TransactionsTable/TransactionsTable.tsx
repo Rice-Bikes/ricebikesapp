@@ -976,7 +976,10 @@ export function TransactionsTable(): JSX.Element {
               },
               "& .ag-cell": {
                 padding: { xs: "4px", md: "8px" },
-                justifyContent: "center",
+                display: "flex",
+                // justifyContent: "center",
+                alignItems: "center",
+                height: "100%",
               },
             }}
           >
