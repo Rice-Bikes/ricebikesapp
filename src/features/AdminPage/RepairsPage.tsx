@@ -119,6 +119,7 @@ const RepairsPage: React.FC = () => {
         name: editedName,
         price: editedPrice,
         description: editedDescription,
+        disabled: false,
       } as Repair;
       DBModel.createRepair(newRepair)
         .then(() => {

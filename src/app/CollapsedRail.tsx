@@ -15,31 +15,18 @@ export function CollapsedRail({ open, toggleDrawer }: Props) {
           // fixed left rail
           sx={{
             position: "fixed",
-            top: 0,
-            left: 0,
-            height: "100vh",
-            width: "5vw", // use a fixed width for a crisp rail
-            bgcolor: "background.paper",
+            top: { xs: "8px", md: 0 },
+            left: { xs: "8px", md: 0 },
+            height: { xs: "auto", md: "100vh" },
+            width: { xs: "auto", md: "5vw" },
+            bgcolor: { xs: "transparent", md: "background.paper" },
             alignItems: "center",
             justifyContent: "flex-start",
-            pt: 1.5,
+            pt: { xs: 0, md: 1.5 },
             // keep this below the Drawer when it opens
             zIndex: (theme) => theme.zIndex.drawer - 1,
-            // subtle right-edge effect like your screenshot
-            boxShadow: "4px 0 12px rgba(0,0,0,0.10)",
-            // // optional: extra inner fade on the right edge
-            // "&::after": {
-            //   content: '""',
-            //   position: "absolute",
-            //   top: 0,
-            //   right: 0,
-            //   height: "100%",
-            //   width: "10px",
-            //   pointerEvents: "none",
-            //   background:
-            //     "linear-gradient(to right, rgba(0,0,0,0.08), rgba(0,0,0,0))",
-            // },
-            borderRight: "1px solid",
+            // subtle right-edge effect like your screenshot (only on desktop)
+            boxShadow: { xs: "none", md: "4px 0 12px rgba(0,0,0,0.10)" },
             borderColor: "divider",
           }}
         >
@@ -49,11 +36,17 @@ export function CollapsedRail({ open, toggleDrawer }: Props) {
             size="large"
             sx={{
               color: "text.secondary",
-              // reduce default icon button padding to match the screenshot spacing
-              m: 0.5,
+              m: { xs: 0, md: 0.5 },
+              p: { xs: 0.75, md: 1 },
+              bgcolor: { xs: "background.paper", md: "transparent" },
+              boxShadow: { xs: 2, md: 0 },
+              borderRadius: { xs: 1, md: 0 },
+              "&:hover": {
+                bgcolor: { xs: "action.hover", md: "transparent" },
+              },
             }}
           >
-            <ReorderIcon />
+            <ReorderIcon sx={{ fontSize: { xs: "1.5rem", md: "2rem" } }} />
           </IconButton>
         </Stack>
       )}
