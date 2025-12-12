@@ -2,8 +2,19 @@ import { AgGridReact } from "ag-grid-react"; // React Data Grid Component
 import { themeQuartz } from "ag-grid-community";
 import { useState, useMemo, useRef, useEffect } from "react"; // React State Hook
 import { useQuery } from "@tanstack/react-query";
-import { Button, Select, MenuItem, Chip, Stack } from "@mui/material";
-import { ErrorSharp } from "@mui/icons-material";
+import {
+  Button,
+  Select,
+  MenuItem,
+  Chip,
+  Stack,
+  TextField,
+  InputAdornment,
+  useMediaQuery,
+  useTheme,
+  Box,
+} from "@mui/material";
+import { ErrorSharp, Search } from "@mui/icons-material";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import type {
   ColDef,
@@ -194,6 +205,8 @@ const ProgressCellRenderer = ({ data }: ICellRendererParams) => {
 
 export function TransactionsTable(): JSX.Element {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const currDate: Date = new Date();
   const [viewType, setViewType] = useState<string>(() => {
     try {
@@ -206,6 +219,7 @@ export function TransactionsTable(): JSX.Element {
   const [, setRowData] = useState<IRow[]>([]);
   const [summaryData, setSummaryData] = useState<TransactionSummary>();
   const [showPriceCheckModal, setShowPriceCheckModal] = useState(false);
+  const [searchText, setSearchText] = useState<string>("");
 
   // Persist selected view type across navigations
   useEffect(() => {
@@ -275,6 +289,16 @@ export function TransactionsTable(): JSX.Element {
           Array.isArray(bikeSalesColumns) &&
           bikeSalesColumns.length > 0
         ) {
+          // Hide certain columns on mobile for Retrospec view
+          if (isMobile) {
+            return bikeSalesColumns.map((col) => {
+              if (col.colId === "Bike" || col.colId === "submitted") {
+                return { ...col, hide: true };
+              }
+              return col;
+            });
+          }
+
           // Validate that all columns have required properties
           const validColumns = bikeSalesColumns.filter(
             (col) => col && typeof col === "object",
@@ -303,6 +327,8 @@ export function TransactionsTable(): JSX.Element {
         colId: "transaction_num",
         valueGetter: (params) => params.data?.Transaction.transaction_num,
         filter: true,
+        // hide: isMobile, // Hide on mobile
+        // flex: isMobile ? 0 : undefined,
       },
       {
         headerName: "Status",
@@ -502,6 +528,8 @@ export function TransactionsTable(): JSX.Element {
         valueGetter: (params) =>
           `${params.data?.Customer.first_name} ${params.data?.Customer.last_name}`,
         filter: true,
+        hide: isMobile, // Hide on mobile
+        flex: isMobile ? 0 : undefined,
       },
       {
         headerName: "Bike",
@@ -587,6 +615,8 @@ export function TransactionsTable(): JSX.Element {
     if (newAlignment !== null) {
       if (debug) console.log("new alignment", newAlignment);
       setViewType(newAlignment);
+      // Clear search text when changing views
+      setSearchText("");
 
       // Add a small delay to ensure the column definitions have been updated
       setTimeout(() => {
@@ -600,7 +630,11 @@ export function TransactionsTable(): JSX.Element {
 
           const sortFunc = sortMap.get(newAlignment) ?? clearSort;
 
-          if (newAlignment === "paid" || newAlignment === "pickup") {
+          if (
+            newAlignment === "paid" ||
+            newAlignment === "pickup" ||
+            newAlignment === "completed"
+          ) {
             gridApiRef.current.api.applyColumnState({
               state: [
                 { colId: "time_since_completion", hide: false },
@@ -637,7 +671,7 @@ export function TransactionsTable(): JSX.Element {
       transaction.transaction_type != null &&
       transaction.transaction_type.toLowerCase() === "retrospec";
 
-    return (
+    const matchesView =
       (viewType === "retrospec" &&
         isRetrospec &&
         transaction?.is_paid === false) ||
@@ -653,6 +687,7 @@ export function TransactionsTable(): JSX.Element {
           new Date(),
         )) ||
       (viewType === "paid" && transaction?.is_paid === true) ||
+      (viewType === "completed" && transaction?.is_completed === true) ||
       (viewType === "main" &&
         // Include regular non-retrospec transactions that are incomplete
         ((transaction?.is_completed === false &&
@@ -682,8 +717,31 @@ export function TransactionsTable(): JSX.Element {
         !isRetrospec) ||
       (viewType === "beer bike" &&
         transaction?.is_beer_bike === true &&
-        !isDaysLess(364, new Date(transaction?.date_created ?? ""), new Date()))
-    );
+        !isDaysLess(
+          364,
+          new Date(transaction?.date_created ?? ""),
+          new Date(),
+        ));
+
+    if (!matchesView) return false;
+
+    // Apply search filter only for "completed" view
+    if (viewType === "completed" && searchText.trim() !== "") {
+      const searchLower = searchText.toLowerCase();
+      const transactionNum = transaction?.transaction_id?.toString() || "";
+      const customerName = (node.data.Customer?.name || "").toLowerCase();
+      const email = (node.data.Customer?.email || "").toLowerCase();
+      const phone = (node.data.Customer?.phone || "").toLowerCase();
+
+      return (
+        transactionNum.includes(searchLower) ||
+        customerName.includes(searchLower) ||
+        email.includes(searchLower) ||
+        phone.includes(searchLower)
+      );
+    }
+
+    return true;
   }
 
   function sortByTransactionNumDesc() {
@@ -728,6 +786,7 @@ export function TransactionsTable(): JSX.Element {
     // ["main", sortBySubmittedDateAsc],
     ["pickup", sortByCompletionDateAsc],
     ["paid", sortByCompletionDateAsc],
+    ["completed", sortByCompletionDateAsc],
     ["employee", sortByTransactionNumDesc],
     ["refurb", sortByTransactionNumDesc],
     ["beer bike", sortByTransactionNumDesc],
@@ -735,7 +794,13 @@ export function TransactionsTable(): JSX.Element {
   ]);
 
   return (
-    <main style={{ width: "80%" }}>
+    <Box
+      component="main"
+      sx={{
+        width: { xs: "100%", sm: "100%", md: "95%", lg: "80%" },
+        px: { xs: 0, md: 2 },
+      }}
+    >
       <PriceCheckModal
         open={showPriceCheckModal}
         onClose={() => {
@@ -746,14 +811,24 @@ export function TransactionsTable(): JSX.Element {
       <section id="transactions-table">
         <>
           <Stack
-            direction={"row"}
-            alignItems={"center"}
+            direction={{ xs: "column", md: "row" }}
+            alignItems={{ xs: "stretch", md: "center" }}
             spacing={2}
-            mt={2}
-            mb={2}
+            mt={{ xs: 1, md: 2 }}
+            mb={{ xs: 1, md: 2 }}
+            px={{ xs: 1, md: 0 }}
           >
-            <Stack direction={"row"}>
-              <Stack direction="row" alignItems="center" spacing={2}>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={{ xs: 1, sm: 2 }}
+              sx={{ width: { xs: "100%", md: "auto" } }}
+            >
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={{ xs: 1, sm: 2 }}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
                 <CreateTransactionDropdown />
                 <Select
                   variant="outlined"
@@ -762,193 +837,258 @@ export function TransactionsTable(): JSX.Element {
                   displayEmpty
                   size="small"
                   sx={{
-                    minWidth: 220,
+                    minWidth: { xs: "auto", sm: 220 },
+                    flex: { xs: 1, sm: "none" },
                     bgcolor: "background.paper",
                     "& fieldset": { borderColor: "divider" },
+                    fontSize: { xs: "0.875rem", md: "1rem" },
                   }}
                 >
                   <MenuItem value="main">Main Transactions</MenuItem>
                   <MenuItem value="pickup">Waiting on Pickup</MenuItem>
                   <MenuItem value="retrospec">Retrospec</MenuItem>
                   <MenuItem value="paid">Paid</MenuItem>
+                  <MenuItem value="completed">Completed Bikes</MenuItem>
                   <MenuItem value="employee">Employee</MenuItem>
                   <MenuItem value="refurb">Refurbs</MenuItem>
                   <MenuItem value="beer bike">Beer Bike</MenuItem>
                 </Select>
               </Stack>
             </Stack>
+            {viewType === "completed" && (
+              <TextField
+                size="small"
+                placeholder={
+                  isMobile
+                    ? "Search..."
+                    : "Search by transaction #, name, email, or phone..."
+                }
+                value={searchText}
+                onChange={(e) => {
+                  setSearchText(e.target.value);
+                  gridApiRef.current?.api?.onFilterChanged();
+                }}
+                sx={{
+                  minWidth: { xs: "100%", md: 300 },
+                  bgcolor: "background.paper",
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
             <Stack
-              direction={"row"}
+              direction={{ xs: "column", sm: "row" }}
               spacing={1}
-              justifyItems={"flex-end"}
-              justifyContent={"flex-end"}
+              justifyItems={{ xs: "stretch", md: "flex-end" }}
+              justifyContent={{ xs: "stretch", md: "flex-end" }}
               flexGrow={1}
-              sx={{ pointerEvents: "none" }}
+              sx={{
+                pointerEvents: "none",
+                width: { xs: "100%", md: "auto" },
+              }}
             >
               <Button
                 size="small"
                 sx={{
-                  height: 40,
+                  height: { xs: 36, md: 40 },
                   lineHeight: 1,
-                  px: 1.5,
-                  // borderRadius: 1,
+                  px: { xs: 1, md: 1.5 },
                   whiteSpace: "nowrap",
                   bgcolor: "blue",
                   color: "white",
+                  fontSize: { xs: "0.75rem", md: "0.875rem" },
                 }}
               >
-                {summaryData?.quantity_incomplete} Incomplete Bikes
+                {summaryData?.quantity_incomplete}{" "}
+                {isMobile ? "Incomplete" : "Incomplete Bikes"}
               </Button>
               {summaryData?.quantity_beer_bike_incomplete !== 0 && (
                 <Button
                   size="small"
                   sx={{
-                    height: 40,
+                    height: { xs: 36, md: 40 },
                     lineHeight: 1,
-                    px: 1.5,
-                    // borderRadius: 1,
+                    px: { xs: 1, md: 1.5 },
                     whiteSpace: "nowrap",
                     bgcolor: "turquoise",
                     color: "black",
+                    fontSize: { xs: "0.75rem", md: "0.875rem" },
                   }}
                 >
-                  {summaryData?.quantity_beer_bike_incomplete} Incomplete Beer
-                  Bikes
+                  {summaryData?.quantity_beer_bike_incomplete}{" "}
+                  {isMobile ? "Beer Bikes" : "Incomplete Beer Bikes"}
                 </Button>
               )}
               <Button
                 size="small"
                 sx={{
-                  height: 40,
+                  height: { xs: 36, md: 40 },
                   lineHeight: 1,
-                  px: 1.5,
+                  px: { xs: 1, md: 1.5 },
                   borderRadius: 1,
                   whiteSpace: "nowrap",
                   bgcolor: "green",
                   color: "white",
+                  fontSize: { xs: "0.75rem", md: "0.875rem" },
                 }}
               >
-                {summaryData?.quantity_waiting_on_pickup} Bikes For Pickup
+                {summaryData?.quantity_waiting_on_pickup}{" "}
+                {isMobile ? "For Pickup" : "Bikes For Pickup"}
               </Button>
               {summaryData?.quantity_waiting_on_safety_check !== 0 && (
                 <Button
                   size="small"
                   sx={{
-                    height: 40,
+                    height: { xs: 36, md: 40 },
                     lineHeight: 1,
-                    px: 1.5,
+                    px: { xs: 1, md: 1.5 },
                     borderRadius: 1,
                     whiteSpace: "nowrap",
                     bgcolor: "orange",
                     color: "white",
+                    fontSize: { xs: "0.75rem", md: "0.875rem" },
                   }}
                 >
-                  {summaryData?.quantity_waiting_on_safety_check} Bikes to
-                  Safety Check
+                  {summaryData?.quantity_waiting_on_safety_check}{" "}
+                  {isMobile ? "Safety Check" : "Bikes to Safety Check"}
                 </Button>
               )}
             </Stack>
             {/*<OrderModal />*/}
           </Stack>
-          {colDefs &&
-          Array.isArray(colDefs) &&
-          colDefs.length > 0 &&
-          colDefs.every((col) => col && typeof col === "object") ? (
-            <AgGridReact
-              key={`ag-grid-${viewType}`}
-              ref={gridApiRef}
-              theme={themeQuartz}
-              loading={status !== "success"}
-              rowData={data}
-              columnDefs={colDefs}
-              defaultColDef={defaultColDef}
-              rowSelection={rowSelection}
-              onRowClicked={onRowClicked}
-              getRowStyle={({ data }) => {
-                const transaction = data?.Transaction as Transaction;
-                if (
-                  transaction.date_created &&
-                  transaction.transaction_type != null &&
-                  ((transaction.is_completed === false &&
-                    transaction.transaction_type !== "retrospec" &&
-                    transaction.transaction_type !== "Retrospec" &&
-                    transaction.is_employee === false &&
-                    transaction.is_refurb === false) ||
-                    (transaction.is_beer_bike === true &&
-                      transaction.is_completed === false))
-                ) {
+          <Box
+            sx={{
+              overflowX: { xs: "auto", md: "visible" },
+              mx: { xs: -1, md: 0 },
+              "& .ag-theme-quartz": {
+                fontSize: { xs: "0.75rem", md: "0.875rem" },
+              },
+              "& .ag-header-cell": {
+                fontSize: { xs: "0.75rem", md: "0.875rem" },
+                padding: { xs: "4px", md: "8px" },
+              },
+              "& .ag-cell": {
+                padding: { xs: "4px", md: "8px" },
+              },
+            }}
+          >
+            {colDefs &&
+            Array.isArray(colDefs) &&
+            colDefs.length > 0 &&
+            colDefs.every((col) => col && typeof col === "object") ? (
+              <AgGridReact
+                key={`ag-grid-${viewType}`}
+                ref={gridApiRef}
+                theme={themeQuartz}
+                loading={status !== "success"}
+                rowData={data}
+                columnDefs={colDefs}
+                defaultColDef={defaultColDef}
+                rowSelection={rowSelection}
+                onRowClicked={onRowClicked}
+                getRowStyle={({ data }) => {
+                  const transaction = data?.Transaction as Transaction;
                   if (
-                    isDaysLess(5, currDate, new Date(transaction.date_created))
+                    transaction.date_created &&
+                    transaction.transaction_type != null &&
+                    ((transaction.is_completed === false &&
+                      transaction.transaction_type !== "retrospec" &&
+                      transaction.transaction_type !== "Retrospec" &&
+                      transaction.is_employee === false &&
+                      transaction.is_refurb === false) ||
+                      (transaction.is_beer_bike === true &&
+                        transaction.is_completed === false))
                   ) {
-                    return { backgroundColor: "lightcoral" };
+                    if (
+                      isDaysLess(
+                        5,
+                        currDate,
+                        new Date(transaction.date_created),
+                      )
+                    ) {
+                      return { backgroundColor: "lightcoral" };
+                    } else if (
+                      isDaysLess(
+                        2,
+                        currDate,
+                        new Date(transaction.date_created),
+                      )
+                    ) {
+                      return { backgroundColor: "lightyellow" };
+                    } else return { backgroundColor: "white" };
                   } else if (
-                    isDaysLess(2, currDate, new Date(transaction.date_created))
-                  ) {
-                    return { backgroundColor: "lightyellow" };
-                  } else return { backgroundColor: "white" };
-                } else if (
-                  transaction.date_completed !== null &&
-                  transaction.transaction_type !== null &&
-                  transaction.date_completed !== undefined &&
-                  ((transaction.is_paid === false &&
-                    transaction.is_completed === true &&
-                    transaction.is_refurb === false &&
-                    transaction.transaction_type.toLowerCase() !==
-                      "retrospec") ||
-                    (transaction.is_beer_bike === true &&
+                    transaction.date_completed !== null &&
+                    transaction.transaction_type !== null &&
+                    transaction.date_completed !== undefined &&
+                    ((transaction.is_paid === false &&
                       transaction.is_completed === true &&
-                      transaction.is_paid === false))
-                ) {
-                  if (
-                    isDaysLess(
-                      5,
-                      currDate,
-                      new Date(transaction.date_completed),
-                    )
+                      transaction.is_refurb === false &&
+                      transaction.transaction_type.toLowerCase() !==
+                        "retrospec") ||
+                      (transaction.is_beer_bike === true &&
+                        transaction.is_completed === true &&
+                        transaction.is_paid === false))
                   ) {
-                    return { backgroundColor: "lightcoral" };
-                  } else if (
-                    isDaysLess(
-                      2,
-                      currDate,
-                      new Date(transaction.date_completed),
-                    )
-                  ) {
-                    return { backgroundColor: "lightyellow" };
-                  } else return { backgroundColor: "white" };
-                }
-              }}
-              isExternalFilterPresent={isExternalFilterPresent}
-              doesExternalFilterPass={doesExternalFilterPass}
-              domLayout="autoHeight"
-              pagination={viewType === "paid"}
-              onGridReady={(params) => {
-                try {
-                  if (params.api) {
-                    params.api.applyColumnState({
-                      state: [
-                        { colId: "time_since_completion", hide: true },
-                        { colId: "submitted", hide: false },
-                      ],
-                      defaultState: { sort: null },
-                    });
-                    params.api.sizeColumnsToFit();
+                    if (
+                      isDaysLess(
+                        5,
+                        currDate,
+                        new Date(transaction.date_completed),
+                      )
+                    ) {
+                      return { backgroundColor: "lightcoral" };
+                    } else if (
+                      isDaysLess(
+                        2,
+                        currDate,
+                        new Date(transaction.date_completed),
+                      )
+                    ) {
+                      return { backgroundColor: "lightyellow" };
+                    } else return { backgroundColor: "white" };
                   }
-                } catch (error) {
-                  console.error(
-                    "Error during grid ready initialization:",
-                    error,
-                  );
+                }}
+                isExternalFilterPresent={isExternalFilterPresent}
+                doesExternalFilterPass={doesExternalFilterPass}
+                domLayout="autoHeight"
+                pagination={viewType === "paid" || viewType === "completed"}
+                paginationPageSize={viewType === "completed" ? 50 : undefined}
+                paginationPageSizeSelector={
+                  viewType === "completed" ? [25, 50, 100, 200] : undefined
                 }
-              }}
-            />
-          ) : (
-            <div style={{ padding: "20px", textAlign: "center" }}>
-              <p>Error loading table columns. Please refresh the page.</p>
-            </div>
-          )}
+                onGridReady={(params) => {
+                  try {
+                    if (params.api) {
+                      params.api.applyColumnState({
+                        state: [
+                          { colId: "time_since_completion", hide: true },
+                          { colId: "submitted", hide: false },
+                        ],
+                        defaultState: { sort: null },
+                      });
+                      params.api.sizeColumnsToFit();
+                    }
+                  } catch (error) {
+                    console.error(
+                      "Error during grid ready initialization:",
+                      error,
+                    );
+                  }
+                }}
+              />
+            ) : (
+              <div style={{ padding: "20px", textAlign: "center" }}>
+                <p>Error loading table columns. Please refresh the page.</p>
+              </div>
+            )}
+          </Box>
         </>
       </section>
-    </main>
+    </Box>
   );
 }

@@ -81,12 +81,12 @@ const ItemsTable: React.FC = () => {
     data: itemData,
     error: itemError,
     isLoading: itemsLoading,
-  } = useQuery(DBModel.getItemsQuery());
+  } = useQuery(DBModel.getItemsQuery(true));
 
   const deleteItem = useMutation({
     mutationFn: (id: string) => DBModel.deleteItem(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(DBModel.getItemsQuery());
+      queryClient.invalidateQueries({ queryKey: ["items"] });
       toast.success("Item deleted successfully");
     },
     onError: (error) => {
@@ -104,25 +104,20 @@ const ItemsTable: React.FC = () => {
   const updatePart = useMutation({
     mutationFn: (part: Part) => DBModel.updateItem(part),
     onSuccess: () => {
-      queryClient.invalidateQueries(DBModel.getItemsQuery());
+      queryClient.invalidateQueries({ queryKey: ["items"] });
       toast.success("Item updated successfully");
-      queryClient.invalidateQueries({
-        queryKey: ["items"],
-      });
     },
     onError: (error) => {
       console.error("Error updating item:", error);
       toast.error("Error updating item:" + error);
-      queryClient.invalidateQueries({
-        queryKey: ["items"],
-      });
+      queryClient.invalidateQueries({ queryKey: ["items"] });
     },
   });
 
   const activateByUpc = useMutation({
     mutationFn: (upc: string) => DBModel.activateItem(upc),
     onSuccess: () => {
-      queryClient.invalidateQueries(DBModel.getItemsQuery());
+      queryClient.invalidateQueries({ queryKey: ["items"] });
       toast.success("Item activated by UPC");
       setActivateUpc("");
     },
@@ -131,7 +126,7 @@ const ItemsTable: React.FC = () => {
       toast.error("Activate by UPC failed");
     },
   });
-  
+
   const handleEdit = useCallback((item: Part) => {
     setSelectedItem(item);
     setDialogVisible(true);
@@ -256,7 +251,7 @@ const ItemsTable: React.FC = () => {
         return;
       }
       await Promise.all(selected.map((p) => adjustStock(p, delta)));
-      await queryClient.invalidateQueries(DBModel.getItemsQuery());
+      await queryClient.invalidateQueries({ queryKey: ["items"] });
       toast.success(`Adjusted stock by ${delta} for ${selected.length} items`);
     },
     [adjustStock],
@@ -274,7 +269,7 @@ const ItemsTable: React.FC = () => {
     await Promise.all(
       selected.map((p) => commitPartUpdate({ ...p, stock: value } as Part)),
     );
-    await queryClient.invalidateQueries(DBModel.getItemsQuery());
+    await queryClient.invalidateQueries({ queryKey: ["items"] });
     toast.success(`Set stock=${value} for ${selected.length} items`);
   }, [commitPartUpdate]);
 
@@ -292,7 +287,7 @@ const ItemsTable: React.FC = () => {
         commitPartUpdate({ ...p, minimum_stock: value } as Part),
       ),
     );
-    await queryClient.invalidateQueries(DBModel.getItemsQuery());
+    await queryClient.invalidateQueries({ queryKey: ["items"] });
     toast.success(`Set min stock=${value} for ${selected.length} items`);
   }, [commitPartUpdate]);
 
@@ -304,7 +299,7 @@ const ItemsTable: React.FC = () => {
         return;
       }
       await Promise.all(selected.map((p) => toggleDisabled(p, disabled)));
-      await queryClient.invalidateQueries(DBModel.getItemsQuery());
+      await queryClient.invalidateQueries({ queryKey: ["items"] });
       toast.success(
         `${disabled ? "Disabled" : "Enabled"} ${selected.length} items`,
       );
@@ -315,6 +310,29 @@ const ItemsTable: React.FC = () => {
   // Column definitions
   const columnDefs: ColDef[] = useMemo(
     () => [
+      {
+        field: "disabled",
+        headerName: "Status",
+        sortable: true,
+        filter: true,
+        flex: 0.5,
+        cellRenderer: (params: ICellRendererParams<Part>) => {
+          const disabled = params.data?.disabled;
+          return (
+            <Box
+              sx={{
+                fontWeight: "bold",
+                color: disabled ? "#666" : "#2e7d32",
+              }}
+            >
+              {disabled ? "DISABLED" : "ENABLED"}
+            </Box>
+          );
+        },
+        valueGetter: (params: ValueGetterParams) => {
+          return params.data?.disabled ? 1 : 0;
+        },
+      },
       {
         field: "name",
         headerName: "Name",
@@ -386,6 +404,16 @@ const ItemsTable: React.FC = () => {
         sortable: true,
         filter: true,
         flex: 0.5,
+        onCellClicked: (params) => {
+          const upc = params.data?.upc;
+          if (upc) {
+            navigator.clipboard.writeText(upc);
+            toast.success("UPC copied to clipboard");
+          }
+        },
+        cellStyle: {
+          cursor: "pointer",
+        },
       },
       {
         headerName: "Actions",
@@ -479,8 +507,6 @@ const ItemsTable: React.FC = () => {
   useEffect(() => {
     gridApiRef.current?.api?.onFilterChanged();
   }, [showOnlyLowStock, showOnlyDisabled]);
-
-  
 
   return (
     <Box sx={{ padding: "2%" }}>
@@ -651,22 +677,36 @@ const ItemsTable: React.FC = () => {
           doesExternalFilterPass={doesExternalFilterPass}
           getRowStyle={({ data }) => {
             const part = data as Part;
+
+            // If disabled, show gray background
+            if (part.disabled) {
+              return {
+                backgroundColor: "#d0d0d0",
+                color: "#666666",
+              };
+            }
+
+            // Otherwise, use urgency-based colors
             const urgency = getUrgency(
               part.stock ?? 0,
               part.minimum_stock ?? 0,
               part.name ?? "",
             );
             if (urgency == 3) {
-              return { backgroundColor: "#F88379" };
+              return { backgroundColor: "#F88379", color: "#000000" };
             } else if (urgency == 2) {
-              return { backgroundColor: "lightyellow" };
+              return { backgroundColor: "lightyellow", color: "#000000" };
             } else if (urgency == 1) {
-              return { backgroundColor: "lightgreen" };
+              return { backgroundColor: "lightgreen", color: "#000000" };
             }
+            return undefined;
           }}
           onGridReady={() => {
             gridApiRef.current?.api?.applyColumnState({
-              state: [{ colId: "urgency", sort: "desc" }],
+              state: [
+                { colId: "disabled", sort: "asc" },
+                { colId: "urgency", sort: "desc" },
+              ],
               applyOrder: true,
             });
             // apply any initial quick filter if present

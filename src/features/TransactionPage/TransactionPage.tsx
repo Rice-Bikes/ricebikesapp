@@ -1,256 +1,153 @@
-import {
-  useState,
-  useEffect,
-  useRef,
-} from "react";
-import { useParams, useSearchParams } from "react-router-dom";
-import {
-  Button,
-  Stack,
-  List,
-  ListItem,
-  Grid2,
-  Skeleton,
-  Tooltip,
-  Paper,
-  Box,
-  Chip,
-  Avatar,
-  Divider,
-  Typography,
-  Card,
-  CardHeader,
-  CardContent,
-  IconButton,
-} from "@mui/material";
-import { OrderRequest, User } from "../../model";
-import { useNavigate } from "react-router-dom";
-import Item from "../../components/TransactionPage/HeaderItem";
-import Notes from "../../components/TransactionPage/Notes";
-import { RowClickedEvent } from "ag-grid-community";
-import ModeEditIcon from "@mui/icons-material/ModeEdit";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import {
-  SALES_TAX_MULTIPLIER,
-  MECHANIC_PART_MULTIPLIER,
-} from "../../constants/transaction";
-import DBModel, {
-  ItemDetails,
-  Part,
+// React & Routing
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+
+// MUI Components
+import { Box, Paper, Stack, Divider, Grid2, Skeleton } from "@mui/material";
+
+// Contexts
+import { useUser } from "../../contexts/UserContext";
+
+// Model & Types
+import type {
   Repair,
+  Part,
   RepairDetails,
-  Transaction,
-  UpdateTransaction,
-  Bike,
+  ItemDetails,
   Customer,
 } from "../../model";
-import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
-import { queryClient } from "../../app/queryClient";
-import { toast } from "react-toastify";
-import SearchModal from "../../components/ItemSearch/SearchModal";
-import "./TransactionPage.css";
-import NewBikeForm from "../../components/TransactionPage/BikeForm";
-import TransactionOptionDropdown from "../../components/TransactionPage/TransactionOptionDropdown";
-import WhiteboardEntryModal from "../../components/WhiteboardEntryModal";
-import ErrorSharp from "@mui/icons-material/ErrorSharp";
-// import InfoOutlined from "@mui/icons-material/InfoOutlined";
-import TransactionsLogModal from "../../components/TransactionsLogModal";
-import CompleteTransactionDropdown from "./CompleteTransactionDropdown";
-import SetProjectsTypesDropdown from "./SetProjectsTypesDropdown";
-import DeleteTransactionsModal from "./DeleteTransactionsModal";
-import CheckoutModal from "./CheckoutModal";
-import { useUser } from "../../contexts/UserContext";
-import CopyReceiptButton from "../RecieptButton";
 
+// Query Client
+import { queryClient } from "../../app/queryClient";
+
+// Extracted Hooks
+import {
+  useTransactionData,
+  useTransactionMutations,
+  useTransactionState,
+} from "./hooks";
+
+// Extracted Components
+import {
+  TransactionHeader,
+  BikeInformation,
+  RepairsList,
+  PartsList,
+  OrderRequestsList,
+  TransactionActions,
+} from "./components";
+
+// Other Components
+import SearchModal from "../../components/ItemSearch/SearchModal";
+import Notes from "../../components/TransactionPage/Notes";
+import { RowClickedEvent } from "ag-grid-community";
+
+// Utilities
+import { calculateTotalCost } from "./utils";
+
+// Styles
+import "./TransactionPage.css";
+
+// Constants
 const debug: boolean = import.meta.env.VITE_DEBUG;
 
-const calculateTotalCost = (
-  repairs: RepairDetails[],
-  parts: ItemDetails[],
-  orderRequest: Part[],
-  isEmployee: boolean,
-  isBeerBike: boolean,
-) => {
-  let total = 0;
-  if (repairs)
-    repairs.forEach((repair) => {
-      total += repair.Repair.price;
-    });
-  if (parts)
-    parts.forEach((part) => {
-      total +=
-        !isEmployee || isBeerBike
-          ? part.Item.standard_price
-          : part.Item.wholesale_cost * MECHANIC_PART_MULTIPLIER;
-    });
-  if (orderRequest)
-    if (debug)
-      console.log("calculating order request cost: ", orderRequest, total);
-  (orderRequest ?? []).forEach((part) => {
-    total +=
-      !isEmployee || isBeerBike
-        ? part.standard_price
-        : part.wholesale_cost * MECHANIC_PART_MULTIPLIER;
-  });
-  if (debug) console.log("total cost: ", total);
-  return total;
-};
-
-const checkStatusOfRetrospec = (transaction: Transaction) => {
-  if (transaction.is_refurb) {
-    return "Building";
-  } else if (transaction.is_waiting_on_email) {
-    return "Completed";
-  } else if (transaction.is_completed) {
-    return "For Sale";
-  }
-  return "Arrived";
-};
-
-const checkUserPermissions = (
-  user: User | null,
-  permissionName: string,
-): boolean => {
-  if (user === null) return false;
-  if (debug) console.log("checking permission: ", permissionName);
-  const permissions = user.permissions?.find(
-    (perm) => perm.name === permissionName,
-  );
-  return permissions ? true : false;
-};
-
-//["Arrived", "Building", "Completed", "For Sale"]
-
 const TransactionDetail = () => {
+  // ===================================
+  // 1. ROUTING & USER
+  // ===================================
   const { transaction_id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const nav = useNavigate();
-
   const { data: user } = useUser();
 
   if (!transaction_id) {
     throw new Error("Transaction ID not provided");
   }
 
-  const [
-    itemsQuery,
-    repairsQuery,
-    repairDetailsQuery,
-    itemDetailsQuery,
-    transactionQuery,
-  ] = useQueries({
-    queries: [
-      DBModel.getItemsQuery(),
-      DBModel.getRepairsQuery(),
-      DBModel.getTransactionDetailsQuery(transaction_id, "repair"),
-      DBModel.getTransactionDetailsQuery(transaction_id, "item"),
-      DBModel.getTransactionQuery(transaction_id),
-    ],
+  // ===================================
+  // 2. DATA FETCHING (Hook)
+  // ===================================
+  const {
+    parts,
+    partsLoading,
+    repairs,
+    repairsLoading,
+    repairDetails,
+    repairDetailsLoading,
+    repairDetailsIsFetching,
+    itemDetails,
+    itemDetailsLoading,
+    itemDetailsIsFetching,
+    transactionData,
+    transactionLoading,
+    orderRequestData,
+    orderRequestLoading,
+    orderRequestIsFetching,
+  } = useTransactionData(transaction_id);
+
+  // ===================================
+  // 3. STATE MANAGEMENT (Hook)
+  // ===================================
+  const {
+    bike,
+    setBike,
+    transactionType,
+    setTransactionType,
+    showCheckout,
+    setShowCheckout,
+    showBikeForm,
+    setShowBikeForm,
+    showWaitingParts,
+    setShowWaitingParts,
+    refurb,
+    setIsRefurb,
+    waitEmail,
+    setWaitEmail,
+    waitPart,
+    setWaitPart,
+    priority,
+    setPriority,
+    nuclear,
+    setNuclear,
+    setDescription,
+    setPaid,
+    isCompleted,
+    setIsCompleted,
+    beerBike,
+    setBeerBike,
+    isEmployee,
+    setIsEmployee,
+    totalPrice,
+    setTotalPrice,
+    totalRef,
+    lastCheckedNetIdRef,
+  } = useTransactionState({ transactionData, searchParams });
+
+  // ===================================
+  // 4. MUTATIONS (Hook)
+  // ===================================
+  const {
+    sendCheckoutEmail,
+    sendReceiptEmail,
+    addRepair,
+    deleteRepair,
+    completeRepair,
+    addPart,
+    deletePart,
+    deleteTransaction,
+    checkUser,
+  } = useTransactionMutations({
+    transaction_id,
+    transactionData,
+    user: user ?? null,
+    setIsEmployee,
   });
 
-  const {
-    isLoading: partsLoading,
-    data: parts,
-    error: partsError,
-  } = itemsQuery;
-  useEffect(() => {
-    if (partsError) toast.error("parts: " + partsError);
-  }, [partsError]);
+  // ===================================
+  // 5. EFFECTS
+  // ===================================
 
-  const {
-    isLoading: repairsLoading,
-    data: repairs,
-    error: repairError,
-  } = repairsQuery;
-  useEffect(() => {
-    if (repairError) toast.error("repairs: " + repairError);
-  }, [repairError]);
-
-  const {
-    isFetching: repairDetailsIsFetching,
-    isLoading: repairDetailsLoading,
-    data: queriedRepairDetails,
-    error: repairDetailsError,
-  } = repairDetailsQuery;
-  if (repairDetailsError) toast.error("repairDetails: " + repairDetailsError);
-
-  const repairDetails = queriedRepairDetails as RepairDetails[];
-  const {
-    isFetching: itemDetailsIsFetching,
-    isLoading: itemDetailsLoading,
-    data: queriedItemDetails,
-    error: itemDetailsError,
-  } = itemDetailsQuery;
-  useEffect(() => {
-    if (itemDetailsError) toast.error("itemDetails: " + itemDetailsError);
-  }, [itemDetailsError]);
-  const itemDetails = queriedItemDetails as ItemDetails[];
-  const totalRef = useRef<HTMLDivElement | null>(null);
-  // const scrollToTotal = useCallback(() => {
-  //   totalRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-  // }, []);
-  const {
-    status: transactionStatus,
-    isLoading: transactionLoading,
-    data: transactionData,
-    error: transactionError,
-  } = transactionQuery;
-  useEffect(() => {
-    if (transactionError) toast.error("transaction: " + transactionError);
-  }, [transactionError]);
-
-  const {
-    data: orderRequestData,
-    error: orderRequestError,
-    isLoading: orderRequestLoading,
-    isFetching: orderRequestIsFetching,
-  } = useQuery({
-    queryKey: ["orderRequest", transaction_id],
-    queryFn: () => {
-      return DBModel.getOrderRequests(transaction_id);
-    },
-    select: (data: OrderRequest[]) => {
-      if (debug) console.log("converting incoming data", data);
-      return (
-        (data.flatMap((dataItem: OrderRequest) => {
-          // Create an array with the same part repeated based on quantity
-          return Array(dataItem.quantity).fill(dataItem.Item);
-        }) as Part[]) ?? Array<Part>()
-      );
-    },
-  });
-  useEffect(() => {
-    if (orderRequestError) toast.error("orderRequest: " + orderRequestError);
-  }, [orderRequestError]);
-
-  const [bike, setBike] = useState<Bike>(null);
-  // const [customer, setCustomer] = useState(transaction?.Customer);
-  const [transactionType, setTransactionType] = useState<string>(
-    searchParams.get("type") ?? "",
-  );
-  // TODO: make a state that checks to see if you're the first person to
-  const [totalPrice, setTotalPrice] = useState<number>(0);
-  const [showCheckout, setShowCheckout] = useState<boolean>(false);
-  const [showBikeForm, setShowBikeForm] = useState<boolean>(false);
-  const [showWaitingParts, setShowWaitingParts] = useState<boolean>(false);
-
-  const [refurb, setIsRefurb] = useState<boolean>(); // TODO: create refurb Button
-  const [reserved] = useState<boolean>(transactionData?.is_reserved ?? false); // TODO: create retrospec stuff
-  const [waitEmail, setWaitEmail] = useState<boolean>(
-    transactionData?.is_waiting_on_email ?? false,
-  );
-  const [waitPart, setWaitPart] = useState<boolean>();
-  const [priority, setPriority] = useState<boolean>();
-  const [nuclear, setNuclear] = useState<boolean>();
-  const [description, setDescription] = useState<string>();
-  const [isPaid, setPaid] = useState<boolean>(
-    transactionData?.is_paid ?? false,
-  );
-  const [isCompleted, setIsCompleted] = useState<boolean>();
-  const [beerBike, setBeerBike] = useState<boolean>();
-  const [isEmployee, setIsEmployee] = useState<boolean>(false);
-  const lastCheckedNetIdRef = useRef<string | null>(null);
+  // Check if customer is employee
   useEffect(() => {
     try {
       const email = transactionData?.Customer?.email;
@@ -258,501 +155,22 @@ const TransactionDetail = () => {
       const netId = email.split("@")[0];
       if (transactionType === "Retrospec") return;
       if (lastCheckedNetIdRef.current === netId) return;
-      lastCheckedNetIdRef.current = netId;
+
+      // Update ref
+      (lastCheckedNetIdRef as React.MutableRefObject<string | null>).current =
+        netId;
       checkUser.mutate(netId);
-    } catch {
-      // ignore
+    } catch (error) {
+      if (debug) console.log("Error checking user:", error);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactionData, transactionType]);
-
-  const sendCheckoutEmail = useMutation({
-    mutationFn: (customer: Customer) => {
-      if (!transactionData) throw new Error("Transaction data not found");
-      else
-        DBModel.postTransactionLog(
-          transactionData.transaction_num,
-          user?.user_id ?? "",
-          "sent email",
-          "completed transaction",
-        );
-      queryClient.removeQueries({
-        queryKey: ["transactionLogs", transactionData.transaction_num],
-      });
-      return DBModel.sendEmail(customer, transactionData.transaction_num);
-    },
-    onSuccess: () => {
-      toast.success("Email sent");
-    },
-    onError: (error) => {
-      toast.error("Error sending email: " + error);
-    },
-  });
-
-  const sendRecieptEmail = useMutation({
-    mutationFn: ({
-      customer,
-      transaction_id,
-    }: {
-      customer: Customer;
-      transaction_id: string;
-    }) => {
-      if (!transactionData || !transactionData.transaction_num)
-        throw new Error("Transaction data not found");
-      return DBModel.sendRecieptEmail(
-        customer,
-        transactionData.transaction_num ?? "",
-        transaction_id,
-      );
-    },
-    onSuccess: () => {
-      toast.success("Receipt email sent");
-    },
-    onError: (error) => {
-      toast.error("Error sending receipt email: " + error);
-    },
-  });
-
-  const updateTransaction = useMutation({
-    mutationFn: (input: {
-      transaction_id: string;
-      transaction: UpdateTransaction;
-    }) => {
-      if (debug) console.log("calling update transaction on dbmodel");
-      return DBModel.updateTransaction(input.transaction_id, input.transaction);
-    },
-    onSuccess: (data: Transaction) => {
-      queryClient.invalidateQueries({
-        queryKey: ["transaction", transaction_id],
-      });
-      if (debug) console.log("transaction updated", data);
-    },
-    onError: (error) => {
-      toast.error("error updating transaction" + error);
-    },
-  });
-
-  const completeRepair = useMutation({
-    mutationFn: (input: {
-      transaction_detail_id: string;
-      status: boolean;
-      repair_name: string;
-    }) => {
-      DBModel.postTransactionLog(
-        transactionData?.transaction_num ?? 0,
-        user?.user_id ?? "",
-        input.repair_name,
-        `${input.status ? "completed" : "reopened"} repair`,
-      );
-      queryClient.removeQueries({
-        queryKey: ["transactionLogs", transactionData?.transaction_num],
-      });
-      if (debug)
-        console.log("calling update transaction on dbmodel", input.status);
-      return DBModel.updateTransactionDetails(
-        input.transaction_detail_id,
-        input.status,
-      );
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({
-        queryKey: ["transactionDetails", transaction_id, "repair"],
-      });
-      if (debug) console.log("repair updated", data);
-    },
-    onError: (error) => {
-      toast.error("error updating repair" + error);
-    },
-  });
-
-  const checkUser = useMutation({
-    mutationFn: (net_id: string) => {
-      return DBModel.fetchUser(net_id);
-    },
-    onSuccess: (data) => {
-      if (debug) console.log("User found", data);
-      setIsEmployee(true);
-    },
-    onError: (error) => {
-      console.error("Error finding user", error);
-      setIsEmployee(false);
-    },
-  });
-  useEffect(() => {
-    if (debug)
-      console.log(
-        "waiting on data",
-        transactionStatus,
-        description === "",
-        description === null,
-      );
-    if (
-      transactionStatus !== "pending" &&
-      transactionStatus !== "error" &&
-      description !== "" &&
-      description !== null &&
-      isCompleted !== undefined
-    ) {
-      // if (debug) // console.log("description before update: ", description);
-
-      const updatedTransaction = {
-        description: description ?? "",
-        transaction_type: transactionType,
-        total_cost: totalPrice,
-        is_waiting_on_email: waitEmail,
-        is_urgent: priority ?? false,
-        is_nuclear: nuclear ?? false,
-        is_completed: isCompleted,
-        is_paid: isPaid,
-        is_beer_bike: beerBike ?? false,
-        is_refurb: refurb,
-        is_reserved: reserved,
-        is_employee: isEmployee ?? false,
-        bike_id: bike?.bike_id,
-        date_completed: !isCompleted
-          ? null
-          : transactionData?.date_completed === null && isCompleted
-            ? new Date().toISOString()
-            : transactionData?.date_completed,
-      } as UpdateTransaction;
-
-      // if (debug) // console.log("description after update", updatedTransaction.description);
-      updateTransaction.mutate({
-        transaction_id: transaction_id,
-        transaction: updatedTransaction,
-      });
-      if (debug) console.log("submitted update");
-      // setCurrentTransaction({
-      //   ...transactionData,
-      //   Transaction: transactionData,
-      // });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    isPaid,
-    transactionData,
-    description,
-    totalPrice,
-    waitEmail,
-    priority,
-    nuclear,
-    isCompleted,
-    showCheckout,
-    bike,
-    beerBike,
-    refurb,
-    reserved,
-    transactionStatus,
+    transactionData?.Customer?.email,
     transactionType,
-    isEmployee,
+    checkUser,
+    lastCheckedNetIdRef,
   ]);
 
-  useEffect(() => {
-    if (transactionData) {
-      if (transactionData.is_waiting_on_email !== waitEmail)
-        setWaitEmail(transactionData.is_waiting_on_email);
-      if (transactionData.is_urgent && transactionData.is_urgent !== priority)
-        setPriority(transactionData.is_urgent);
-      if (transactionData.is_nuclear && transactionData.is_nuclear !== nuclear)
-        setNuclear(transactionData.is_nuclear);
-      if (
-        transactionData.description &&
-        transactionData.description !== description
-      )
-        setDescription(transactionData.description);
-      if (transactionData.is_paid !== isPaid) setPaid(transactionData.is_paid);
-      if (transactionData.is_completed !== isCompleted)
-        setIsCompleted(transactionData.is_completed);
-      if (transactionData.is_beer_bike !== beerBike)
-        setBeerBike(transactionData.is_beer_bike);
-      if (transactionData.is_refurb !== refurb)
-        setIsRefurb(transactionData.is_refurb);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactionData]);
-
-  const addRepair = useMutation({
-    mutationFn: (repair: Repair) => {
-      DBModel.postTransactionLog(
-        transactionData?.transaction_num ?? 0,
-        user?.user_id ?? "",
-        repair.name,
-        "added repair",
-      );
-      queryClient.removeQueries({
-        queryKey: ["transactionLogs", transactionData?.transaction_num],
-      });
-      return DBModel.postTransactionDetails(
-        transaction_id,
-        repair.repair_id,
-        user?.user_id ?? "",
-        1,
-        "repair",
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["transactionDetails", transaction_id, "repair"],
-      });
-      if (debug) console.log("repair added");
-    },
-  });
-
-  const deleteRepair = useMutation({
-    mutationFn: (transactionDetail: RepairDetails) => {
-      DBModel.postTransactionLog(
-        transactionData?.transaction_num ?? 0,
-        user?.user_id ?? "",
-        transactionDetail.Repair.name,
-        "deleted repair",
-      );
-      queryClient.removeQueries({
-        queryKey: ["transactionLogs", transactionData?.transaction_num],
-      });
-      return DBModel.deleteTransactionDetails(
-        transactionDetail.transaction_detail_id,
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["transactionDetails", transaction_id, "repair"],
-      });
-      if (debug) console.log("repair deleted");
-    },
-  });
-
-  const addPart = useMutation({
-    mutationFn: (part: Part) => {
-      DBModel.postTransactionLog(
-        transactionData?.transaction_num ?? 0,
-        user?.user_id ?? "",
-        part.name,
-        "added part",
-      );
-      queryClient.removeQueries({
-        queryKey: ["transactionLogs", transactionData?.transaction_num],
-      });
-      return DBModel.postTransactionDetails(
-        transaction_id,
-        part.item_id,
-        user?.user_id ?? "",
-        1,
-        "item",
-      );
-    },
-
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["transactionDetails", transaction_id, "item"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["items"],
-      });
-      if (debug) console.log("part added");
-    },
-  });
-
-  const deletePart = useMutation({
-    mutationFn: (transactionDetail: ItemDetails) => {
-      DBModel.postTransactionLog(
-        transactionData?.transaction_num ?? 0,
-        user?.user_id ?? "",
-        transactionDetail.Item.name,
-        "deleted item",
-      );
-      queryClient.removeQueries({
-        queryKey: ["transactionLogs", transactionData?.transaction_num],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["items"],
-      });
-      return DBModel.deleteTransactionDetails(
-        transactionDetail.transaction_detail_id,
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["transactionDetails", transaction_id, "item"],
-      });
-      if (debug) console.log("part deleted");
-    },
-  });
-
-  const deleteTransaction = useMutation({
-    mutationFn: (transaction: Transaction) => {
-      DBModel.postTransactionLog(
-        transaction.transaction_num,
-        user?.user_id ?? "",
-        "transaction deleted",
-        "transaction",
-      );
-      queryClient.invalidateQueries({
-        queryKey: ["transactionLogs", transactionData?.transaction_num],
-      });
-      return DBModel.deleteTransaction(transaction.transaction_id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["transaction", transaction_id],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["transactions"],
-      });
-      if (debug) console.log("transaction deleted");
-      nav("/");
-    },
-  });
-
-  const handlePaid = () => {
-    setPaid(true);
-    setWaitEmail(false);
-    setNuclear(false);
-    setPriority(false);
-    closeCheckout();
-    queryClient.invalidateQueries({
-      queryKey: ["transaction", transaction_id],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ["transactions"],
-    });
-    DBModel.postTransactionLog(
-      transactionData!.transaction_num,
-      user?.user_id ?? "",
-      `checked out transaction for $${totalPrice}`,
-      "transaction",
-    );
-    const customer: Customer = transactionData?.Customer as Customer;
-    sendRecieptEmail.mutate({
-      customer,
-      transaction_id: transactionData!.transaction_id,
-    });
-    nav("/");
-  };
-
-  const handleRetrospecStatusChange = (newStatus: string) => {
-    // console.log("new status retrospec", newStatus)
-    switch (newStatus) {
-      case "Building":
-        setIsRefurb(true);
-        break;
-      case "Completed":
-        setIsRefurb(false);
-        setWaitEmail(true);
-        break;
-      case "For Sale":
-        if (!checkUserPermissions(user ?? null, "safetyCheckBikes")) {
-          return;
-        }
-        setWaitEmail(false);
-        setIsCompleted(true);
-        break;
-      default:
-        setIsCompleted(false);
-        setWaitEmail(false);
-        setIsRefurb(false);
-        break;
-    }
-    queryClient.invalidateQueries({
-      queryKey: ["transaction", transaction_id],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ["transactions"],
-    });
-  };
-
-  const handleTransactionTypeChange = (newTransactionType: string) => {
-    setSearchParams((params) => {
-      params.set("type", newTransactionType);
-      return params;
-    });
-    setTransactionType(newTransactionType);
-    queryClient.invalidateQueries({
-      queryKey: ["transaction", transaction_id],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ["transactions"],
-    });
-  };
-
-  const handleWaitEmail = () => {
-    setWaitEmail(!waitEmail);
-    queryClient.invalidateQueries({
-      queryKey: ["transaction", transaction_id],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ["transactions"],
-    });
-  };
-
-  const handleWaitPartClick = () => {
-    setShowWaitingParts(!showWaitingParts);
-  };
-
-  const handlePriority = () => {
-    if (debug) console.log("priority: ", priority);
-
-    setPriority(!priority);
-    queryClient.invalidateQueries({
-      queryKey: ["transaction", transaction_id],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ["transactions"],
-    });
-  };
-
-  const handleNuclear = () => {
-    if (debug) console.log("nuclear: ", nuclear);
-    setNuclear(!nuclear);
-    queryClient.invalidateQueries({
-      queryKey: ["transaction", transaction_id],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ["transactions"],
-    });
-  };
-
-  const handleMarkDone = async (email: boolean) => {
-    if (!transactionData) return;
-    if (!transactionData.Customer) return;
-    setIsCompleted(true);
-
-    const customer: Customer = transactionData?.Customer as Customer;
-    if (isCompleted === false && email) {
-      sendCheckoutEmail.mutate(customer);
-      DBModel.postTransactionLog(
-        transactionData.transaction_num,
-        user?.user_id ?? "",
-        "completed and sent email",
-        "transaction",
-      );
-    }
-    queryClient.invalidateQueries({
-      queryKey: ["transaction", transaction_id],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ["transactions"],
-    });
-  };
-
-  const handleCheckout = () => {
-    setShowCheckout(true);
-  };
-
-  const closeCheckout = () => {
-    setShowCheckout(false);
-  };
-
-  const handleSaveNotes = (newNotes: string) => {
-    if (debug) console.log("new notes: ", newNotes);
-    queryClient.resetQueries({
-      queryKey: ["transactionLogs", transaction_id],
-    });
-
-    const payload = newNotes;
-
-    setDescription(payload);
-  };
-
+  // Calculate total price when data changes
   useEffect(() => {
     if (
       !repairDetailsIsFetching &&
@@ -762,9 +180,9 @@ const TransactionDetail = () => {
     ) {
       setTotalPrice(
         calculateTotalCost(
-          repairDetails as RepairDetails[],
-          itemDetails as ItemDetails[],
-          orderRequestData as Part[],
+          repairDetails ?? [],
+          itemDetails ?? [],
+          orderRequestData ?? [],
           isEmployee,
           beerBike ?? false,
         ),
@@ -779,15 +197,105 @@ const TransactionDetail = () => {
     orderRequestIsFetching,
     isEmployee,
     beerBike,
+    setTotalPrice,
   ]);
 
-  if (repairsLoading || partsLoading || transactionLoading) {
-    return <Skeleton />;
-  }
+  // Sync transaction type from URL params
+  useEffect(() => {
+    if (transactionData) {
+      const typeFromParams = searchParams.get("type");
+      if (typeFromParams && typeFromParams !== transactionType) {
+        setTransactionType(typeFromParams);
+      }
+    }
+  }, [transactionData, searchParams, transactionType, setTransactionType]);
 
-  if (repairError || partsError || transactionError) {
-    return <p>Error loading data</p>;
-  }
+  // ===================================
+  // 6. HANDLERS
+  // ===================================
+
+  const handlePaid = () => {
+    setPaid(true);
+    setWaitEmail(false);
+    setNuclear(false);
+    setPriority(false);
+    setShowCheckout(false);
+
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+
+    // Transaction log handled in mutation hook
+
+    const customer: Customer = transactionData?.Customer as Customer;
+    sendReceiptEmail.mutate({
+      customer,
+      transaction_id: transactionData!.transaction_id,
+    });
+
+    nav("/");
+  };
+
+  const handleMarkDone = async (email: boolean) => {
+    if (!transactionData?.Customer) return;
+
+    setIsCompleted(true);
+
+    if (isCompleted === false && email) {
+      const customer: Customer = transactionData.Customer as Customer;
+      sendCheckoutEmail.mutate(customer);
+      // Transaction log handled in mutation hook
+    }
+
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+  };
+
+  const handleRetrospecStatusChange = (newStatus: string) => {
+    switch (newStatus) {
+      case "Building":
+        setIsRefurb(true);
+        break;
+      case "Completed":
+        setIsRefurb(false);
+        setWaitEmail(true);
+        break;
+      case "For Sale":
+        setWaitEmail(false);
+        setIsCompleted(true);
+        break;
+      default:
+        setIsCompleted(false);
+        setWaitEmail(false);
+        setIsRefurb(false);
+        break;
+    }
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+  };
+
+  const handleTransactionTypeChange = (newTransactionType: string) => {
+    setSearchParams((params) => {
+      params.set("type", newTransactionType);
+      return params;
+    });
+    setTransactionType(newTransactionType);
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+  };
+
+  const handleSaveNotes = (newNotes: string) => {
+    if (debug) console.log("new notes: ", newNotes);
+    queryClient.resetQueries({ queryKey: ["transactionLogs", transaction_id] });
+    setDescription(newNotes);
+  };
 
   const handleAddRepair = (event: RowClickedEvent) => {
     const repair = event.data as Repair;
@@ -799,10 +307,19 @@ const TransactionDetail = () => {
     deleteRepair.mutate(repair);
   };
 
+  const handleToggleDone = (id: string, status: boolean, name: string) => {
+    completeRepair.mutate({
+      repair_name: name,
+      transaction_detail_id: id,
+      status,
+    });
+  };
+
   const handleAddPart = (event: RowClickedEvent) => {
     const part = event.data as Part;
     addPart.mutate(part);
   };
+
   const handleAddOrderedPart = (item: Part) => {
     addPart.mutate(item);
   };
@@ -811,14 +328,14 @@ const TransactionDetail = () => {
     deletePart.mutate(part);
   };
 
-  const toggleDoneRepair = (repairDetail: RepairDetails) => {
-    const newStatus: boolean = !repairDetail.completed;
-    const repairId: string = repairDetail.transaction_detail_id;
-    completeRepair.mutate({
-      repair_name: repairDetail.Repair.name,
-      transaction_detail_id: repairId,
-      status: newStatus,
-    });
+  const handleBikeCreated = () => {
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+  };
+
+  const handleDeleteTransaction = () => {
+    if (transactionData) {
+      deleteTransaction.mutate(transactionData);
+    }
   };
 
   const blockCompletion = () => {
@@ -826,283 +343,89 @@ const TransactionDetail = () => {
     if (
       repairDetails.length === 0 &&
       (searchParams.get("type") === "Merch" || refurb)
-    )
+    ) {
       return false;
+    }
     if (debug) console.log("repair details: ", repairDetails);
     return !repairDetails.every((repair: RepairDetails) => repair.completed);
   };
 
-  if (transactionData === undefined || transactionData.Customer === undefined) {
+  // ===================================
+  // 7. LOADING & ERROR STATES
+  // ===================================
+
+  if (repairsLoading || partsLoading || transactionLoading) {
     return <Skeleton />;
   }
 
-  if (transactionData.Customer === null) {
+  if (!transactionData?.Customer) {
     return <p>Customer not found</p>;
   }
+
+  // ===================================
+  // 8. RENDER
+  // ===================================
+
   return (
-    <Box sx={{ px: "10vw", py: 2 }}>
+    <Box sx={{ px: { xs: 0.5, sm: 2, md: "10vw" }, py: { xs: 0.5, md: 2 } }}>
       <Paper
         elevation={3}
-        sx={{
-          p: 3,
-          borderRadius: 3,
-        }}
+        sx={{ p: { xs: 1, sm: 1.5, md: 3 }, borderRadius: { xs: 2, md: 3 } }}
       >
-        <Stack className="transaction-header" sx={{ gap: 2 }}>
-          {/* <h2>Transaction Details</h2> */}
-          <Grid2 container>
-            <Grid2 size={6} className="transaction-options-container">
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                  {`${transactionData.transaction_num}: ${transactionData.Customer.first_name} ${transactionData.Customer.last_name}`}
-                </Typography>
-                {/*<Chip
-                  label={transactionType.toUpperCase()}
-                  color={
-                    transactionType.toLowerCase() === "inpatient"
-                      ? "success"
-                      : transactionType.toLowerCase() === "outpatient"
-                        ? "info"
-                        : transactionType.toLowerCase() === "merch"
-                          ? "default"
-                          : "warning"
-                  }
-                  sx={{ fontWeight: 700 }}
-                />*/}
-              </Stack>
-              <TransactionOptionDropdown
-                options={["Inpatient", "Outpatient", "Merch", "Retrospec"]}
-                colors={["green", "blue", "gray", "orange"]}
-                setTransactionType={handleTransactionTypeChange}
-                initialOption={transactionType.toLowerCase()}
-                isAllowed={(index: string) =>
-                  index === "Retrospec"
-                    ? checkUserPermissions(
-                        user ?? null,
-                        "createRetrospecTransaction",
-                      )
-                    : true
-                }
-              />
-              {transactionType.toLowerCase() === "retrospec" && (
-                <TransactionOptionDropdown
-                  options={["Arrived", "Building", "Completed", "For Sale"]}
-                  colors={["gray"]}
-                  setTransactionType={handleRetrospecStatusChange}
-                  initialOption={checkStatusOfRetrospec(transactionData)}
-                  isAllowed={(option: string) =>
-                    ["For Sale", "Arrived"].includes(option)
-                      ? checkUserPermissions(user ?? null, "safetyCheckBikes")
-                      : true
-                  }
-                />
-              )}
-              {beerBike && (
-                <Button
-                  style={{
-                    backgroundColor: "turquoise",
-                    color: "black",
-                    pointerEvents: "none",
-                    width: "fit-content",
-                    // wordWrap: "break-word",
-                    whiteSpace: "nowrap",
-                  }}
-                  variant="contained"
-                  size="small"
-                >
-                  {" "}
-                  Beer Bike
-                </Button>
-              )}
+        <Stack sx={{ gap: 2 }}>
+          {/* HEADER SECTION */}
+          <TransactionHeader
+            transactionData={transactionData}
+            transactionType={transactionType}
+            user={user ?? null}
+            beerBike={beerBike}
+            refurb={refurb}
+            isEmployee={isEmployee}
+            onTransactionTypeChange={handleTransactionTypeChange}
+            onRetrospecStatusChange={handleRetrospecStatusChange}
+            onDeleteTransaction={handleDeleteTransaction}
+          />
 
-              {refurb && transactionType.toLowerCase() !== "retrospec" && (
-                <Button
-                  style={{
-                    backgroundColor: "beige",
-                    color: "black",
-                    pointerEvents: "none",
-                  }}
-                  variant="contained"
-                  size="small"
-                >
-                  Refurb
-                </Button>
-              )}
-              {isEmployee && (
-                <Button
-                  style={{
-                    backgroundColor: "green",
-                    color: "white",
-                    pointerEvents: "none",
-                  }}
-                  variant="contained"
-                  size="small"
-                >
-                  Employee
-                </Button>
-              )}
-            </Grid2>
-            <Grid2
-              size={6}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                gap: "5px",
-              }}
-            >
-              <TransactionsLogModal
-                transaction_num={transactionData.transaction_num}
-              />
-
-              {(transactionType.toLowerCase() !== "retrospec" ||
-                (transactionType.toLowerCase() === "retrospec" &&
-                  checkUserPermissions(
-                    user ?? null,
-                    "createRetrospecTransaction",
-                  ))) && (
-                <DeleteTransactionsModal
-                  handleConfirm={() =>
-                    deleteTransaction.mutate(transactionData as Transaction)
-                  }
-                />
-              )}
-            </Grid2>
-          </Grid2>
-          <Item
-            style={{
-              display: "flex",
-              gap: "10px",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-              <h3>
-                <strong>📧: </strong>
-                <a
-                  target="_blank"
-                  href={`mailto:${transactionData.Customer.email}?subject=Your bike`}
-                >
-                  {transactionData.Customer.email}
-                </a>
-              </h3>
-              <h3>
-                <strong>#: </strong>
-                {transactionData.Customer.phone}
-              </h3>
-            
-          </Item>
-
+          {/* NOTES SECTION */}
           <Notes
             notes={transactionData.description ?? ""}
             onSave={handleSaveNotes}
             transaction_num={transactionData.transaction_num}
           />
-          <Divider sx={{ my: 2 }} />
-          <Typography
-            variant="h5"
-            sx={{ fontWeight: 700, color: "text.primary" }}
-          >
-            Bike Information
-          </Typography>
-          <Item style={{ color: "black" }}>
-            {" "}
-            {transactionData.Bike ? (
-              <Grid2 container>
-                <Grid2
-                  size={2}
-                  sx={{
-                    display: "flex",
-                    justifyContent: "flex-start",
-                    margin: "30px 0",
-                  }}
-                >
-                  <Button
-                    variant="contained"
-                    sx={{
-                      backgroundColor: "gray",
-                      marginLeft: "10px",
-                    }}
-                    onClick={() => {
-                      setBike({
-                        ...bike,
-                        description: transactionData.Bike?.description ?? "",
-                        make: transactionData.Bike?.make ?? "",
-                        model: transactionData.Bike?.model ?? "",
-                      });
-                      setShowBikeForm(true);
-                    }}
-                  >
-                    <ModeEditIcon />
-                  </Button>
-                </Grid2>
-                <Grid2 size={8}>
-                  <h2>
-                    {transactionData.Bike.make +
-                      " " +
-                      transactionData.Bike.model}
-                  </h2>
-                  <h2>{transactionData.Bike.description}</h2>
-                </Grid2>
-                <Grid2
-                  size={2}
-                  sx={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    margin: "30px 0",
-                  }}
-                ></Grid2>
-              </Grid2>
-            ) : (
-              <Button
-                color="primary"
-                variant="contained"
-                onClick={() => setShowBikeForm(true)}
-              >
-                Add Bike
-              </Button>
-            )}
-          </Item>
 
-          <NewBikeForm
-            isOpen={showBikeForm}
-            onClose={() => setShowBikeForm(false)}
-            onBikeCreated={(bike: Bike) => {
-              setBike(bike);
-              setShowBikeForm(false);
-              queryClient.invalidateQueries({
-                queryKey: ["transactions"],
-              });
-            }}
-            bike={
-              bike === null
-                ? {
-                    make: "",
-                    model: "",
-                    description: "",
-                  }
-                : bike
-            }
+          <Divider sx={{ my: 2 }} />
+
+          {/* BIKE SECTION */}
+          <BikeInformation
+            transactionData={transactionData}
+            bike={bike}
+            setBike={setBike}
+            showBikeForm={showBikeForm}
+            setShowBikeForm={setShowBikeForm}
+            onBikeCreated={handleBikeCreated}
           />
         </Stack>
+
         <hr />
+
+        {/* PARTS & REPAIRS GRID */}
         <Grid2
           container
           id="transaction-details"
-          spacing={2}
+          spacing={{ xs: 0.5, md: 2 }}
           sx={{
-            paddingBottom: "20px",
+            paddingBottom: { xs: "5px", md: "20px" },
             backgroundColor: "white",
-            padding: "20px",
-            borderRadius: "16px",
+            padding: { xs: "5px", sm: "10px", md: "20px" },
+            borderRadius: { xs: "4px", md: "16px" },
             boxShadow: 2,
             border: "1px solid rgba(0,0,0,0.05)",
           }}
         >
-          {/* <Grid2 id="search" size = {12}> */}
-          <Grid2 size={6}>
+          {/* SEARCH MODALS */}
+          <Grid2 size={{ xs: 12, md: 6 }}>
             <SearchModal
-              searchData={repairs == undefined ? [] : repairs}
+              searchData={repairs ?? []}
               columnData={[
                 {
                   field: "name",
@@ -1116,17 +439,15 @@ const TransactionDetail = () => {
                 },
                 { field: "price", headerName: "Price", width: 200 },
               ]}
-              colDefaults={{
-                flex: 1,
-              }}
-              onRowClick={(row) => handleAddRepair(row)}
+              colDefaults={{ flex: 1 }}
+              onRowClick={handleAddRepair}
             >
               Add Repair
             </SearchModal>
           </Grid2>
-          <Grid2 size={6}>
+          <Grid2 size={{ xs: 12, md: 6 }}>
             <SearchModal
-              searchData={parts == undefined ? [] : (parts as Part[])}
+              searchData={parts ?? []}
               columnData={[
                 {
                   field: "name",
@@ -1143,13 +464,7 @@ const TransactionDetail = () => {
                   field: "standard_price",
                   headerName: "Price",
                   width: 200,
-                  valueGetter: (params) =>
-                    params.data?.standard_price as number,
-                  // (params.data?.standard_price as number) > 0
-                  //   ? params.data?.standard_price
-                  //   : (params.data?.wholesale_cost as number) * 2,
                 },
-                // { field: "stock", headerName: "Stock", width: 200 }, //TODO: Verify that this piece is actually true
                 {
                   field: "upc",
                   headerName: "UPC",
@@ -1159,536 +474,92 @@ const TransactionDetail = () => {
                   filter: true,
                 },
               ]}
-              colDefaults={{
-                flex: 1,
-              }}
-              onRowClick={(row) => handleAddPart(row)}
+              colDefaults={{ flex: 1 }}
+              onRowClick={handleAddPart}
             >
               Add Part
             </SearchModal>
           </Grid2>
-          <Grid2 size={6}>
-            <Card elevation={2} sx={{ bgcolor: "#FFF8E1", borderRadius: 2 }}>
-              <CardHeader title="Repairs" />
-              <CardContent>
-                {!repairDetailsLoading && repairDetails ? (
-                  <List
-                    sx={{
-                      width: "100%",
-                      // bgcolor: "background.paper",
-                      opacity: repairDetails.length === 0 ? 0 : 1,
-                    }}
-                  >
-                    {repairDetails.map((transactionDetail: RepairDetails) => (
-                      <Tooltip
-                        title={transactionDetail.Repair.description}
-                        placement="top-start"
-                      >
-                        <ListItem
-                          key={transactionDetail.transaction_detail_id}
-                          sx={{
-                            p: 1.5,
-                            mb: 1,
-                            borderRadius: 2,
-                            bgcolor: "background.paper",
-                            transition: "all .15s ease-in-out",
-                            "&:hover": {
-                              boxShadow: 3,
-                              transform: "translateY(-1px)",
-                            },
-                          }}
-                        >
-                          <Stack
-                            direction="row"
-                            alignItems="center"
-                            spacing={2}
-                            sx={{ width: "100%" }}
-                          >
-                            <Avatar
-                              sx={{
-                                bgcolor: transactionDetail.completed
-                                  ? "success.light"
-                                  : "warning.light",
-                                color: transactionDetail.completed
-                                  ? "success.dark"
-                                  : "warning.dark",
-                                width: 32,
-                                height: 32,
-                                fontSize: 14,
-                              }}
-                            >
-                              {transactionDetail.Repair.name?.[0]?.toUpperCase()}
-                            </Avatar>
-                            <Box sx={{ flex: 1, minWidth: 0, flexShrink: 1 }}>
-                              <Typography
-                                variant="subtitle1"
-                                fontWeight={600}
-                                sx={{
-                                  whiteSpace: "normal",
-                                  overflowWrap: "anywhere",
-                                  wordBreak: "break-word",
-                                }}
-                              >
-                                {transactionDetail.Repair.name}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                ${transactionDetail.Repair.price.toFixed(2)}
-                              </Typography>
-                            </Box>
-                            <Chip
-                              size="small"
-                              color={
-                                transactionDetail.completed
-                                  ? "success"
-                                  : "warning"
-                              }
-                              variant={
-                                transactionDetail.completed
-                                  ? "filled"
-                                  : "outlined"
-                              }
-                              label={
-                                transactionDetail.completed
-                                  ? "Done"
-                                  : "In Progress"
-                              }
-                              sx={{
-                                mr: 0.5,
-                                minWidth: 96,
-                                display: "flex",
-                                justifyContent: "center",
-                                px: 1,
-                              }}
-                            />
-                            <IconButton
-                              onClick={() =>
-                                toggleDoneRepair(transactionDetail)
-                              }
-                              color={
-                                transactionDetail.completed
-                                  ? "success"
-                                  : "default"
-                              }
-                              size="small"
-                            >
-                              <CheckCircleOutlineIcon />
-                            </IconButton>
-                            <IconButton
-                              onClick={() =>
-                                handleRemoveRepair(transactionDetail)
-                              }
-                              color="error"
-                              size="small"
-                            >
-                              <DeleteOutlineIcon />
-                            </IconButton>
-                          </Stack>
-                        </ListItem>
-                      </Tooltip>
-                    ))}
-                  </List>
-                ) : (
-                  <Skeleton
-                    variant="rectangular"
-                    animation="wave"
-                    style={{ marginBottom: "10px", opacity: 0.5 }}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </Grid2>
 
-          <Grid2 size={6}>
-            <Card elevation={2} sx={{ bgcolor: "#E8F3FF", borderRadius: 2 }}>
-              <CardHeader title="Parts" />
-              <CardContent>
-                {!itemDetailsLoading && itemDetails ? (
-                  <List
-                    sx={{
-                      width: "100%",
-                      // borderRadius: "7px",
-                      opacity: itemDetails.length === 0 ? 0 : 1,
-                    }}
-                  >
-                    {(itemDetails as ItemDetails[]).map((part: ItemDetails) => (
-                      <ListItem
-                        key={part.transaction_detail_id}
-                        sx={{
-                          p: 1.5,
-                          mb: 1,
-                          borderRadius: "7px",
-                          bgcolor: "background.paper",
-                          transition: "all .15s ease-in-out",
-                          "&:hover": {
-                            boxShadow: 3,
-                            transform: "translateY(-1px)",
-                          },
-                        }}
-                      >
-                        <Stack
-                          direction="row"
-                          alignItems="center"
-                          spacing={2}
-                          sx={{ width: "100%" }}
-                        >
-                          <Avatar
-                            sx={{
-                              bgcolor: "primary.light",
-                              color: "primary.dark",
-                              width: 32,
-                              height: 32,
-                              fontSize: 14,
-                            }}
-                          >
-                            {part.Item.name?.[0]?.toUpperCase()}
-                          </Avatar>
-                          <Box sx={{ flex: 1, minWidth: 0, flexShrink: 1 }}>
-                            <Typography
-                              variant="subtitle1"
-                              fontWeight={600}
-                              sx={{
-                                whiteSpace: "normal",
-                                overflowWrap: "anywhere",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              {part.Item.name}
-                            </Typography>
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{
-                                whiteSpace: "normal",
-                                overflowWrap: "anywhere",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              $
-                              {!isEmployee || beerBike
-                                ? part.Item.standard_price.toFixed(2)
-                                : (
-                                    part.Item.wholesale_cost *
-                                    MECHANIC_PART_MULTIPLIER
-                                  ).toFixed(2)}
-                            </Typography>
-                          </Box>
-                          {part.Item.brand && (
-                            <Chip
-                              size="small"
-                              variant="outlined"
-                              label={part.Item.brand}
-                              sx={{ mr: 0.5 }}
-                            />
-                          )}
-                          <IconButton
-                            onClick={() => {
-                              handleRemovePart(part);
-                            }}
-                            color="error"
-                            size="small"
-                          >
-                            <DeleteOutlineIcon />
-                          </IconButton>
-                        </Stack>
-                      </ListItem>
-                    ))}
-                  </List>
-                ) : (
-                  <Skeleton
-                    variant="rectangular"
-                    animation="wave"
-                    style={{ marginBottom: "10px", opacity: 0.5 }}
-                  />
-                )}
-
-                {!orderRequestLoading && orderRequestData && (
-                  <List
-                    sx={{
-                      width: "100%",
-                      opacity: orderRequestData.length === 0 ? 0 : 1,
-                    }}
-                  >
-                    {orderRequestData.map((part: Part) => (
-                      <ListItem
-                        key={part.item_id}
-                        sx={{
-                          p: 1.5,
-                          mb: 1,
-                          borderRadius: 2,
-                          bgcolor: "background.paper",
-                          transition: "all .15s ease-in-out",
-                          "&:hover": {
-                            boxShadow: 3,
-                            transform: "translateY(-1px)",
-                          },
-                          opacity: 0.5,
-                        }}
-                      >
-                        <Stack
-                          direction="row"
-                          spacing={2}
-                          alignItems="center"
-                          sx={{ width: "100%" }}
-                        >
-                          <Avatar
-                            sx={{
-                              bgcolor: "primary.light",
-                              color: "primary.dark",
-                              width: 32,
-                              height: 32,
-                              fontSize: 14,
-                            }}
-                          >
-                            {part.name?.[0]?.toUpperCase()}
-                          </Avatar>
-
-                          <Box sx={{ flex: 1, minWidth: 0, flexShrink: 1 }}>
-                            <Typography
-                              variant="subtitle1"
-                              fontWeight={600}
-                              sx={{
-                                whiteSpace: "normal",
-                                overflowWrap: "anywhere",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              {part.name}
-                            </Typography>
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{
-                                whiteSpace: "normal",
-                                overflowWrap: "anywhere",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              $
-                              {!isEmployee || beerBike
-                                ? part.standard_price.toFixed(2)
-                                : (
-                                    part.wholesale_cost *
-                                    MECHANIC_PART_MULTIPLIER
-                                  ).toFixed(2)}
-                            </Typography>
-                          </Box>
-
-                          <Chip
-                            size="small"
-                            variant="outlined"
-                            label="Ordered"
-                            sx={{ mr: 0.5 }}
-                          />
-
-                          <IconButton
-                            disabled
-                            size="small"
-                            color="error"
-                            aria-label="delete-ordered-part"
-                          >
-                            <DeleteOutlineIcon />
-                          </IconButton>
-                        </Stack>
-                      </ListItem>
-                    ))}
-                  </List>
-                )}
-              </CardContent>
-            </Card>
-          </Grid2>
-        </Grid2>
-
-        <Grid2
-          container
-          sx={{
-            mt: "5vh",
-            backgroundColor: "white",
-            borderRadius: "10px",
-            padding: "10px",
-          }}
-        >
-          <Grid2
-            size={12}
-            style={{
-              borderRadius: "10px",
-              height: "50%",
-              marginBottom: "5px",
-            }}
-            ref={totalRef}
-          >
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Total
-            </Typography>
-            <Typography variant="h5" sx={{ fontWeight: 800 }}>
-              {(totalPrice * SALES_TAX_MULTIPLIER).toFixed(2)}
-            </Typography>
-            <WhiteboardEntryModal
-              open={showWaitingParts}
-              onClose={() => setShowWaitingParts(false)}
-              setWaitingOnParts={(waiting: boolean) => setWaitPart(waiting)}
-              waitingOnParts={waitPart ?? false}
-              parts={parts as Part[]}
-              transaction_id={transaction_id}
-              user_id={user?.user_id ?? ""}
-              handleAddOrderedPart={handleAddOrderedPart}
-            />
-          </Grid2>
-          <Grid2
-            style={{
-              color: "white",
-              gap: "2px",
-              height: "50%",
-              marginBottom: "10px",
-            }}
-            size={12}
-            gap={2}
-          >
-            <Grid2 size={6}>
-              <Stack
-                spacing={1}
-                direction="row"
-                alignItems="center"
-                height={"6vh"}
-              >
-                <Button
-                  onClick={handleWaitPartClick}
-                  style={{
-                    backgroundColor: waitPart ? "red" : "grey",
-                    color: "white",
-                    height: "100%",
-                  }}
-                  variant="contained"
-                >
-                  Wait on Part
-                </Button>
-                <Button
-                  onClick={handleWaitEmail}
-                  style={{
-                    backgroundColor: waitEmail ? "red" : "grey",
-                    color: "white",
-                    height: "100%",
-                  }}
-                  variant="contained"
-                >
-                  Wait on Email
-                </Button>
-                <Button
-                  onClick={handlePriority}
-                  style={{
-                    backgroundColor: "black",
-                    height: "100%",
-                  }}
-                  disableElevation={!priority}
-                  variant="contained"
-                >
-                  <ErrorSharp
-                    style={{
-                      color: priority ? "red" : "white",
-                      marginRight: "5px",
-                    }}
-                  />
-                </Button>
-                <Button
-                  onClick={handleNuclear}
-                  style={{
-                    // backgroundColor: nuclear ? "white" : "grey",
-                    borderColor: nuclear ? "red" : "black",
-                    color: nuclear ? "red" : "black",
-                    width: "fit-content",
-                    height: "100%",
-                  }}
-                  // disabled={checkUserPermissions(user, "setAtomic")}
-
-                  variant="outlined"
-                >
-                  {nuclear ? (
-                    <i className="fas fa-radiation" style={{ color: "red" }} />
-                  ) : (
-                    "Mark as Nuclear"
-                  )}
-                </Button>
-
-                <SetProjectsTypesDropdown
-                  setRefurb={() => setIsRefurb(!refurb)}
-                  setBeerBike={() => setBeerBike(!beerBike)}
-                />
-                
-              </Stack>
-            </Grid2>
-          </Grid2>
-          <Grid2 size={10}>
-            <Button
-              onClick={handleCheckout}
-              disabled={!isCompleted}
-              style={{
-                backgroundColor: isCompleted ? "green" : "grey",
-                border: "white",
-                marginRight: "10px",
-                color: "white",
-                // cursor: allRepairsDone() ? "pointer" : "not-allowed",
-                opacity: isCompleted ? 1 : 0.5,
+          {/* REPAIRS LIST */}
+          <Grid2 size={{ xs: 12, md: 6 }}>
+            <RepairsList
+              repairDetails={repairDetails ?? []}
+              isLoading={repairDetailsLoading}
+              onToggleDone={handleToggleDone}
+              onRemove={(id: string) => {
+                const repair = repairDetails?.find(
+                  (r) => r.transaction_detail_id === id,
+                );
+                if (repair) handleRemoveRepair(repair);
               }}
-              variant="outlined"
-            >
-              Checkout
-            </Button>
-            {showCheckout && (
-              <CheckoutModal
-                repairDetails={repairDetails as RepairDetails[]}
-                itemDetails={itemDetails as ItemDetails[]}
-                totalPrice={totalPrice}
-                isEmployee={isEmployee}
-                beerBike={beerBike ?? false}
-                handlePaid={handlePaid}
-                closeCheckout={closeCheckout}
-              />
-            )}
-            {!isCompleted ? (
-              <CompleteTransactionDropdown
-                sendEmail={() => handleMarkDone(true)}
-                disabled={blockCompletion()}
-                completeTransaction={() => handleMarkDone(false)}
-              />
-            ) : (
-              <Button
-                onClick={() => {
-                  setIsCompleted(false);
-                  setPaid(false);
-                  queryClient.invalidateQueries({
-                    queryKey: ["transaction", transaction_id],
-                  });
-                  queryClient.invalidateQueries({
-                    queryKey: ["transactions"],
-                  });
-                }}
-                style={{
-                  marginRight: "10px",
-                  color: "white",
-                  backgroundColor: "gray",
-                }}
-                variant="outlined"
-              >
-                Reopen Transaction
-              </Button>
-            )}
-            <CopyReceiptButton
-              transactionData={transactionData}
-              items={
-                itemDetails?.map((item) => ({
-                  ...item.Item,
-                  standard_price:
-                    !isEmployee || beerBike
-                      ? item.Item.standard_price
-                      : item.Item.wholesale_cost * MECHANIC_PART_MULTIPLIER,
-                })) ?? []
-              }
-              repairs={repairDetails?.map((repair) => repair.Repair) ?? []}
             />
           </Grid2>
+
+          {/* PARTS LIST */}
+          <Grid2 size={{ xs: 12, md: 6 }}>
+            <PartsList
+              itemDetails={itemDetails ?? []}
+              isLoading={itemDetailsLoading}
+              isEmployee={isEmployee}
+              isBeerBike={beerBike ?? false}
+              onRemove={(id: string) => {
+                const part = itemDetails?.find(
+                  (p) => p.transaction_detail_id === id,
+                );
+                if (part) handleRemovePart(part);
+              }}
+            />
+          </Grid2>
+
+          {/* ORDERED PARTS LIST */}
+          {orderRequestData && orderRequestData.length > 0 && (
+            <Grid2 size={{ xs: 12, md: 6 }}>
+              <OrderRequestsList
+                orderRequestData={orderRequestData}
+                isLoading={orderRequestLoading}
+                isEmployee={isEmployee}
+                isBeerBike={beerBike ?? false}
+              />
+            </Grid2>
+          )}
         </Grid2>
+
+        {/* ACTIONS SECTION */}
+        <TransactionActions
+          transactionData={transactionData}
+          transaction_id={transaction_id}
+          user={user ?? null}
+          totalPrice={totalPrice}
+          isCompleted={isCompleted}
+          isEmployee={isEmployee}
+          beerBike={beerBike}
+          waitPart={waitPart}
+          waitEmail={waitEmail}
+          priority={priority}
+          nuclear={nuclear}
+          refurb={refurb}
+          showCheckout={showCheckout}
+          showWaitingParts={showWaitingParts}
+          repairDetails={repairDetails ?? []}
+          itemDetails={itemDetails ?? []}
+          parts={parts ?? []}
+          setShowCheckout={setShowCheckout}
+          setShowWaitingParts={setShowWaitingParts}
+          setWaitPart={setWaitPart}
+          setWaitEmail={setWaitEmail}
+          setPriority={setPriority}
+          setNuclear={setNuclear}
+          setIsRefurb={setIsRefurb}
+          setBeerBike={setBeerBike}
+          setIsCompleted={setIsCompleted}
+          setPaid={setPaid}
+          handlePaid={handlePaid}
+          handleMarkDone={handleMarkDone}
+          handleAddOrderedPart={handleAddOrderedPart}
+          blockCompletion={blockCompletion}
+          totalRef={totalRef}
+        />
       </Paper>
     </Box>
   );

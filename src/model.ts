@@ -868,8 +868,8 @@ class DBModel {
         throw Error("Error loading or parsing summary data: " + error);
       });
 
-  public static fetchItems = async () =>
-    fetch(`${hostname}/items`)
+  public static fetchItems = async (includeDisabled = false) =>
+    fetch(`${hostname}/items?includeDisabled=${includeDisabled}`)
       .then((response) => response.json())
       .then((itemsData: unknown) => {
         console.log("Raw Parts Data:", itemsData);
@@ -2043,10 +2043,10 @@ class DBModel {
     });
   };
 
-  public static getItemsQuery = () => {
+  public static getItemsQuery = (includeDisabled = false) => {
     return queryOptions({
-      queryKey: ["items"],
-      queryFn: () => this.fetchItems(),
+      queryKey: ["items", includeDisabled],
+      queryFn: () => this.fetchItems(includeDisabled),
       refetchOnWindowFocus: false,
       staleTime: 600000, // Cache products for 10 minutes
       select: (data) => data as Part[],

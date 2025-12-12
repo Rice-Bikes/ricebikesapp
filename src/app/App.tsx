@@ -55,28 +55,44 @@ function AppContent() {
   return (
     <Grid2 style={{ margin: 0, padding: 0 }}>
       <Stack direction={"row"}>
-        <Stack sx={{ width: "5vw" }}>
+        <Stack sx={{ width: { xs: 0, md: "5vw" } }}>
           <CollapsedRail open={open} toggleDrawer={toggleDrawer} />
           <AppDrawer open={open} toggleDrawer={toggleDrawer} />
         </Stack>
         <Stack
           direction={"column"}
-          sx={{ width: "95vw", mt: 2, mb: 2 }}
+          sx={{
+            width: { xs: "100vw", md: "95vw" },
+            mt: { xs: 0.5, md: 2 },
+            mb: { xs: 0.5, md: 2 },
+            px: { xs: 0, md: 0 },
+            pr: { xs: 4, md: 0 },
+            pl: { xs: 4, md: 0 },
+          }}
           alignItems="center"
         >
           <Stack
             direction={"row"}
-            alignItems="space-between"
-            sx={{ width: "90vw" }}
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ width: { xs: "100%", md: "90vw" }, px: { xs: 0, md: 0 } }}
           >
             <Typography
               variant="h3"
-              noWrap
-              width="55vw"
+              width={{ xs: "auto", md: "55vw" }}
               onClick={() => {
                 nav("/");
               }}
-              sx={{ cursor: "pointer", fontWeight: "bold", ml: "7.5vw" }}
+              sx={{
+                cursor: "pointer",
+                fontWeight: "bold",
+                ml: { xs: 0, md: "7.5vw" },
+                fontSize: { xs: "1.25rem", sm: "1.75rem", md: "3rem" },
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: { xs: "normal", md: "nowrap" },
+                lineHeight: { xs: 1.2, md: 1 },
+              }}
             >
               {title}
             </Typography>
