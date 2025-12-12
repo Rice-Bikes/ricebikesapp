@@ -42,6 +42,7 @@ import {
   Remove,
   Search,
   RestartAlt,
+  Download,
 } from "@mui/icons-material";
 import PriceCheckModal from "../../components/PriceCheckModal";
 
@@ -143,6 +144,38 @@ const ItemsTable: React.FC = () => {
     setShowOnlyDisabled(false);
     gridApiRef.current?.api?.setGridOption?.("quickFilterText", "");
     gridApiRef.current?.api?.onFilterChanged();
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/data-export/excel/item-inventory`,
+        {
+          method: "GET",
+          credentials: "include",
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to export items");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const timestamp = new Date().toISOString().split("T")[0];
+      a.download = `item-inventory-${timestamp}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success("Items exported successfully!");
+    } catch (error) {
+      console.error("Error exporting items:", error);
+      toast.error("Failed to export items");
+    }
   };
 
   if (itemError) {
@@ -589,6 +622,14 @@ const ItemsTable: React.FC = () => {
         </Stack>
 
         <Stack direction="row" spacing={2} justifyContent="flex-end">
+          <Button
+            variant="outlined"
+            startIcon={<Download />}
+            onClick={handleExportExcel}
+            color="primary"
+          >
+            Export Excel
+          </Button>
           <Button
             variant="contained"
             onClick={() => {
