@@ -40,6 +40,12 @@ const EXPORT_ENDPOINTS: Array<{
     filename: "bike-inventory.xlsx",
   },
   {
+    label: "Download Item Inventory (Excel)",
+    path: "/data-export/excel/item-inventory",
+    type: "excel",
+    filename: "item-inventory.xlsx",
+  },
+  {
     label: "Download Repair History (Excel)",
     path: "/data-export/excel/repair-history",
     type: "excel",
