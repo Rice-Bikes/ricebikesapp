@@ -64,13 +64,23 @@ export function buildColDefs(viewType: string, isMobile: boolean) {
                 if (!transaction_type) return null;
                 if (transaction_type.toLowerCase() !== 'retrospec') {
                     return (
-                        <Stack direction={'row'} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', height: '100%', minHeight: '100%' }}>
+                        <Stack
+                            direction={'row'}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', height: '100%', minHeight: '100%' }}
+                            sx={{
+                                pl: 1,
+                                // apply left margin to every chip except the first rendered one
+                                '& > *:not(:first-of-type)': {
+                                    ml: 1,
+                                },
+                            }}
+                        >
                             {transaction_type?.toLowerCase() === 'inpatient' && (
                                 <Chip
                                     label="Inpatient"
                                     size="small"
                                     variant="filled"
-                                    sx={{ bgcolor: '#1b9e3a', color: '#ffffff', fontWeight: 600, borderRadius: 1 }}
+                                    sx={{ bgcolor: '#1b9e3a', color: '#ffffff', fontWeight: 600, borderRadius: 1, px: 1, height: 28 }}
                                 />
                             )}
                             {transaction_type?.toLowerCase() === 'outpatient' && (
@@ -78,7 +88,7 @@ export function buildColDefs(viewType: string, isMobile: boolean) {
                                     label="Outpatient"
                                     size="small"
                                     variant="filled"
-                                    sx={{ bgcolor: '#9e9e9e', color: '#ffffff', fontWeight: 600, borderRadius: 1 }}
+                                    sx={{ bgcolor: '#9e9e9e', color: '#ffffff', fontWeight: 600, borderRadius: 1, px: 1, height: 28 }}
                                 />
                             )}
                             {transaction_type?.toLowerCase() === 'merch' && (
@@ -86,7 +96,7 @@ export function buildColDefs(viewType: string, isMobile: boolean) {
                                     label="Merch"
                                     size="small"
                                     variant="filled"
-                                    sx={{ bgcolor: '#6c757d', color: '#ffffff', fontWeight: 600, borderRadius: 1 }}
+                                    sx={{ bgcolor: '#6c757d', color: '#ffffff', fontWeight: 600, borderRadius: 1, px: 1, height: 28 }}
                                 />
                             )}
                             {isBeerBike && (
@@ -94,7 +104,7 @@ export function buildColDefs(viewType: string, isMobile: boolean) {
                                     label="Beer Bike"
                                     size="small"
                                     variant="filled"
-                                    sx={{ bgcolor: '#07d1c3', color: '#ffffff', fontWeight: 600, borderRadius: 1 }}
+                                    sx={{ bgcolor: '#07d1c3', color: '#ffffff', fontWeight: 600, borderRadius: 1, px: 1, height: 28 }}
                                 />
                             )}
                         </Stack>
