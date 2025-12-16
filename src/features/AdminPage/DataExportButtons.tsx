@@ -17,103 +17,12 @@ import Grid2 from "@mui/material/Grid2";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { subDays, startOfMonth, endOfMonth } from "date-fns";
-import { hostname } from "../../model";
 
-const EXPORT_ENDPOINTS: Array<{
-  label: string;
-  path: string;
-  type: "excel" | "json";
-  filename: string;
-  acceptsFilters?: boolean;
-}> = [
-  {
-    label: "Download Repair Summary Report",
-    path: "/data-export/excel/full-report",
-    type: "excel",
-    filename: "full-report.xlsx",
-    acceptsFilters: true,
-  },
-  {
-    label: "Download Bike Inventory (Excel)",
-    path: "/data-export/excel/bike-inventory",
-    type: "excel",
-    filename: "bike-inventory.xlsx",
-  },
-  {
-    label: "Download Item Inventory (Excel)",
-    path: "/data-export/excel/item-inventory",
-    type: "excel",
-    filename: "item-inventory.xlsx",
-  },
-  {
-    label: "Download Repair History (Excel)",
-    path: "/data-export/excel/repair-history",
-    type: "excel",
-    filename: "repair-history.xlsx",
-    acceptsFilters: true,
-  },
-];
+import { EXPORT_ENDPOINTS, downloadFile } from "./dataExportUtils";
 
-function buildQueryString(filters: Record<string, string | undefined>) {
-  const params = new URLSearchParams();
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value !== undefined && value !== "") params.append(key, value);
-  });
-  const qs = params.toString();
-  return qs ? `?${qs}` : "";
-}
+// buildQueryString moved to ./dataExportUtils
 
-async function downloadFile(
-  path: string,
-  filename: string,
-  type: "excel" | "json",
-  filters?: Record<string, string | undefined>,
-) {
-  try {
-    const url = `${hostname}${path}${filters ? buildQueryString(filters) : ""}`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: type === "json" ? { Accept: "application/json" } : {},
-    });
-    if (!res.ok) throw new Error("Failed to download");
-    if (type === "excel") {
-      const contentType = res.headers.get("Content-Type");
-      if (
-        !contentType ||
-        !contentType.includes(
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-      ) {
-        // Try to parse error message
-        let text = await res.text();
-        text = JSON.parse(text).message || text;
-        throw new Error("Server did not return a valid Excel file. " + text);
-      }
-      const blob = await res.blob();
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } else {
-      const data = await res.json();
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
-        type: "application/json",
-      });
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    }
-  } catch (err: unknown) {
-    alert(
-      "Download failed: " + (err instanceof Error ? err.message : String(err)),
-    );
-  }
-}
+// downloadFile moved to ./dataExportUtils
 
 export default function DataExportButtons() {
   const [filters, setFilters] = useState({
