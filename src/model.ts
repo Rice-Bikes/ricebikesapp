@@ -45,7 +45,7 @@ import {
   WorkflowProgressSchema,
   CreateWorkflowSchema,
 } from "./schema";
-import { IRow } from "./features/TransactionsTable/TransactionsTable";
+import type { IRow } from "./features/TransactionsTable/TransactionsTable.types";
 import { queryClient } from "./app/queryClient";
 
 export const hostname = import.meta.env.VITE_API_URL;

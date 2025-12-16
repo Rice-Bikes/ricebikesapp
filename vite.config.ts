@@ -47,5 +47,16 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/setupTests.ts'],
     include: ['**/*.{test,spec}.{js,jsx,ts,tsx}'],
+    // Coverage configuration: generate multiple reporters including a JSON summary
+    coverage: {
+      provider: 'v8', // use the V8 provider (fast) via @vitest/coverage-v8
+      reporter: ['text', 'lcov', 'json-summary'],
+      // Only include project source files under `src/` in the coverage report
+      // This prevents vendor, scripts, and build artifacts from being counted.
+      all: true,
+      include: ['src/**/*.{js,jsx,ts,tsx}'],
+      // exclude test files and external deps
+      exclude: ['**/*.test.*', 'tests/**', 'node_modules/**', 'public/**']
+    }
   }
 })

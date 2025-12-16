@@ -82,6 +82,7 @@ const ItemsTable: React.FC = () => {
     data: itemData,
     error: itemError,
     isLoading: itemsLoading,
+    refetch: refetchItems,
   } = useQuery(DBModel.getItemsQuery(true));
 
   const deleteItem = useMutation({
@@ -145,6 +146,17 @@ const ItemsTable: React.FC = () => {
     gridApiRef.current?.api?.setGridOption?.("quickFilterText", "");
     gridApiRef.current?.api?.onFilterChanged();
   };
+
+  const handleReloadItems = useCallback(async () => {
+    try {
+      toast.info("Reloading items...");
+      await refetchItems();
+      toast.success("Items reloaded");
+    } catch (error) {
+      console.error("Error reloading items:", error);
+      toast.error("Failed to reload items");
+    }
+  }, [refetchItems]);
 
   const handleExportExcel = async () => {
     try {
@@ -272,8 +284,12 @@ const ItemsTable: React.FC = () => {
   const toggleDisabled = useCallback(
     async (part: Part, disabled: boolean) => {
       if (disabled) handleDelete(part.item_id);
+      else {
+        part.disabled = false;
+        await updatePart.mutateAsync(part);
+      }
     },
-    [handleDelete],
+    [handleDelete, updatePart],
   );
 
   const bulkAdjustStock = useCallback(
@@ -393,7 +409,7 @@ const ItemsTable: React.FC = () => {
         colId: "stockAdjust",
         flex: 0.5,
         sortable: false,
-        suppressMenu: true,
+        suppressHeaderMenuButton: true,
         cellRenderer: (params: ICellRendererParams<Part>) => {
           const part = params.data!;
           return (
@@ -624,19 +640,19 @@ const ItemsTable: React.FC = () => {
         <Stack direction="row" spacing={2} justifyContent="flex-end">
           <Button
             variant="outlined"
+            startIcon={<RestartAlt />}
+            onClick={handleReloadItems}
+            disabled={itemsLoading}
+          >
+            Reload Items
+          </Button>
+          <Button
+            variant="outlined"
             startIcon={<Download />}
             onClick={handleExportExcel}
             color="primary"
           >
             Export Excel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={() => {
-              setShowPriceCheckModal(true);
-            }}
-          >
-            Check for Availability
           </Button>
           <PriceCheckModal
             open={showPriceCheckModal}
@@ -712,8 +728,7 @@ const ItemsTable: React.FC = () => {
           columnDefs={columnDefs}
           defaultColDef={{ flex: 1, resizable: false }}
           pagination
-          rowSelection="multiple"
-          rowMultiSelectWithClick
+          rowSelection={{ mode: "multiRow", enableSelectionWithoutKeys: true }}
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
           getRowStyle={({ data }) => {

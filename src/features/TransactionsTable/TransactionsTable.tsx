@@ -2,22 +2,38 @@ import { AgGridReact } from "ag-grid-react"; // React Data Grid Component
 import { themeQuartz } from "ag-grid-community";
 import { useState, useMemo, useRef, useEffect } from "react"; // React State Hook
 import { useQuery } from "@tanstack/react-query";
-import { Button, Select, MenuItem, Stack, TextField, InputAdornment, useMediaQuery, useTheme, Box } from "@mui/material";
+import {
+  Button,
+  Select,
+  MenuItem,
+  Stack,
+  TextField,
+  InputAdornment,
+  useMediaQuery,
+  useTheme,
+  Box,
+} from "@mui/material";
 import { Search } from "@mui/icons-material";
-import type { ColDef, RowClickedEvent, RowSelectionOptions, IRowNode } from "ag-grid-community";
+import type {
+  ColDef,
+  RowClickedEvent,
+  RowSelectionOptions,
+  IRowNode,
+} from "ag-grid-community";
 import CreateTransactionDropdown from "./TransactionTypeDropdown";
 import "./TransactionsTable.css";
-import {
-  Transaction,
-  TransactionSummary,
-} from "../../model";
+import { Transaction, TransactionSummary } from "../../model";
 import { useNavigate } from "react-router-dom";
 import DBModel from "../../model";
 import PriceCheckModal from "../../components/PriceCheckModal";
-import { buildColDefs, handleRowClick } from './TransactionsTable.helpers';
-import { isDaysLess } from './TransactionsTable.utils';
+import { buildColDefs, handleRowClick } from "./TransactionsTable.helpers";
+import { isDaysLess } from "./TransactionsTable.utils";
+import {
+  passesExternalFilter,
+  isExternalFilterPresent as filterIsExternalFilterPresent,
+} from "./TransactionsTable.filter";
 
-import type { IRow } from './TransactionsTable.types';
+import type { IRow } from "./TransactionsTable.types";
 
 const debug: boolean = import.meta.env.VITE_DEBUG;
 
@@ -90,7 +106,10 @@ export function TransactionsTable(): JSX.Element {
   }, [status, data, error, summaryStatus, summaryQueryData, summaryError]);
 
   // Dynamic column definitions based on view type
-  const colDefs = useMemo<ColDef<IRow>[]>(() => buildColDefs(viewType, isMobile), [viewType, isMobile]);
+  const colDefs = useMemo<ColDef<IRow>[]>(
+    () => buildColDefs(viewType, isMobile),
+    [viewType, isMobile],
+  );
 
   const defaultColDef: ColDef = {
     flex: 1,
@@ -156,86 +175,11 @@ export function TransactionsTable(): JSX.Element {
   };
 
   function isExternalFilterPresent() {
-    return true;
+    return filterIsExternalFilterPresent();
   }
 
   function doesExternalFilterPass(node: IRowNode) {
-    const transaction = node.data.Transaction as Transaction;
-    const isRetrospec =
-      transaction.transaction_type != null &&
-      transaction.transaction_type.toLowerCase() === "retrospec";
-
-    const matchesView =
-      (viewType === "retrospec" &&
-        isRetrospec &&
-        transaction?.is_paid === false) ||
-      (viewType === "pickup" &&
-        transaction?.is_paid === false &&
-        transaction?.is_completed === true &&
-        transaction?.is_refurb === false &&
-        transaction.transaction_type != null &&
-        !isRetrospec &&
-        !isDaysLess(
-          183,
-          new Date(transaction.date_created ?? ""),
-          new Date(),
-        )) ||
-      (viewType === "paid" && transaction?.is_paid === true) ||
-      (viewType === "completed" && transaction?.is_completed === true) ||
-      (viewType === "main" &&
-        // Include regular non-retrospec transactions that are incomplete
-        ((transaction?.is_completed === false &&
-          transaction.transaction_type != null &&
-          !isRetrospec &&
-          (transaction?.is_employee === false ||
-            (transaction?.is_employee === true &&
-              transaction?.is_beer_bike === true)) &&
-          transaction?.is_refurb === false) ||
-          // Include retrospec transactions that are actively being built (is_refurb = true)
-          (isRetrospec &&
-            transaction?.is_refurb === true &&
-            !transaction?.is_completed &&
-            !transaction?.is_waiting_on_email))) ||
-      (viewType === "employee" &&
-        transaction?.is_employee === true &&
-        transaction?.is_completed === false &&
-        transaction?.is_beer_bike === false &&
-        transaction.transaction_type != null &&
-        !isRetrospec &&
-        transaction?.is_refurb === false) ||
-      (viewType === "refurb" &&
-        transaction?.is_refurb === true &&
-        transaction?.is_paid === false &&
-        transaction?.is_completed === false &&
-        transaction.transaction_type != null &&
-        !isRetrospec) ||
-      (viewType === "beer bike" &&
-        transaction?.is_beer_bike === true &&
-        !isDaysLess(
-          364,
-          new Date(transaction?.date_created ?? ""),
-          new Date(),
-        ));
-
-    if (!matchesView) return false;
-
-    // Apply search filter only for "completed" view
-    if (viewType === "completed" && searchText.trim() !== "") {
-      const searchLower = searchText.toLowerCase();
-      const transactionNum = transaction?.transaction_id?.toString() || "";
-      const customerName = (node.data.Customer?.name || "").toLowerCase();
-      const email = (node.data.Customer?.email || "").toLowerCase();
-      const phone = (node.data.Customer?.phone || "").toLowerCase();
-
-      return (
-        transactionNum.includes(searchLower) ||
-        customerName.includes(searchLower) ||
-        email.includes(searchLower) ||
-        phone.includes(searchLower)
-      );
-    }
-
-    return true;
+    return passesExternalFilter(node, viewType, searchText);
   }
 
   function sortByTransactionNumDesc() {
@@ -397,7 +341,7 @@ export function TransactionsTable(): JSX.Element {
                   bgcolor: "#0b5cff",
                   color: "#ffffff",
                   borderRadius: 1,
-                  '&:hover': { bgcolor: '#084bd9' },
+                  "&:hover": { bgcolor: "#084bd9" },
                   fontSize: { xs: "0.75rem", md: "0.875rem" },
                 }}
               >
@@ -415,7 +359,7 @@ export function TransactionsTable(): JSX.Element {
                     bgcolor: "#07d1c3",
                     color: "#000000",
                     borderRadius: 1,
-                    '&:hover': { bgcolor: '#06bfb0' },
+                    "&:hover": { bgcolor: "#06bfb0" },
                     fontSize: { xs: "0.75rem", md: "0.875rem" },
                   }}
                 >
@@ -433,7 +377,7 @@ export function TransactionsTable(): JSX.Element {
                   whiteSpace: "nowrap",
                   bgcolor: "#1b9e3a",
                   color: "#ffffff",
-                  '&:hover': { bgcolor: '#177e31' },
+                  "&:hover": { bgcolor: "#177e31" },
                   fontSize: { xs: "0.75rem", md: "0.875rem" },
                 }}
               >
@@ -481,9 +425,9 @@ export function TransactionsTable(): JSX.Element {
             }}
           >
             {colDefs &&
-              Array.isArray(colDefs) &&
-              colDefs.length > 0 &&
-              colDefs.every((col) => col && typeof col === "object") ? (
+            Array.isArray(colDefs) &&
+            colDefs.length > 0 &&
+            colDefs.every((col) => col && typeof col === "object") ? (
               <AgGridReact
                 key={`ag-grid-${viewType}`}
                 ref={gridApiRef}
@@ -532,7 +476,7 @@ export function TransactionsTable(): JSX.Element {
                       transaction.is_completed === true &&
                       transaction.is_refurb === false &&
                       transaction.transaction_type.toLowerCase() !==
-                      "retrospec") ||
+                        "retrospec") ||
                       (transaction.is_beer_bike === true &&
                         transaction.is_completed === true &&
                         transaction.is_paid === false))
