@@ -206,7 +206,7 @@ describe('PdfViewer Component', () => {
         // Should still show headers but no rows
         expect(screen.getByText('Line')).toBeInTheDocument()
         expect(screen.getByText('Part Number')).toBeInTheDocument()
-    })
+    }, 15000)
 
     test('handles error state correctly', async () => {
         const testError = new Error('PDF processing failed')

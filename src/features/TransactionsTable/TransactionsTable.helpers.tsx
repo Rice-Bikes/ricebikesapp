@@ -75,7 +75,7 @@ export function buildColDefs(
         };
       },
       cellRenderer: (params: ICellRendererParams) => {
-        const { transaction_type, isBeerBike } = params.value as {
+        const { transaction_type } = params.value as {
           transaction_type?: string;
           isBeerBike?: boolean;
         };
@@ -98,16 +98,6 @@ export function buildColDefs(
                 },
               }}
             >
-              {isBeerBike && (
-                <SportsBarIcon
-                  sx={{
-                    color: "#07d1c3",
-                    fontWeight: 600,
-                    borderRadius: 1,
-                    height: 28,
-                  }}
-                />
-              )}
               {transaction_type?.toLowerCase() === "inpatient" && (
                 <Chip
                   label="Inpatient"

@@ -202,4 +202,152 @@ describe("TransactionActions", () => {
     expect(spies.setIsCompleted).toHaveBeenCalledWith(false);
     expect(spies.setPaid).toHaveBeenCalledWith(false);
   });
+
+  it("toggles waiting on parts and project type flags", () => {
+    render(
+      <TransactionActions
+        transactionData={baseTransaction}
+        transaction_id={"123"}
+        user={null}
+        totalPrice={10}
+        isCompleted={false}
+        isEmployee={false}
+        beerBike={false}
+        waitPart={false}
+        waitEmail={false}
+        priority={false}
+        nuclear={false}
+        refurb={false}
+        showCheckout={false}
+        showWaitingParts={false}
+        repairDetails={[]}
+        itemDetails={[]}
+        parts={[]}
+        totalRef={React.createRef<HTMLDivElement>()}
+        {...spies}
+      />,
+      { wrapper: AllTheProviders },
+    );
+
+    fireEvent.click(screen.getByText("Wait on Part"));
+    expect(spies.setShowWaitingParts).toHaveBeenCalledWith(true);
+
+    fireEvent.click(screen.getByText("Project Type"));
+    fireEvent.click(screen.getByText("Refurb"));
+    expect(spies.setIsRefurb).toHaveBeenCalledWith(true);
+
+    fireEvent.click(screen.getByText("Project Type"));
+    fireEvent.click(screen.getByText("Beer Bike"));
+    expect(spies.setBeerBike).toHaveBeenCalledWith(true);
+  });
+
+  it("triggers completion dropdown actions when transaction is incomplete", async () => {
+    const blockCompletionSpy = vi.fn().mockReturnValue(false);
+    const handleMarkDone = vi.fn();
+
+    render(
+      <TransactionActions
+        transactionData={baseTransaction}
+        transaction_id={"123"}
+        user={null}
+        totalPrice={10}
+        isCompleted={false}
+        isEmployee={false}
+        beerBike={false}
+        waitPart={false}
+        waitEmail={false}
+        priority={false}
+        nuclear={false}
+        refurb={false}
+        showCheckout={false}
+        showWaitingParts={false}
+        repairDetails={[]}
+        itemDetails={[]}
+        parts={[]}
+        totalRef={React.createRef<HTMLDivElement>()}
+        {...spies}
+        handleMarkDone={handleMarkDone}
+        blockCompletion={blockCompletionSpy}
+      />,
+      { wrapper: AllTheProviders },
+    );
+
+    const dropdownButtons = screen.getAllByLabelText("select merge strategy");
+    const completeButton = dropdownButtons.find((btn) =>
+      btn.textContent?.includes("Complete Transaction"),
+    );
+    expect(completeButton).toBeDefined();
+    fireEvent.click(completeButton!);
+    fireEvent.click(await screen.findByText("Send Email"));
+    expect(handleMarkDone).toHaveBeenCalledWith(true);
+
+    fireEvent.click(completeButton!);
+    fireEvent.click(await screen.findByText("Complete w/out Email"));
+    expect(handleMarkDone).toHaveBeenCalledWith(false);
+    expect(blockCompletionSpy).toHaveBeenCalled();
+  });
+
+  it("toggles wait email off and nuclear off when already set", async () => {
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    const { rerender } = render(
+      <TransactionActions
+        transactionData={baseTransaction}
+        transaction_id={"123"}
+        user={null}
+        totalPrice={10}
+        isCompleted={false}
+        isEmployee={false}
+        beerBike={false}
+        waitPart={false}
+        waitEmail={true}
+        priority={false}
+        nuclear={false}
+        refurb={false}
+        showCheckout={false}
+        showWaitingParts={false}
+        repairDetails={[]}
+        itemDetails={[]}
+        parts={[]}
+        totalRef={React.createRef<HTMLDivElement>()}
+        {...spies}
+      />,
+      { wrapper: AllTheProviders },
+    );
+
+    fireEvent.click(screen.getByText("Wait on Email"));
+    expect(spies.setWaitEmail).toHaveBeenCalledWith(false);
+    await waitFor(() => expect(invalidateSpy).toHaveBeenCalled());
+
+    rerender(
+      <TransactionActions
+        transactionData={baseTransaction}
+        transaction_id={"123"}
+        user={null}
+        totalPrice={10}
+        isCompleted={false}
+        isEmployee={false}
+        beerBike={false}
+        waitPart={false}
+        waitEmail={false}
+        priority={false}
+        nuclear={true}
+        refurb={false}
+        showCheckout={false}
+        showWaitingParts={false}
+        repairDetails={[]}
+        itemDetails={[]}
+        parts={[]}
+        totalRef={React.createRef<HTMLDivElement>()}
+        {...spies}
+      />,
+    );
+
+    // nuclear true renders only the icon, so target the button by role and index
+    const buttons = screen.getAllByRole("button");
+    const nuclearButton = buttons.find((btn) => btn.querySelector(".fa-radiation"));
+    expect(nuclearButton).toBeDefined();
+    fireEvent.click(nuclearButton!);
+    expect(spies.setNuclear).toHaveBeenCalledWith(false);
+  });
 });

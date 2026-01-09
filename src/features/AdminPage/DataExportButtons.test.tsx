@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
@@ -9,18 +10,27 @@ vi.mock("@mui/x-date-pickers", () => ({
     label?: string;
     value?: Date | string | null;
     onChange?: (v: Date | null) => void;
-  }) => (
-    <input
-      aria-label={props.label}
-      value={props.value ? props.value.toString() : ""}
-      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-        props.onChange?.(new Date(e.target.value))
-      }
-    />
-  ),
+  }) => {
+    const [val, setVal] = useState(props.value ? props.value.toString() : "");
+
+    useEffect(() => {
+      setVal(props.value ? props.value.toString() : "");
+    }, [props.value]);
+
+    return (
+      <input
+        aria-label={props.label}
+        value={val}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          setVal(e.target.value);
+          props.onChange?.(new Date(e.target.value));
+        }}
+      />
+    );
+  },
 }));
 vi.mock("@mui/x-date-pickers/AdapterDateFns", () => ({
-  AdapterDateFns: function Adapter() {},
+  AdapterDateFns: function Adapter() { },
 }));
 
 import DataExportButtons from "./DataExportButtons";
@@ -77,7 +87,7 @@ describe("DataExportButtons", () => {
     // spy on URL.createObjectURL to avoid dealing with real blobs and capture the created URL
     // also mock window.alert so a thrown error in downloadFile doesn't crash the test
     // (JSDOM doesn't implement alert by default)
-    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => { });
     // use helper utilities for download testing
     const createObjectURLSpy = mockCreateObjectURL("blob:fake-url");
     const append = spyOnAppendChild();
@@ -131,13 +141,72 @@ describe("DataExportButtons", () => {
       .fn()
       .mockResolvedValue(fakeRes) as unknown as typeof global.fetch;
     global.fetch = fetchMock;
-    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => { });
 
     render(<DataExportButtons />, { wrapper: AllTheProviders });
 
     fireEvent.click(screen.getByText("Download Bike Inventory (Excel)"));
 
     await waitFor(() => expect(alertSpy).toHaveBeenCalled());
+    alertSpy.mockRestore();
+  });
+
+  it("updates filters via inputs and clears them", async () => {
+    render(<DataExportButtons />, { wrapper: AllTheProviders });
+
+    const startInput = screen.getByRole("textbox", { name: "Start Date" }) as HTMLInputElement;
+    const endInput = screen.getByRole("textbox", { name: "End Date" }) as HTMLInputElement;
+
+    fireEvent.change(startInput, { target: { value: "2024-01-01" } });
+    fireEvent.change(endInput, { target: { value: "2024-01-10" } });
+
+    await waitFor(() => {
+      expect(startInput.value).not.toBe("");
+      expect(endInput.value).not.toBe("");
+    });
+
+    fireEvent.click(screen.getByText("Clear filters"));
+
+    await waitFor(() => {
+      expect(startInput.value).toBe("");
+      expect(endInput.value).toBe("");
+    });
+  });
+
+  it("applies select filters before download", async () => {
+    const fakeBlob = new Blob(["fake"], { type: "text/csv" });
+    const headersMock = new Headers({ "Content-Type": "text/csv" });
+    const fakeRes = {
+      ok: true,
+      headers: headersMock,
+      blob: async () => fakeBlob,
+      text: async () => JSON.stringify({ message: "" }),
+      json: async () => ({ message: "" }),
+    } as unknown as Response;
+    const fetchMock = vi.fn().mockResolvedValue(fakeRes) as unknown as typeof global.fetch;
+    global.fetch = fetchMock;
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => { });
+
+    const createObjectURLSpy = mockCreateObjectURL("blob:fake-url");
+    const append = spyOnAppendChild();
+
+    render(<DataExportButtons />, { wrapper: AllTheProviders });
+
+    fireEvent.mouseDown(screen.getByLabelText("Include Refurb"));
+    fireEvent.click(await screen.findByText("Exclude Refurb"));
+
+    fireEvent.mouseDown(screen.getByLabelText("Paid?"));
+    fireEvent.click(await screen.findByText("Yes"));
+
+    fireEvent.click(screen.getByText("Download Repair Summary Report"));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const url = (fetchMock as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(url).toContain("includeRefurb=false");
+    expect(url).toContain("isPaid=true");
+
+    createObjectURLSpy.mockRestore();
+    append.restore();
     alertSpy.mockRestore();
   });
 });

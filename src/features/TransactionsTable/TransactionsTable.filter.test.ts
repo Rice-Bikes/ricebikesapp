@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { passesExternalFilter } from './TransactionsTable.filter';
+import { passesExternalFilter, isExternalFilterPresent } from './TransactionsTable.filter';
 import type { IRowNode } from 'ag-grid-community';
 
 describe('passesExternalFilter helper', () => {
@@ -166,5 +166,9 @@ describe('passesExternalFilter helper', () => {
       },
     } as unknown as IRowNode;
     expect(passesExternalFilter(nodeRecent, 'beer bike', '')).toBe(false);
+  });
+
+  it('reports that an external filter is present', () => {
+    expect(isExternalFilterPresent()).toBe(true);
   });
 });

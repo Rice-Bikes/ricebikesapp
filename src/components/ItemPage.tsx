@@ -204,8 +204,13 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({
           },
         }}
       >
-        <DialogTitle id="item-dialog-title" sx={{ pb: 0 }}>
-          <Typography variant="h5" align="center" sx={{ fontWeight: 600 }}>
+        <DialogTitle id="item-dialog-title" sx={{ pb: 0 }} component="div">
+          <Typography
+            variant="h5"
+            component="h2"
+            align="center"
+            sx={{ fontWeight: 600 }}
+          >
             Item Details
           </Typography>
         </DialogTitle>
@@ -220,19 +225,19 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({
               <CircularProgress size={32} />
             </Stack>
           ) : edit ? (
-            <form onSubmit={handleSubmit} autoComplete="off">
+            <form onSubmit={handleSubmit} autoComplete="off" noValidate>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
                   <TextField
                     name="name"
-                    label="Name"
+                    label="Item Name"
                     required
                     error={hasBeenSubmitted && !form.name}
                     value={form.name}
                     onChange={handleFormChange}
                     fullWidth
                     autoFocus
-                    aria-label="Item Name"
+                    inputProps={{ "aria-label": "Item Name" }}
                     variant="outlined"
                     size="medium"
                     helperText={
@@ -318,7 +323,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({
                 <Grid item xs={12} sm={6}>
                   <TextField
                     name="standard_price"
-                    label="Price"
+                    label="Standard Price"
                     type="number"
                     inputProps={{ step: 0.01 }}
                     error={
@@ -333,7 +338,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({
                     size="medium"
                     helperText={
                       hasBeenSubmitted &&
-                      Number.parseFloat(form.standard_price) === 0
+                        Number.parseFloat(form.standard_price) === 0
                         ? "Price is required"
                         : ""
                     }
@@ -357,7 +362,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({
                     size="medium"
                     helperText={
                       hasBeenSubmitted &&
-                      Number.parseFloat(form.wholesale_cost) === 0
+                        Number.parseFloat(form.wholesale_cost) === 0
                         ? "Wholesale cost is required"
                         : ""
                     }
@@ -386,7 +391,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({
                 <Grid item xs={12} sm={6}>
                   <TextField
                     name="minimum_stock"
-                    label="Min Stock"
+                    label="Minimum Stock"
                     type="number"
                     required
                     error={hasBeenSubmitted && form.minimum_stock < 0}

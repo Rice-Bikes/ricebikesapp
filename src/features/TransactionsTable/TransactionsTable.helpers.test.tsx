@@ -3,9 +3,16 @@ import * as BikeSales from "./BikeSalesColumns";
 import {
   buildColDefs,
   getTransactionRowUrl,
+  timeAgo,
+  checkStatusOfRetrospec,
+  handleRowClick,
 } from "./TransactionsTable.helpers";
 import type { ColDef } from "ag-grid-community";
 import type { Transaction } from "../../model";
+import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+import PanToolIcon from "@mui/icons-material/PanTool";
+import ConstructionIcon from "@mui/icons-material/Construction";
+import { mockCustomer, mockTransaction } from "../../test-constants";
 
 describe("TransactionsTable helpers", () => {
   afterEach(() => {
@@ -53,5 +60,40 @@ describe("TransactionsTable helpers", () => {
       transaction_type: "inpatient",
     } as Partial<Transaction> as Transaction;
     expect(getTransactionRowUrl(t2)).toContain("/transaction-details/234");
+  });
+
+  it("timeAgo handles sub-minute durations", () => {
+    const now = new Date();
+    const justNow = new Date(now.getTime() - 15 * 1000);
+    const label = timeAgo(justNow);
+    expect(label).toContain("seconds");
+  });
+
+  it("checkStatusOfRetrospec renders correct icon per state", () => {
+    const completed = checkStatusOfRetrospec(false, false, true);
+    const waitingEmail = checkStatusOfRetrospec(false, true, false);
+    const refurb = checkStatusOfRetrospec(true, false, false);
+
+    expect(completed?.type).toBe(MonetizationOnIcon);
+    expect(waitingEmail?.type).toBe(PanToolIcon);
+    expect(refurb?.type).toBe(ConstructionIcon);
+  });
+
+  it("handleRowClick navigates only when transaction exists", () => {
+    const navigate = vi.fn();
+    handleRowClick(navigate, undefined);
+    expect(navigate).not.toHaveBeenCalled();
+
+    const data = {
+      Transaction: {
+        ...mockTransaction,
+        transaction_id: "t-1",
+        transaction_type: "inpatient",
+      },
+      Customer: mockCustomer,
+      OrderRequests: []
+    };
+    handleRowClick(navigate, data);
+    expect(navigate).toHaveBeenCalledWith("/transaction-details/t-1?type=inpatient");
   });
 });

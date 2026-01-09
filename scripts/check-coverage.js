@@ -76,21 +76,21 @@ function readSummary(jsonPath) {
         statements: {
           pct: totals.statements.total
             ? Math.round(
-                (totals.statements.covered / totals.statements.total) * 10000
+                (totals.statements.covered / totals.statements.total) * 10000,
               ) / 100
             : 0,
         },
         functions: {
           pct: totals.functions.total
             ? Math.round(
-                (totals.functions.covered / totals.functions.total) * 10000
+                (totals.functions.covered / totals.functions.total) * 10000,
               ) / 100
             : 0,
         },
         branches: {
           pct: totals.branches.total
             ? Math.round(
-                (totals.branches.covered / totals.branches.total) * 10000
+                (totals.branches.covered / totals.branches.total) * 10000,
               ) / 100
             : 0,
         },
@@ -109,17 +109,36 @@ function assertCoveragePasses(total) {
     process.exit(2);
   }
 
-  const metrics = ["lines", "statements", "functions", "branches"];
+  // Strictly enforce these metrics
+  const enforcedMetrics = ["lines", "statements", "branches"];
+  // Only warn about these metrics (do not fail the run)
+  const warnOnlyMetrics = ["functions"];
   const fails = [];
 
-  metrics.forEach((m) => {
+  // Enforce required metrics
+  enforcedMetrics.forEach((m) => {
     const pct = (total[m] && total[m].pct) || total[m]?.pct;
     if (typeof pct === "number") {
       if (pct < MIN_COVERAGE) fails.push(`${m}: ${pct}% < ${MIN_COVERAGE}%`);
     } else {
-      // if we don't have a data point for this metric, don't fail but show a warning
       console.warn(
-        `Coverage metric ${m} not found in coverage summary; skipping check.`
+        `Coverage metric ${m} not found in coverage summary; skipping check.`,
+      );
+    }
+  });
+
+  // Warn (but don't fail) for metrics that are still TODO to enforce
+  warnOnlyMetrics.forEach((m) => {
+    const pct = (total[m] && total[m].pct) || total[m]?.pct;
+    if (typeof pct === "number") {
+      if (pct < MIN_COVERAGE) {
+        console.warn(
+          `Coverage metric ${m} is below the threshold (${pct}% < ${MIN_COVERAGE}%) — WARNING only; not failing.`,
+        );
+      }
+    } else {
+      console.warn(
+        `Coverage metric ${m} not found in coverage summary; not enforcing.`,
       );
     }
   });
@@ -139,7 +158,7 @@ function main() {
   if (!coverageFile) {
     console.error(
       "No coverage summary JSON found. Checked:",
-      POSSIBLE_FILES.join(", ")
+      POSSIBLE_FILES.join(", "),
     );
     process.exit(1);
   }

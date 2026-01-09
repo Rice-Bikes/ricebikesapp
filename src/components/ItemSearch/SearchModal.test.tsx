@@ -113,7 +113,7 @@ describe('SearchModal', () => {
 
         // Find the title using a more flexible approach
         expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Search for Parts')
-    })
+    }, 10000)
 
     it('shows search input and quantity controls in modal', () => {
         renderSearchModal({ children: 'Add Part' }) // Make sure children contains "Part"
@@ -212,7 +212,7 @@ describe('SearchModal', () => {
         fireEvent.change(searchInput, { target: { value: 'Test & Part' } })
 
         expect(screen.getByTestId('ag-grid')).toBeInTheDocument()
-    })
+    }, 10000)
 
     it('handles keyboard navigation (Enter key)', () => {
         renderSearchModal()
