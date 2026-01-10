@@ -349,11 +349,8 @@ const WhiteboardPage: React.FC = () => {
   };
 
   return (
-    <Container>
-      <Typography variant="h4" gutterBottom>
-        Order Requests
-      </Typography>
-      <Grid2 container alignItems="center">
+    <Container sx={{ mt: 3 }}>
+      <Grid2 container alignItems="center" spacing={2}>
         <Grid2 size={5}>
           <OrderModal />
         </Grid2>
@@ -420,7 +417,6 @@ const WhiteboardPage: React.FC = () => {
             <Typography variant="h6">Customer Orders</Typography>
             <div style={{ height: 400, width: "100%" }}>
               <AgGridReact
-                // onGridReady={onGridReady}
                 rowData={
                   orderRequestData.filter(
                     (order: OrderRequest) => order.User?.firstname !== "SYSTEM",

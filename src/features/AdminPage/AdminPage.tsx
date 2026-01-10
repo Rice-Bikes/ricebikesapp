@@ -66,7 +66,7 @@ const AdminPage: React.FC = () => {
   }
   return (
     <div
-      style={{ padding: "0 5vw", paddingBottom: "100px", paddingTop: "30px" }}
+      style={{ padding: "0 10vw", paddingBottom: "100px", paddingTop: "30px" }}
     >
       <AdminFeatureFlags />
       <DataExportButtons />

@@ -1,6 +1,6 @@
 import { ColDef, ICellRendererParams } from "ag-grid-community";
 import { Chip, Stack, Typography } from "@mui/material";
-import { IRow } from "../TransactionsTable/TransactionsTable";
+import type { IRow } from "./TransactionsTable.types";
 
 // Column definitions specifically for Bike Sales transactions
 export const getBikeSalesColumnDefs = (): ColDef<IRow>[] => [
@@ -147,7 +147,7 @@ export const getBikeSalesColumnDefs = (): ColDef<IRow>[] => [
 
       const now = new Date();
       const diffTime = now.getTime() - date.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
       if (diffDays === 0) return "Today";
       if (diffDays === 1) return "Yesterday";

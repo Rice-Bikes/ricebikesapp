@@ -60,12 +60,35 @@ export function generateReceiptHTML(params: ReceiptParams): string {
 }
 
 /**
- * Copies HTML content to clipboard in a way that works with Gmail
- * Uses the old-school execCommand method which Gmail recognizes
+ * Copies HTML content to the clipboard using the modern async Clipboard API when possible,
+ * falling back to the legacy execCommand approach for environments (notably Gmail) that still
+ * rely on it. The fallback is retained because Gmail aggressively strips formatting copied with
+ * writeText, but execCommand remains functional there despite being deprecated in most browsers.
  */
-export function copyHTMLToClipboard(html: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    // Create a temporary element
+export async function copyHTMLToClipboard(html: string): Promise<void> {
+  const clipboard = navigator.clipboard;
+
+  if (clipboard?.write && typeof ClipboardItem !== "undefined") {
+      const item = new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([html], { type: "text/plain" }),
+      });
+      await clipboard.write([item]);
+      return;
+    
+  }
+
+  if (clipboard?.writeText) {
+      await clipboard.writeText(html);
+      return;
+
+  }
+
+  if (typeof document.execCommand !== "function") {
+    throw new Error("Clipboard API is unavailable");
+  }
+
+  await new Promise<void>((resolve, reject) => {
     const tempDiv = document.createElement("div");
     tempDiv.style.position = "fixed";
     tempDiv.style.left = "-9999px";
@@ -74,7 +97,6 @@ export function copyHTMLToClipboard(html: string): Promise<void> {
 
     document.body.appendChild(tempDiv);
 
-    // Select the content
     const range = document.createRange();
     range.selectNodeContents(tempDiv);
     const selection = window.getSelection();
@@ -82,17 +104,14 @@ export function copyHTMLToClipboard(html: string): Promise<void> {
     selection?.addRange(range);
 
     try {
-      // Copy using execCommand (works better with Gmail)
-      const successful = document.execCommand("copy");
-      if (successful) {
+      if (document.execCommand("copy")) {
         resolve();
       } else {
         reject(new Error("Copy command failed"));
       }
-    } catch (err) {
-      reject(err);
+    } catch (error) {
+      reject(error instanceof Error ? error : new Error("Copy command failed"));
     } finally {
-      // Clean up
       selection?.removeAllRanges();
       document.body.removeChild(tempDiv);
     }

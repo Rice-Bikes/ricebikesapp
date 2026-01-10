@@ -5,6 +5,7 @@ import CreateTransactionDropdown from "./TransactionTypeDropdown";
 import DBModel from "../../model";
 import { AllTheProviders } from "../../test-utils";
 import { useNavigate } from "react-router-dom";
+import { mockCustomer, mockTransaction } from "../../test-constants";
 
 // Mock dependencies
 vi.mock("react-router-dom", async () => {
@@ -20,9 +21,15 @@ vi.mock("react-router-dom", async () => {
 
 vi.mock("../../model", () => ({
   default: {
+    createCustomer: vi.fn(),
+    postTransaction: vi.fn(),
     postTransactionLog: vi.fn(),
   },
 }));
+
+const createCustomerMock = vi.mocked(DBModel.createCustomer);
+const postTransactionMock = vi.mocked(DBModel.postTransaction);
+const postTransactionLogMock = vi.mocked(DBModel.postTransactionLog);
 
 // Mock the NewTransactionForm component
 vi.mock("./CustomerForm", () => ({
@@ -79,6 +86,9 @@ describe("CreateTransactionDropdown Component", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    createCustomerMock.mockReset();
+    postTransactionMock.mockReset();
+    postTransactionLogMock.mockReset();
     vi.mocked(useNavigate).mockReturnValue(mockNavigate);
   });
 
@@ -156,6 +166,61 @@ describe("CreateTransactionDropdown Component", () => {
     // Check if navigation occurred
     expect(mockNavigate).toHaveBeenCalledWith(
       "/transaction-details/new-transaction-123?type=Inpatient",
+    );
+  });
+
+  test("creates Retrospec transaction directly and navigates to bike workflow", async () => {
+    createCustomerMock.mockResolvedValue({ ...mockCustomer, customer_id: "cust-1" });
+    postTransactionMock.mockResolvedValue({
+      ...mockTransaction,
+      transaction_id: "bike-123",
+      transaction_num: 789,
+      transaction_type: "Retrospec",
+    });
+
+    render(<CreateTransactionDropdown />, {
+      wrapper: AllTheProviders,
+    });
+
+    fireEvent.click(screen.getByText("+ Add new transaction"));
+    fireEvent.click(screen.getByText("Retrospec"));
+
+    await waitFor(() => expect(createCustomerMock).toHaveBeenCalled());
+    expect(postTransactionMock).toHaveBeenCalledWith({
+      transaction_type: "Retrospec",
+      customer_id: "cust-1",
+      is_employee: false,
+    });
+
+    await waitFor(() =>
+      expect(postTransactionLogMock).toHaveBeenCalledWith(
+        789,
+        expect.any(String),
+        "Retrospec",
+        "initiated bike sales workflow",
+      ),
+    );
+
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith("/bike-transaction/bike-123"),
+    );
+    expect(
+      screen.queryByTestId("new-transaction-form"),
+    ).not.toBeInTheDocument();
+  });
+
+  test("falls back to showing form when Retrospec creation fails", async () => {
+    createCustomerMock.mockRejectedValue(new Error("network fail"));
+
+    render(<CreateTransactionDropdown />, {
+      wrapper: AllTheProviders,
+    });
+
+    fireEvent.click(screen.getByText("+ Add new transaction"));
+    fireEvent.click(screen.getByText("Retrospec"));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("new-transaction-form")).toBeInTheDocument(),
     );
   });
 
