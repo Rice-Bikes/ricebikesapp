@@ -350,4 +350,38 @@ describe("TransactionActions", () => {
     fireEvent.click(nuclearButton!);
     expect(spies.setNuclear).toHaveBeenCalledWith(false);
   });
+
+  it("toggles priority flag from true to false", async () => {
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+    render(
+      <TransactionActions
+        transactionData={baseTransaction}
+        transaction_id={"123"}
+        user={null}
+        totalPrice={10}
+        isCompleted={false}
+        isEmployee={false}
+        beerBike={false}
+        waitPart={false}
+        waitEmail={false}
+        priority={true}
+        nuclear={false}
+        refurb={false}
+        showCheckout={false}
+        showWaitingParts={false}
+        repairDetails={[]}
+        itemDetails={[]}
+        parts={[]}
+        totalRef={React.createRef<HTMLDivElement>()}
+        {...spies}
+      />,
+      { wrapper: AllTheProviders },
+    );
+
+    const icon = screen.getByTestId("ErrorSharpIcon");
+    const iconBtn = icon.closest("button");
+    fireEvent.click(iconBtn!);
+    expect(spies.setPriority).toHaveBeenCalledWith(false);
+    await waitFor(() => expect(invalidateSpy).toHaveBeenCalled());
+  });
 });

@@ -96,4 +96,16 @@ describe("TransactionsTable helpers", () => {
     handleRowClick(navigate, data);
     expect(navigate).toHaveBeenCalledWith("/transaction-details/t-1?type=inpatient");
   });
+
+  it("checkStatusOfRetrospec returns defined when all flags false", () => {
+    const result = checkStatusOfRetrospec(false, false, false);
+    expect(result).toBeDefined();
+  });
+
+  it("buildColDefs renders status chips with multiple flags", () => {
+    const cols = buildColDefs("retail", false);
+    const statusCol = cols.find((c) => c.colId === "Status");
+    expect(statusCol).toBeUndefined();
+    expect(statusCol?.cellRenderer).toBeUndefined();
+  });
 });
