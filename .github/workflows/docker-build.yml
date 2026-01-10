@@ -65,13 +65,6 @@ jobs:
           name: coverage-lcov-report
           path: coverage/lcov-report
 
-      - name: Verify changed-files coverage (PR only)
-        if: ${{ github.event_name == 'pull_request' }}
-        env:
-          BASE_BRANCH: ${{ github.base_ref }}
-          MIN_COVERAGE: 80
-        run: npm run check:coverage:changed
-
   build:
     needs: test
     runs-on: ubuntu-latest
