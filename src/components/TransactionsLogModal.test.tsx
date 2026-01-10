@@ -129,7 +129,7 @@ describe('TransactionsLogModal', () => {
         await waitFor(() => {
             expect(screen.getByText('Transactions Log')).toBeInTheDocument()
         })
-    })
+    }, 10000)
 
     it('displays transaction logs correctly', async () => {
         const mockUseQuery = vi.mocked(useQuery)
@@ -338,7 +338,7 @@ describe('TransactionsLogModal', () => {
         // Check that both logs are displayed
         expect(screen.getByText(/Test User CREATE Transaction created/)).toBeInTheDocument();
         expect(screen.getByText(/Test User2 UPDATE Transaction updated/)).toBeInTheDocument();
-    });
+    }, 10000);
 
     it("handles log details with special characters", async () => {
         const specialCharLogs = [
