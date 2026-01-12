@@ -15,6 +15,7 @@ import type {
   RepairDetails,
   ItemDetails,
   Customer,
+  Bike,
 } from "../../model";
 
 // Query Client
@@ -53,8 +54,6 @@ const debug: boolean = import.meta.env.VITE_DEBUG;
 
 const TransactionDetail = () => {
   // ===================================
-  // 1. ROUTING & USER
-  // ===================================
   const { transaction_id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const nav = useNavigate();
@@ -64,9 +63,6 @@ const TransactionDetail = () => {
     throw new Error("Transaction ID not provided");
   }
 
-  // ===================================
-  // 2. DATA FETCHING (Hook)
-  // ===================================
   const {
     parts,
     partsLoading,
@@ -129,6 +125,7 @@ const TransactionDetail = () => {
   const {
     sendCheckoutEmail,
     sendReceiptEmail,
+    updateTransaction,
     addRepair,
     deleteRepair,
     completeRepair,
@@ -221,6 +218,20 @@ const TransactionDetail = () => {
     setPriority(false);
     setShowCheckout(false);
 
+    // Persist is_paid to database
+    if (transactionData) {
+      updateTransaction.mutate({
+        transaction_id,
+        transaction: {
+          ...transactionData,
+          is_paid: true,
+          is_waiting_on_email: false,
+          is_nuclear: false,
+          is_urgent: false,
+        },
+      });
+    }
+
     queryClient.invalidateQueries({
       queryKey: ["transaction", transaction_id],
     });
@@ -248,6 +259,18 @@ const TransactionDetail = () => {
       // Transaction log handled in mutation hook
     }
 
+    // Persist is_completed and date_completed to database
+    if (transactionData) {
+      updateTransaction.mutate({
+        transaction_id,
+        transaction: {
+          ...transactionData,
+          is_completed: true,
+          date_completed: new Date().toISOString(),
+        },
+      });
+    }
+
     queryClient.invalidateQueries({
       queryKey: ["transaction", transaction_id],
     });
@@ -255,24 +278,51 @@ const TransactionDetail = () => {
   };
 
   const handleRetrospecStatusChange = (newStatus: string) => {
+    let newRefurb = false;
+    let newWaitEmail = false;
+    let newCompleted = false;
+    let dateCompleted: string | null = null;
+
     switch (newStatus) {
       case "Building":
-        setIsRefurb(true);
+        newRefurb = true;
         break;
       case "Completed":
-        setIsRefurb(false);
-        setWaitEmail(true);
+        newRefurb = false;
+        newWaitEmail = true;
         break;
       case "For Sale":
-        setWaitEmail(false);
-        setIsCompleted(true);
+        newWaitEmail = false;
+        newCompleted = true;
+        dateCompleted = new Date().toISOString();
         break;
       default:
-        setIsCompleted(false);
-        setWaitEmail(false);
-        setIsRefurb(false);
+        newRefurb = false;
+        newWaitEmail = false;
+        newCompleted = false;
         break;
     }
+
+    setIsRefurb(newRefurb);
+    setWaitEmail(newWaitEmail);
+    setIsCompleted(newCompleted);
+
+    // Persist to database
+    if (transactionData) {
+      const updateData = {
+        ...transactionData,
+        is_refurb: newRefurb,
+        is_waiting_on_email: newWaitEmail,
+        is_completed: newCompleted,
+        ...(dateCompleted && { date_completed: dateCompleted }),
+      };
+
+      updateTransaction.mutate({
+        transaction_id,
+        transaction: updateData,
+      });
+    }
+
     queryClient.invalidateQueries({
       queryKey: ["transaction", transaction_id],
     });
@@ -293,8 +343,22 @@ const TransactionDetail = () => {
 
   const handleSaveNotes = (newNotes: string) => {
     if (debug) console.log("new notes: ", newNotes);
-    queryClient.resetQueries({ queryKey: ["transactionLogs", transaction_id] });
     setDescription(newNotes);
+
+    // Persist description to database with all required fields
+    if (transactionData) {
+      updateTransaction.mutate({
+        transaction_id,
+        transaction: {
+          ...transactionData,
+          description: newNotes,
+        },
+      });
+    }
+
+    queryClient.resetQueries({
+      queryKey: ["transactionLogs", transaction_id],
+    });
   };
 
   const handleAddRepair = (event: RowClickedEvent) => {
@@ -328,8 +392,128 @@ const TransactionDetail = () => {
     deletePart.mutate(part);
   };
 
-  const handleBikeCreated = () => {
+  const handleBikeCreated = (createdBike: Bike) => {
+    if (transactionData && createdBike?.bike_id) {
+      updateTransaction.mutate({
+        transaction_id,
+        transaction: {
+          ...transactionData,
+          bike_id: createdBike.bike_id,
+        },
+      });
+    }
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
+  };
+
+  // Wrapper handlers for persisting transaction flags to database
+  const handleWaitEmailToggle = () => {
+    const newWaitEmail = !waitEmail;
+    setWaitEmail(newWaitEmail);
+
+    if (transactionData) {
+      updateTransaction.mutate({
+        transaction_id,
+        transaction: {
+          ...transactionData,
+          is_waiting_on_email: newWaitEmail,
+        },
+      });
+    }
+
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["transactions"],
+    });
+  };
+
+  const handlePriorityToggle = () => {
+    const newPriority = !priority;
+    setPriority(newPriority);
+
+    if (transactionData) {
+      updateTransaction.mutate({
+        transaction_id,
+        transaction: {
+          ...transactionData,
+          is_urgent: newPriority,
+        },
+      });
+    }
+
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["transactions"],
+    });
+  };
+
+  const handleNuclearToggle = () => {
+    const newNuclear = !nuclear;
+    setNuclear(newNuclear);
+
+    if (transactionData) {
+      updateTransaction.mutate({
+        transaction_id,
+        transaction: {
+          ...transactionData,
+          is_nuclear: newNuclear,
+        },
+      });
+    }
+
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["transactions"],
+    });
+  };
+
+  const handleRefurbToggle = () => {
+    const newRefurb = !refurb;
+    setIsRefurb(newRefurb);
+
+    if (transactionData) {
+      updateTransaction.mutate({
+        transaction_id,
+        transaction: {
+          ...transactionData,
+          is_refurb: newRefurb,
+        },
+      });
+    }
+
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["transactions"],
+    });
+  };
+
+  const handleBeerBikeToggle = () => {
+    const newBeerBike = !beerBike;
+    setBeerBike(newBeerBike);
+
+    if (transactionData) {
+      updateTransaction.mutate({
+        transaction_id,
+        transaction: {
+          ...transactionData,
+          is_beer_bike: newBeerBike,
+        },
+      });
+    }
+
+    queryClient.invalidateQueries({
+      queryKey: ["transaction", transaction_id],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["transactions"],
+    });
   };
 
   const handleDeleteTransaction = () => {
@@ -547,11 +731,11 @@ const TransactionDetail = () => {
           setShowCheckout={setShowCheckout}
           setShowWaitingParts={setShowWaitingParts}
           setWaitPart={setWaitPart}
-          setWaitEmail={setWaitEmail}
-          setPriority={setPriority}
-          setNuclear={setNuclear}
-          setIsRefurb={setIsRefurb}
-          setBeerBike={setBeerBike}
+          setWaitEmail={handleWaitEmailToggle}
+          setPriority={handlePriorityToggle}
+          setNuclear={handleNuclearToggle}
+          setIsRefurb={handleRefurbToggle}
+          setBeerBike={handleBeerBikeToggle}
           setIsCompleted={setIsCompleted}
           setPaid={setPaid}
           handlePaid={handlePaid}

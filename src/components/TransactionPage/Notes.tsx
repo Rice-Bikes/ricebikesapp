@@ -17,13 +17,6 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, transaction_num }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedNotes, setEditedNotes] = useState(notes);
   const [originalNotes, setOriginalNotes] = useState(notes);
-  // useEffect(() => {
-  //   if (currentUser !== user && isWaitingForUser) {
-  //     // console.log("setting new user in Notes component", user);
-  //     setCurrentUser(user);
-  //     setIsWaitingForUser(false);
-  //   }
-  // }, [user, isWaitingForUser, currentUser]);
 
   const handleSubmit = () => {
     // setIsWaitingForUser(true);
@@ -36,9 +29,9 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, transaction_num }) => {
       toast.error("User not found. Cannot save notes.");
       return;
     }
-    setEditedNotes(editedNotes + " - " + user.firstname + " " + user.lastname);
+    setEditedNotes(editedNotes + " - " + user.firstname + " " + user.lastname + "\n");
     // // console.log("edited notes in Notes component", editedNotes);
-    onSave(editedNotes + " - " + user.firstname + " " + user.lastname);
+    onSave(editedNotes + " - " + user.firstname + " " + user.lastname + "\n");
     DBModel.postTransactionLog(
       transaction_num,
       user.user_id,
@@ -53,7 +46,7 @@ const Notes: React.FC<NotesProps> = ({ notes, onSave, transaction_num }) => {
   };
 
   const handleOpenToEdit = () => {
-    setEditedNotes(editedNotes === "" ? "" : editedNotes);
+    setEditedNotes(editedNotes.trim() === "" ? "" : editedNotes);
     logout();
     setIsEditing(true);
   };

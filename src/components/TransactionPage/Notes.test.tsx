@@ -67,7 +67,7 @@ describe('Notes component', () => {
         fireEvent.click(screen.getByText('Save Notes'));
 
         // onSave should be called with appended user name
-        expect(onSave).toHaveBeenCalledWith('updated note - Jane Doe');
+        expect(onSave).toHaveBeenCalledWith('updated note - Jane Doe\n');
 
         // DBModel.postTransactionLog should be called (we don't assert exact diff string here)
         expect(DBModel.postTransactionLog).toHaveBeenCalledWith(
