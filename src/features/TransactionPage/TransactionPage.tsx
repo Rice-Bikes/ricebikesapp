@@ -335,6 +335,18 @@ const TransactionDetail = () => {
       return params;
     });
     setTransactionType(newTransactionType);
+
+    // Persist transaction_type to database
+    if (transactionData) {
+      updateTransaction.mutate({
+        transaction_id,
+        transaction: {
+          ...transactionData,
+          transaction_type: newTransactionType,
+        },
+      });
+    }
+
     queryClient.invalidateQueries({
       queryKey: ["transaction", transaction_id],
     });
