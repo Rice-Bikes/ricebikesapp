@@ -82,6 +82,7 @@ const TransactionOptionDropdown: React.FC<TransactionOptionDropdownProps> = ({
           sx={{
             backgroundColor:
               colors[selectedIndex] ?? "gray",
+            px: { xs: 1, md: 1.5 },
           }}
         >
           {selectedStatus}

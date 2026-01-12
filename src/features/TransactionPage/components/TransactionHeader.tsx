@@ -64,9 +64,9 @@ export const TransactionHeader: React.FC<TransactionHeaderProps> = ({
             isAllowed={(index: string) =>
               index === "Retrospec"
                 ? checkUserPermissions(
-                    user ?? null,
-                    "createRetrospecTransaction",
-                  )
+                  user ?? null,
+                  "createRetrospecTransaction",
+                )
                 : true
             }
           />
@@ -97,7 +97,7 @@ export const TransactionHeader: React.FC<TransactionHeaderProps> = ({
               sx={{
                 fontSize: { xs: "0.7rem", md: "0.875rem" },
                 py: { xs: 0.25, md: 0.5 },
-                px: { xs: 0.5, md: 1 },
+                px: { xs: 2.5, md: 3.5 },
               }}
             >
               Beer Bike
@@ -116,7 +116,7 @@ export const TransactionHeader: React.FC<TransactionHeaderProps> = ({
               sx={{
                 fontSize: { xs: "0.7rem", md: "0.875rem" },
                 py: { xs: 0.25, md: 0.5 },
-                px: { xs: 0.5, md: 1 },
+                px: { xs: 2.5, md: 3.5 },
               }}
             >
               Refurb
@@ -134,7 +134,7 @@ export const TransactionHeader: React.FC<TransactionHeaderProps> = ({
               sx={{
                 fontSize: { xs: "0.7rem", md: "0.875rem" },
                 py: { xs: 0.25, md: 0.5 },
-                px: { xs: 0.5, md: 1 },
+                px: { xs: 2.5, md: 3.5 },
               }}
             >
               Employee
@@ -161,8 +161,8 @@ export const TransactionHeader: React.FC<TransactionHeaderProps> = ({
                 user ?? null,
                 "createRetrospecTransaction",
               ))) && (
-            <DeleteTransactionsModal handleConfirm={onDeleteTransaction} />
-          )}
+              <DeleteTransactionsModal handleConfirm={onDeleteTransaction} />
+            )}
         </Grid2>
       </Grid2>
       <Item

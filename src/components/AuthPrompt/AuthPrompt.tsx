@@ -116,7 +116,10 @@ export default function AuthPrompt({
                   : ""
             }
             onKeyDown={(e) => {
-              if (e.key === "Enter") handleSubmit();
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSubmit();
+              }
             }}
             onChange={(e) => setNetIdInput(e.target.value)}
           />

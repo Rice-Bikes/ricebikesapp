@@ -33,7 +33,7 @@ export function passesExternalFilter(
       transaction?.is_refurb === false &&
       transaction.transaction_type != null &&
       !isRetrospec &&
-      isDaysLess(183, new Date(transaction.date_created ?? ""), new Date())) ||
+      !isDaysLess(183, new Date(transaction.date_created ?? ""), new Date())) ||
     (viewType === "paid" && transaction?.is_paid === true) ||
     (viewType === "completed" && transaction?.is_completed === true) ||
     (viewType === "main" &&

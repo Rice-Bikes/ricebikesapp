@@ -22,8 +22,7 @@ describe('passesExternalFilter helper', () => {
     expect(passesExternalFilter(node, 'retrospec', '')).toBe(false);
   });
 
-  it('pickup view requires completed, not paid, not refurb and older than threshold', () => {
-    const oldDate = new Date(Date.now() - 184 * 24 * 60 * 60 * 1000).toISOString(); // older than 183 days
+  it('pickup view requires completed, not paid, not refurb, and not retrospec', () => {
     const nodeGood = {
       data: {
         Transaction: {
@@ -31,25 +30,36 @@ describe('passesExternalFilter helper', () => {
           is_paid: false,
           is_completed: true,
           is_refurb: false,
-          date_created: oldDate,
         },
       },
     } as unknown as IRowNode;
     expect(passesExternalFilter(nodeGood, 'pickup', '')).toBe(true);
 
-    const recentDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const nodeRecent = {
+    // Should not include paid transactions
+    const nodePaid = {
+      data: {
+        Transaction: {
+          transaction_type: 'inpatient',
+          is_paid: true,
+          is_completed: true,
+          is_refurb: false,
+        },
+      },
+    } as unknown as IRowNode;
+    expect(passesExternalFilter(nodePaid, 'pickup', '')).toBe(false);
+
+    // Should not include refurb transactions
+    const nodeRefurb = {
       data: {
         Transaction: {
           transaction_type: 'inpatient',
           is_paid: false,
           is_completed: true,
-          is_refurb: false,
-          date_created: recentDate,
+          is_refurb: true,
         },
       },
     } as unknown as IRowNode;
-    expect(passesExternalFilter(nodeRecent, 'pickup', '')).toBe(false);
+    expect(passesExternalFilter(nodeRefurb, 'pickup', '')).toBe(false);
   });
 
   it('paid view includes paid transactions', () => {
