@@ -41,7 +41,6 @@ import {
 // Other Components
 import SearchModal from "../../components/ItemSearch/SearchModal";
 import Notes from "../../components/TransactionPage/Notes";
-import { RowClickedEvent } from "ag-grid-community";
 
 // Utilities
 import { calculateTotalCost } from "./utils";
@@ -373,8 +372,8 @@ const TransactionDetail = () => {
     });
   };
 
-  const handleAddRepair = (event: RowClickedEvent) => {
-    const repair = event.data as Repair;
+  const handleAddRepair = (data: Part | Repair) => {
+    const repair = data as Repair;
     if (debug) console.log("handle add repair");
     addRepair.mutate(repair);
   };
@@ -391,8 +390,8 @@ const TransactionDetail = () => {
     });
   };
 
-  const handleAddPart = (event: RowClickedEvent) => {
-    const part = event.data as Part;
+  const handleAddPart = (data: Part | Repair) => {
+    const part = data as Part;
     addPart.mutate(part);
   };
 

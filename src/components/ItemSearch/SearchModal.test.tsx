@@ -154,9 +154,7 @@ describe('SearchModal', () => {
         const firstRow = screen.getByTestId('grid-row-0')
         fireEvent.click(firstRow)
 
-        expect(mockOnRowClick).toHaveBeenCalledWith(expect.objectContaining({
-            data: mockParts[0]
-        }))
+        expect(mockOnRowClick).toHaveBeenCalledWith(mockParts[0])
     })
 
     it('validates quantity input for positive numbers', () => {

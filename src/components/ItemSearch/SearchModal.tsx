@@ -8,16 +8,17 @@ import {
   Stack,
 } from "@mui/material";
 import { AgGridReact } from "ag-grid-react";
-import { ColDef, RowClickedEvent } from "ag-grid-community";
+import { ColDef } from "ag-grid-community";
 import { Part, Repair } from "../../model";
 import { CustomNoRowsOverlay } from "./CreateItemModal";
+import ItemPageModal from "../ItemPage";
 // import { CustomNoRowsOverlay } from "./CreateItemModal";
 
 interface SearchModalProps {
   searchData: Array<Part | Repair>;
   columnData: Array<ColDef<Part | Repair>>;
   colDefaults: ColDef;
-  onRowClick: (e: RowClickedEvent) => void;
+  onRowClick: (e: Part | Repair) => void;
   onQuantityChange?: (quantity: number) => void;
   variant?: "contained" | "outlined" | "text";
   children?: React.ReactNode;
@@ -36,6 +37,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [errorMsg, setErrorMsg] = useState("");
+  const [itemPageOpen, setItemPageOpen] = useState(false);
 
 
   const gridApiRef = useRef<AgGridReact>(null); // <= defined useRef for gridApi
@@ -117,6 +119,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
                 display: "flex",
                 justifyContent: "flex-start",
                 marginTop: "1%",
+                marginBottom: "1%",
                 width: "100%",
               }}
             >
@@ -139,16 +142,22 @@ const SearchModal: React.FC<SearchModalProps> = ({
                   autoFocus
                 />
                 {children?.toLocaleString().includes("Part") ? (
-                  <TextField
-                    variant="outlined"
-                    type="number"
-                    label="quantity"
-                    value={quantity}
-                    onChange={handleQuantityChange}
-                    required
-                    error={errorMsg !== ""}
-                    helperText={errorMsg}
-                  ></TextField>
+                  <>
+                    <TextField
+                      variant="outlined"
+                      type="number"
+                      label="quantity"
+                      value={quantity}
+                      onChange={handleQuantityChange}
+                      required
+                      error={errorMsg !== ""}
+                      helperText={errorMsg}
+                    ></TextField>
+                    <Button 
+                      style={{ "pointerEvents": "all" }} variant="contained" color="primary" onClick={() => setItemPageOpen(true)}>
+                      Add New Item
+                    </Button>
+                  </>
                 ) : (
                   <></>
                 )}
@@ -169,11 +178,11 @@ const SearchModal: React.FC<SearchModalProps> = ({
                 rowData={searchData}
                 columnDefs={columnData}
                 defaultColDef={colDefaults}
-                onRowClicked={(event) => {
+                onRowClicked={(item) => {
                   if (quantity >= 1) {
                     setVisible(false);
                     setSearchTerm("");
-                    return onRowClick(event);
+                    onRowClick(item.data);
                   } else {
                     setErrorMsg("Please enter a quantity greater than 0");
                   }
@@ -185,6 +194,17 @@ const SearchModal: React.FC<SearchModalProps> = ({
                 quickFilterText={searchTerm}
               />
             </section>
+            <ItemPageModal
+                open={itemPageOpen}
+                onClose={(item) => {
+                  if (item) {
+                    setVisible(false);
+                    setSearchTerm("");
+                    onRowClick(item);
+                  }
+                  setItemPageOpen(false);
+                }}
+            />
           </Box>
         </Dialog>
       </main>

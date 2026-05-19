@@ -190,7 +190,7 @@ export const CustomerReservation: React.FC<CustomerReservationProps> = ({
             first_name: formState.first_name,
             last_name: formState.last_name,
             email: formState.email,
-            phone: formState.phone,
+            phone: formState.phone.replaceAll("-", ""),
         };
 
         if (autocompleted.length > 0) {
@@ -403,11 +403,16 @@ export const CustomerReservation: React.FC<CustomerReservationProps> = ({
                                     />
 
                                     <TextField
-                                        type="text"
+                                        type="tel"
                                         name="phone"
                                         label="Phone Number"
                                         value={formState.phone}
                                         onChange={handleTextFieldChange}
+                                        slotProps={{
+                                            htmlInput: {
+                                                pattern: "[0-9]{3}-?[0-9]{3}-?[0-9]{4}"
+                                            }
+                                        }}
                                         fullWidth
                                         required
                                     />

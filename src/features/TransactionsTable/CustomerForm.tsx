@@ -134,7 +134,7 @@ function NewTransactionForm({
       first_name: formState.first_name,
       last_name: formState.last_name,
       email: formState.email,
-      phone: formState.phone,
+      phone: formState.phone.replaceAll("-", ""),
     };
 
     if (
@@ -278,7 +278,7 @@ function NewTransactionForm({
                         onChange={handleTextFieldChange}
                         slotProps={{
                           htmlInput: {
-                            pattern: "[0-9]{3}[0-9]{3}[0-9]{4}"
+                            pattern: "[0-9]{3}-?[0-9]{3}-?[0-9]{4}"
                           }
                         }}
                         fullWidth

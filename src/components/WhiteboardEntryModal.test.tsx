@@ -98,10 +98,10 @@ vi.mock('ag-grid-react', () => ({
 }))
 
 vi.mock('./ItemSearch/SearchModal', () => ({
-  default: ({ onRowClick }: { onRowClick: (e: { data: { item_id: string } }) => void }) => (
+  default: ({ onRowClick }: { onRowClick: (e: { item_id: string }) => void }) => (
     <button
       data-testid="search-modal-button"
-      onClick={() => onRowClick({ data: { item_id: 'row-1' } })}
+      onClick={() => onRowClick({ item_id: 'row-1' })}
     >
       Add Part
     </button>

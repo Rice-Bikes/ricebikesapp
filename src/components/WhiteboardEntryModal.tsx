@@ -14,10 +14,9 @@ import {
   EditableCallbackParams,
   ITooltipParams,
   NewValueParams,
-  RowClickedEvent,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import DBModel, { OrderRequest, Part } from "../model";
+import DBModel, { OrderRequest, Part, Repair } from "../model";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import SearchModal from "./ItemSearch/SearchModal";
 import { queryClient } from "../app/queryClient";
@@ -297,10 +296,10 @@ const WhiteboardEntryModal = ({
     },
   };
 
-  const handleAddPart = (event: RowClickedEvent) => {
+  const handleAddPart = (data: Part | Repair) => {
     try {
       // console.log('Event received:', event);
-      const part = event.data as Part;
+      const part = data as Part;
       // console.log('Part data:', part);
 
       if (!part.item_id) {

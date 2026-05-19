@@ -23,7 +23,7 @@ import { toast } from "react-toastify";
 
 interface ItemPageModalProps {
   open: boolean;
-  onClose: () => void;
+  onClose: (item?: Part) => void;
   item?: Part;
 }
 
@@ -101,7 +101,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({
         }
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setIsLoading(false);
       toast.success("Item saved successfully");
       queryClient.invalidateQueries({ queryKey: ["items"] });
@@ -109,7 +109,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({
       queryClient.invalidateQueries({ queryKey: ["category", "2"] });
       queryClient.invalidateQueries({ queryKey: ["category", "3"] });
       setEdit(false);
-      onClose();
+      onClose(data as Part);
     },
     onError: (error) => {
       setIsLoading(false);
@@ -188,7 +188,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({
     <>
       <Dialog
         open={open}
-        onClose={onClose}
+        onClose={() => onClose()}
         fullScreen={isMobile}
         maxWidth="sm"
         fullWidth
@@ -479,7 +479,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({
                 sx={{ justifyContent: "flex-end" }}
               >
                 <Button
-                  onClick={onClose}
+                  onClick={() => onClose()}
                   color="primary"
                   variant="outlined"
                   fullWidth={isMobile}
@@ -543,7 +543,7 @@ const ItemPageModal: React.FC<ItemPageModalProps> = ({
                 <Button
                   variant="outlined"
                   color="secondary"
-                  onClick={onClose}
+                  onClick={() => onClose()}
                   aria-label="Close"
                   fullWidth={isMobile}
                 >

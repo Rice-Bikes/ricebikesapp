@@ -8,11 +8,10 @@ import {
   ICellRendererParams,
   NewValueParams,
   ITooltipParams,
-  RowClickedEvent,
 } from "ag-grid-community";
 import { Container, Typography, Button, Grid2 } from "@mui/material";
 import { useQuery, useMutation, useQueries } from "@tanstack/react-query";
-import DBModel, { type Part } from "../model";
+import DBModel, { type Part, type Repair } from "../model";
 import { OrderRequest } from "../model";
 import { queryClient } from "../app/queryClient";
 import { useNavigate } from "react-router-dom";
@@ -326,10 +325,9 @@ const WhiteboardPage: React.FC = () => {
     },
   };
 
-  const handleAddPart = (event: RowClickedEvent) => {
+  const handleAddPart = (data: Part | Repair) => {
     try {
-      // console.log('Event received:', event);
-      const part = event.data as Part;
+      const part = data as Part;
       // console.log('Part data:', part);
 
       if (!part.item_id) {
