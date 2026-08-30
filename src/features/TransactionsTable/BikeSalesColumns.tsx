@@ -16,7 +16,7 @@ export const getBikeSalesColumnDefs = (): ColDef<IRow>[] => [
   {
     headerName: "Customer",
     valueGetter: (params) =>
-      params.data?.Customer.first_name !== ""
+      params.data?.Customer !== null && params.data?.Customer.first_name !== ""
         ? `${params.data?.Customer.first_name} ${params.data?.Customer.last_name}`
         : "No customer assigned",
     filter: true,

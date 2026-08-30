@@ -79,7 +79,7 @@ export const CreatePartSchema = {
     category_2: { type: ["string", "null"] },
     category_3: { type: ["string", "null"] },
     specifications: { type: ["object", "null"] }, // Assuming JSON can be any valid JSON
-    features: { type: ["object","array", "null"] }, // Assuming JSON can be any valid JSON
+    features: { type: ["object", "array", "null"] }, // Assuming JSON can be any valid JSON
   },
 
   required: [
@@ -165,7 +165,7 @@ export const BikeSchema = {
     make: { type: "string" },
     model: { type: "string" },
     date_created: { type: ["string", "null"] },
-    description: { type: "string" },
+    description: { type: ["string", "null"] },
     bike_type: { type: ["string", "null"] },
     size_cm: { type: ["number", "null"] }, // Allow both number and string
     condition: { type: ["string", "null"] },

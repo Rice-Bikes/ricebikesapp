@@ -335,7 +335,10 @@ class DBModel {
             }
           }
 
-          if (!DBModel.validateCustomer(part.Customer)) {
+          if (
+            part.Customer !== null &&
+            !DBModel.validateCustomer(part.Customer)
+          ) {
             console.error("Invalid customer:", part.Customer);
             throw new Error("Invalid customer found");
           }
