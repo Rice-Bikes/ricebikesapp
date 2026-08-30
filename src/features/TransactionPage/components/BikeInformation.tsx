@@ -115,7 +115,10 @@ export const BikeInformation = ({
                 model: "",
                 description: "",
               }
-            : bike
+            : {
+                ...bike,
+                description: bike.description === null ? "" : bike.description,
+              }
         }
       />
     </Box>
