@@ -327,7 +327,7 @@ export const TransactionSchema = {
     transaction_num: { type: "number" },
     transaction_id: { type: "string" },
     date_created: { type: "string" },
-    customer_id: { type: "string" },
+    customer_id: { type: ["string", "null"] },
     transaction_type: { type: "string" },
     bike_id: { type: ["string", "null"] },
     total_cost: { type: "number" },
