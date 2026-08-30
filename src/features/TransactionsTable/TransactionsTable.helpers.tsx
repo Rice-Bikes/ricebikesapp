@@ -267,7 +267,7 @@ export function buildColDefs(
     {
       headerName: "Name",
       valueGetter: (params: ICellRendererParams<IRow>) =>
-        `${params.data?.Customer.first_name} ${params.data?.Customer.last_name}`,
+        `${params.data?.Customer?.first_name} ${params.data?.Customer?.last_name}`,
       filter: true,
       hide: isMobile,
       flex: isMobile ? 0 : undefined,

@@ -53,7 +53,7 @@ export const TransactionHeader: React.FC<TransactionHeaderProps> = ({
                 fontSize: { xs: "1.1rem", sm: "1.25rem", md: "1.5rem" },
               }}
             >
-              {`${transactionData.transaction_num}: ${transactionData.Customer.first_name} ${transactionData.Customer.last_name}`}
+              {`${transactionData.transaction_num}: ${transactionData.Customer?.first_name} ${transactionData.Customer?.last_name}`}
             </Typography>
           </Stack>
           <TransactionOptionDropdown
